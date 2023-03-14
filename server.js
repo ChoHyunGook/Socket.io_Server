@@ -2,6 +2,7 @@ const express =require('express')
 const http =require('http')
 const jwt = require('jsonwebtoken')
 const socketio = require('socket.io')
+const dayjs = require('dayjs')
 
 
 
@@ -20,34 +21,9 @@ const EXPIRES_TIME =process.env.EXPIRES
 
 
 app.get('/',(req,res)=>{
-    let today = new Date()
-
-    let year = today.getFullYear()
-    let month = today.getMonth() +1
-    let date = today.getDate();
-    let day = today.getDay();
-    let hours = today.getHours()
-    let minutes = today.getMinutes();
-    let seconds = today.getSeconds();
-
-    let stringDay;
-    if(day === 0){
-        stringDay='일요일'
-    }else if(day === 1){
-        stringDay='월요일'
-    }else if(day === 2){
-        stringDay='화요일'
-    }else if(day === 3){
-        stringDay='수요일'
-    }else if(day === 4){
-        stringDay='목요일'
-    }else if(day === 5){
-        stringDay='금요일'
-    }else if(day === 6){
-        stringDay='토요일'
-    }
-    const todays = `${year}/${month}/${date} (${stringDay}) ${hours}:${minutes}:${seconds}`
-    res.send(`***** ${todays} 서버 켜져있음 *****`)
+    dayjs.locale('ko')
+    const today = dayjs().format('YYYY년 MM월 DD일 dddd. HH:mm:ss')
+    res.send(`***** ${today} 서버 켜져있음 *****`)
 })
 
 
