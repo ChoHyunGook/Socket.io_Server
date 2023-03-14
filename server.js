@@ -2,7 +2,7 @@ const express =require('express')
 const http =require('http')
 const jwt = require('jsonwebtoken')
 const socketio = require('socket.io')
-const dayjs = require('dayjs')
+const moment = require('moment-timezone')
 
 
 
@@ -21,8 +21,46 @@ const EXPIRES_TIME =process.env.EXPIRES
 
 
 app.get('/',(req,res)=>{
-    dayjs.locale('ko')
-    const today = dayjs().format('YYYY년 MM월 DD일 dddd. HH:mm:ss')
+    const m = moment().tz('Asia/Seoul')
+    const days = m.format('dddd')
+    const hours = m.format('HH')
+    let kodays;
+    let ampm;
+    let hour;
+
+    switch (days){
+        case 'Sunday':
+            kodays='일요일'
+            break;
+        case 'Monday':
+            kodays='월요일'
+            break;
+        case 'Tuesday':
+            kodays='화요일'
+            break;
+        case 'Wednesday':
+            kodays='수요일'
+            break;
+        case 'Thursday':
+            kodays='목요일'
+            break;
+        case 'Friday':
+            kodays='금요일'
+            break;
+        case 'Saturday':
+            kodays='토요일'
+            break;
+    }
+
+    if(hours<=12){
+        ampm = '오전'
+        hour = hours
+    }else{
+        ampm = '오후'
+        hour = hours-12
+    }
+
+    const today = m.format(`YYYY년 MM월 DD일 ${kodays} ${ampm} ${hour}:mm:ss`)
     res.send(`***** ${today} 서버 켜져있음 *****`)
 })
 
