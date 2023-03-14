@@ -3,6 +3,8 @@ const http =require('http')
 const jwt = require('jsonwebtoken')
 const socketio = require('socket.io')
 const moment = require('moment-timezone')
+const ejs = require('ejs')
+
 
 
 
@@ -18,9 +20,11 @@ const MESSAGE_NAME = process.env.MESSAGE_NAME
 const STREAMING_NAME = process.env.STREAMING_NAME
 const EXPIRES_TIME =process.env.EXPIRES
 
-
+let count = 0;
 
 app.get('/',(req,res)=>{
+    count++;
+    const fileName = './picture/spinner.gif'
     const m = moment().tz('Asia/Seoul')
     const days = m.format('dddd')
     const hours = m.format('HH')
@@ -61,7 +65,8 @@ app.get('/',(req,res)=>{
     }
 
     const today = m.format(`YYYY년 MM월 DD일 ${kodays} ${ampm} ${hour}:mm:ss`)
-    res.send(`***** ${today} 서버 켜져있음 *****`)
+    res.send(`@@@@@ ${today} 서버 켜져있음... @@@@@ 오픈 후 서버 접근 횟수 ${count}번 @@@@@ `)
+
 })
 
 
