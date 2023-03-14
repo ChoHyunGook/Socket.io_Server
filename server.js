@@ -3,14 +3,35 @@ const http =require('http')
 const jwt = require('jsonwebtoken')
 const socketio = require('socket.io')
 const moment = require('moment-timezone')
-
-
+const requestIp = require('request-ip')
+const mongoose = require('mongoose')
+const { Schema } = require("mongoose");
 
 
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server)
 require('dotenv').config()
+
+
+
+const MONGO_URI = process.env.MONGO_URI
+const DB_NAME = process.env.DB_NAME
+mongoose.set('strictQuery', false);
+mongoose.connect(MONGO_URI,{dbName:DB_NAME})
+    .then(() => {
+        console.log(' ### 몽고DB 연결 성공 ### ')
+    })
+    .catch(err => {
+        console.log(' 몽고DB와 연결 실패', err)
+        process.exit();
+    });
+
+const logSchema = new Schema({
+    log: {type:String, expires:15552000}//6달(180일)
+},{ versionKey : false })
+
+const logs = mongoose.model('Logs',logSchema)
 
 const PORT = process.env.PORT
 const SECRET_KEY = process.env.SECRET_KEY
@@ -61,9 +82,10 @@ if(hours1<=12){
 }
 
 const today1 = opens.format(`YYYY년 MM월 DD일 ${kodays1} ${ampm1} ${hour1}:mm:ss`)
-
+const logToday1 = opens.format('YYYY:MM:DD.HH:mm:ss')
 
 app.get('/',(req,res)=>{
+    const AccessIp = requestIp.getClientIp(req)
     count++;
     const fileName = './picture/spinner.gif'
     const m = moment().tz('Asia/Seoul')
@@ -106,13 +128,15 @@ app.get('/',(req,res)=>{
     }
 
     const today = m.format(`YYYY년 MM월 DD일 ${kodays} ${ampm} ${hour}:mm:ss`)
-    res.send(`@@@@@ ${today} 서버 ON  @@@@@ 서버오픈일자(재오픈) ${today1} @@@@@ 오픈 후 서버 접근 횟수 ${count}번 @@@@@ `)
-
+    res.send(`@@@@@ ${today} 서버 ON  @@@@@ 서버오픈일자(재오픈) ${today1} @@@@@ 오픈 후 서버 접근 횟수 ${count}번 @@@@@`)
+    const logToday = m.format(`YYYY:MM:DD:dddd:HH:mm:ss::${AccessIp}::count:${count}::${logToday1}`)
+    const logDb = { log: logToday }
+    new logs(logDb).save().then(r => )
 })
 
 
 
-server.listen(PORT, ()=>{
+server.listen(PORT, '0.0.0.0', ()=>{
     console.log('***************** ***************** *****************')
     console.log('***************** ***************** *****************')
     console.log('********** 서버가 정상적으로 실행되고 있습니다 **********')
