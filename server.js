@@ -83,9 +83,10 @@ if(hours1<=12){
 
 const today1 = opens.format(`YYYY년 MM월 DD일 ${kodays1} ${ampm1} ${hour1}:mm:ss`)
 const logToday1 = opens.format('YYYY:MM:DD.HH:mm:ss')
-
+app.set('trust proxy',true)
 app.get('/',(req,res)=>{
     const AccessIp = requestIp.getClientIp(req)
+    const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
     count++;
     const fileName = './picture/spinner.gif'
     const m = moment().tz('Asia/Seoul')
@@ -127,14 +128,17 @@ app.get('/',(req,res)=>{
         hour = hours-12
     }
 
+
     const today = m.format(`YYYY년 MM월 DD일 ${kodays} ${ampm} ${hour}:mm:ss`)
     res.send(`@@@@@ ${today} 서버 ON  @@@@@ 서버오픈일자(재오픈) ${today1} @@@@@ 오픈 후 서버 접근 횟수 ${count}번 @@@@@`)
-    const logToday = m.format(`YYYY:MM:DD:dddd:HH:mm:ss::${AccessIp}::count:${count}::${logToday1}`)
+    const logToday = m.format(`YYYY:MM:DD:dddd:HH:mm:ss::${ip}::count:${count}::${logToday1}`)
     const logDb = { log: logToday }
-    new logs(logDb).save().then(r => )
+    new logs(logDb).save()
+        .then(r => console.log('LogData Save Success',r))
+        .catch(err => console.log(err))
 })
 
-
+app.set('trust proxy', true);
 
 server.listen(PORT, '0.0.0.0', ()=>{
     console.log('***************** ***************** *****************')
