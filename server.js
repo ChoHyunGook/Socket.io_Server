@@ -106,7 +106,7 @@ app.get('/',(req,res)=>{
     }
 
     const today = m.format(`YYYY년 MM월 DD일 ${kodays} ${ampm} ${hour}:mm:ss`)
-    res.send(`@@@@@ 서버오픈(재오픈) ${today1} @@@@@ ${today} 서버 켜져있음... @@@@@ 오픈 후 서버 접근 횟수 ${count}번 @@@@@ `)
+    res.send(`@@@@@ ${today} 서버 ON  @@@@@ 서버오픈일자(재오픈) ${today1} @@@@@ 오픈 후 서버 접근 횟수 ${count}번 @@@@@ `)
 
 })
 
