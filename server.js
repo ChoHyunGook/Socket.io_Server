@@ -88,7 +88,6 @@ app.get('/',(req,res)=>{
     const AccessIp = requestIp.getClientIp(req)
     const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
     count++;
-    const fileName = './picture/spinner.gif'
     const m = moment().tz('Asia/Seoul')
     const days = m.format('dddd')
     const hours = m.format('HH')
@@ -153,6 +152,15 @@ server.listen(PORT, '0.0.0.0', ()=>{
 io.on('connection',(socket)=>{
     console.log('Connected Success');
     let authToken;
+    let roomName;
+
+    //데이터 구조 = { MAC:XXX }
+    socket.on(ROOM_NAME, function (data){
+        console.log('Room Connect')
+        roomName = data.MAC
+        socket.join(roomName)
+    })
+
 
     //데이터 구조 = { MAC: XXX, IP:XXXXXXX, PORT:XXXXXXX }
     socket.on(MESSAGE_NAME, function (data){
@@ -160,13 +168,11 @@ io.on('connection',(socket)=>{
         console.log(data)
         const macAddress = data.MAC;
 
-        socket.join(macAddress)
-
         authToken = jwt.sign({MacAddr:macAddress},SECRET_KEY,{expiresIn:EXPIRES_TIME})
 
-        const tokenData = jwt.verify(authToken,SECRET_KEY)
+        socket.emit(authToken)
 
-        io.sockets.in(tokenData.MacAddr).to(macAddress).emit(data)
+        io.sockets.in(roomName).broadcast.emit(data)
     })
 
     //데이터구조 상관없음 파라미터로 그냥 받아서 그대로 흘려버림(개념상은 가능한데 rtsp구조상 가능할지 모르겠음)
