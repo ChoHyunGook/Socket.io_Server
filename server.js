@@ -149,29 +149,31 @@ server.listen(PORT, '0.0.0.0', ()=>{
 })
 
 
-let authToken;
 
 io.on('connection',(socket)=>{
     console.log('Connected Success');
+    let authToken;
 
-    socket.on(ROOM_NAME,function (data){
-        console.log(data)
-        socket.join(data.roomName);
-        authToken = jwt.sign({roomName:data.roomName},SECRET_KEY,{expiresIn:EXPIRES_TIME})
-    })
-
-
+    //데이터 구조 = { MAC: XXX, IP:XXXXXXX, PORT:XXXXXXX }
     socket.on(MESSAGE_NAME, function (data){
         console.log('Server Received Data');
-        const tokenData = jwt.verify(authToken,SECRET_KEY)
         console.log(data)
-        const MAC = data.MacAddress
-        io.sockets.in(tokenData.roomName).to(MAC).emit(data)
+        const macAddress = data.MAC;
+
+        socket.join(macAddress)
+
+        authToken = jwt.sign({MacAddr:macAddress},SECRET_KEY,{expiresIn:EXPIRES_TIME})
+
+        const tokenData = jwt.verify(authToken,SECRET_KEY)
+
+        io.sockets.in(tokenData.MacAddr).to(macAddress).emit(data)
     })
 
+    //데이터구조 상관없음 파라미터로 그냥 받아서 그대로 흘려버림(개념상은 가능한데 rtsp구조상 가능할지 모르겠음)
     socket.on(STREAMING_NAME,function (data){
         const tokenData = jwt.verify(authToken,SECRET_KEY)
-        io.sockets.in(tokenData.roomName).emit(data)
+        console.log(data)
+        io.sockets.in(tokenData.MacAddr).emit(data)
     })
 
 
