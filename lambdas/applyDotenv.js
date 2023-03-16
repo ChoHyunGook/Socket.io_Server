@@ -1,0 +1,12 @@
+const applyDotenv = dotenv => {
+    dotenv.config()
+    return {
+        MONGO_URI:process.env.MONGO_URI,
+        DB_NAME:process.env.DB_NAME,
+        PORT:process.env.PORT,
+        MESSAGE_NAME:process.env.MESSAGE_NAME,
+    }
+}
+
+module.exports = applyDotenv
+
