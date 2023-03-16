@@ -1,8 +1,8 @@
-const logs = function (mongoose){
+const Log = function (mongoose){
     const logSchema = new mongoose.Schema({
         log: {type:String, expires:15552000}//6달(180일)
     },{ versionKey : false })
-    return mongoose.model('Logs',logSchema)
+    return mongoose.model('logs',logSchema)
 }
 
-module.exports = logs
+module.exports = Log

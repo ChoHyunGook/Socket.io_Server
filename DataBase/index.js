@@ -1,11 +1,13 @@
 const dotenv = require('dotenv')
-const dataBase = require("./db");
 const mongoose = require("mongoose");
+const logs = require("./Logs");
+const InfoData = require('./Info')
+
 
 const db = {}
 db.mongoose = mongoose
 db.url = dotenv.MONGO_URI
-db.Logs=new dataBase(mongoose)
-
+db.logs=new logs(mongoose)
+db.Info =new InfoData(mongoose)
 
 module.exports = db
