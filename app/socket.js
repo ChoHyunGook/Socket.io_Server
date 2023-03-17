@@ -12,8 +12,6 @@ const socket = function (){
     const app = express();
     const server = http.createServer(app)
 
-
-
     const { MESSAGE_NAME } = applyDotenv(dotenv)
 
     const socketLogs = db.logs
@@ -28,12 +26,15 @@ const socket = function (){
             server.listen(8000,()=>{
                 console.log('***************** ***************** *****************')
                 console.log('***************** ***************** *****************')
-                console.log(`********** 소켓서버 ${ServerName} On **********`)
+                console.log(`********** 소켓서버 On **********`)
+                console.log(`********** path: ${ServerName}  **********`)
                 console.log('******************* 서버오픈일자 *******************')
                 console.log(`********* ${Date.today()} *********`)
                 console.log('***************** ***************** *****************')
                 console.log('***************** ***************** *****************')
             });
+
+            console.log(turnData.ip)
 
             io.on('connection', (socket)=>{
                 //서버 내에서 커넥된지 로그확인
