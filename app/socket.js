@@ -6,8 +6,11 @@ const dotenv = require("dotenv");
 const db = require("../DataBase");
 const Date = require("../Data/date");
 
-const app = express();
-const server = http.createServer(app)
+
+
+const socket = function (){
+    const app = express();
+    const server = http.createServer(app)
     server.listen(8000,()=>{
         console.log('***************** ***************** *****************')
         console.log('***************** ***************** *****************')
@@ -18,12 +21,9 @@ const server = http.createServer(app)
         console.log('***************** ***************** *****************')
     });
 
-const { MESSAGE_NAME } = applyDotenv(dotenv)
+    const { MESSAGE_NAME } = applyDotenv(dotenv)
 
-const socketLogs = db.logs
-
-
-const socket = function (){
+    const socketLogs = db.logs
     return {
         socketService(turnData){
 
