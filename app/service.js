@@ -35,9 +35,10 @@ const service = function (){
             try {
                 console.log('Post...SocketServerCreate...')
                 const data = req.body
+                console.log(data)
+                console.log(typeof data.MAC)
                 if(typeof data.MAC === 'string'|| typeof data.PORT === 'string'||
                     typeof data.MACPORT === 'string' || typeof data.IP === 'string'){
-
                     Info.findOne({MACPORT:req.body.MACPORT})
                         .then((mb)=>{
                             if(mb === null){
@@ -88,7 +89,8 @@ const service = function (){
                             res.status(400).json(err)
                         })
                 }else{
-                    res.status(400).send('string값으로 입력해주세요')
+                    console.log('string값 아님')
+                    res.status(400).send('키:밸류 값을 string으로 입력해주세요')
 
                 }
 
