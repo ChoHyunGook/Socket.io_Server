@@ -31,12 +31,43 @@ switch (days1){
         break;
 }
 
-if(hours1<=12){
+if(hours1<12){
     ampm1 = '오전'
     hour1 = hours1
-}else{
+}else {
     ampm1 = '오후'
-    hour1 = hours1-12
+    if(hours1 === '12'){
+        hour1 = hours1
+    }else if(hours1 === '13'){
+        hour1 = '01'
+    }else if(hours1 === '14'){
+        hour1 = '02'
+    }else if(hours1 === '15'){
+        hour1 = '03'
+    }
+    else if(hours1 === '16'){
+        hour1 = '04'
+    }
+    else if(hours1 === '17'){
+        hour1 = '05'
+    }
+    else if(hours1 === '18'){
+        hour1 = '06'
+    }
+    else if(hours1 === '19'){
+        hour1 = '07'
+    }
+    else if(hours1 === '20'){
+        hour1 = '08'
+    }
+    else if(hours1 === '21'){
+        hour1 = '09'
+    }
+    else if(hours1 === '22'){
+        hour1 = '10'
+    }else if(hours1 === '23'){
+        hour1 = '11'
+    }
 }
 
 const Date = function (){

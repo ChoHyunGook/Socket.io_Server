@@ -12,28 +12,16 @@ const Date = require('./Data/date')
 
 
 
-
-
 async function startServer(){
     const app = express();
     dotenv.config()
-    const { MONGO_URI, DB_NAME, PORT, ORIGIN } = applyDotenv(dotenv)
+    const { MONGO_URI, DB_NAME, PORT } = applyDotenv(dotenv)
 
 //post 방식 일경우 begin
 //post 의 방식은 url 에 추가하는 방식이 아니고 body 라는 곳에 추가하여 전송하는 방식
     app.use(express.static('public'));
     app.use(express.urlencoded({extended: true})); // post 방식 세팅
     app.use(express.json()); // json 사용 하는 경우의 세팅
-
-    const corsOptions = {
-        origin : ORIGIN,
-        optionsSuccessStatus : 200
-    }
-
-    app.use(cors({
-        origin:true,
-        credentials: true
-    }))
 
 
 
@@ -53,15 +41,14 @@ async function startServer(){
 
     app.use(morgan('dev'))
 
-    app.get('/', cors(corsOptions), (req,res)=>{
+    app.get('/',  (req,res)=>{
         Service().getService(req,res)
     })
 
 
-    app.post('/socket', cors(corsOptions), (req,res)=>{
+    app.post('/socket',  (req,res)=>{
         Service().postService(req,res)
     })
-
 
 
     app.set('trust proxy', true);
