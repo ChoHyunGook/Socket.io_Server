@@ -11,7 +11,7 @@ const Date = require('./Data/date')
 
 
 
-
+async function startServer(){
     const app = express();
     dotenv.config()
     const { MONGO_URI, DB_NAME, PORT } = applyDotenv(dotenv)
@@ -69,7 +69,8 @@ const Date = require('./Data/date')
     })
 
 
-
+}
+startServer()
 
 
 
