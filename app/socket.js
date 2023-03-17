@@ -7,7 +7,7 @@ const db = require("../DataBase");
 const Date = require("../Data/date");
 
 const app = express();
-const server = http.createServer(app);
+const server = http.createServer(app).listen(8000);
 
 const { MESSAGE_NAME } = applyDotenv(dotenv)
 
@@ -20,7 +20,7 @@ const socket = function (){
 
             const ServerName = turnData.SERVERNAME
 
-            const io = SocketIo(server, { path:ServerName })
+            const io = SocketIo(server, { path: ServerName })
 
             io.on('connection', (socket)=>{
                 //서버 내에서 커넥된지 로그확인
@@ -34,7 +34,7 @@ const socket = function (){
                 // 앱, 디바이스로 커넥됫다고 메세지송신
                 io.emit('Connected Success')
 
-                socket.on(MESSAGE_NAME, function (data){
+                socket.on('msg', function (data){
                     console.log('Server Received Data');
                     console.log(data)
 

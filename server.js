@@ -1,14 +1,13 @@
 const express =require('express')
 const dotenv = require('dotenv')
 const morgan = require('morgan')
-const cors = require('cors')
-
 
 const ResponseService = require('./lambdas/response')
 const applyDotenv = require('./lambdas/applyDotenv')
 const db = require('./DataBase/index')
 const Service = require('./app/service')
 const Date = require('./Data/date')
+
 
 
 
@@ -24,12 +23,10 @@ async function startServer(){
     app.use(express.json()); // json 사용 하는 경우의 세팅
 
 
-
-
     db.mongoose.set('strictQuery', false);
     db
         .mongoose
-        .connect(MONGO_URI,{dbName:DB_NAME})
+        .connect(MONGO_URI, {dbName:DB_NAME})
         .then(() => {
             console.log(' ### 몽고DB 연결 성공 ### ')
         })
@@ -41,12 +38,12 @@ async function startServer(){
 
     app.use(morgan('dev'))
 
-    app.get('/',  (req,res)=>{
+    app.get('/', (req,res)=>{
         Service().getService(req,res)
     })
 
 
-    app.post('/socket',  (req,res)=>{
+    app.post('/socket', (req,res)=>{
         Service().postService(req,res)
     })
 
