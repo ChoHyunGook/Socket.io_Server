@@ -37,6 +37,7 @@ const service = function (){
                 const data = req.body
                 if(typeof data.MAC === 'string'|| typeof data.PORT === 'string'||
                     typeof data.MACPORT === 'string' || typeof data.IP === 'string'){
+                    console.log('String 값이여야함')
                     res.status(400).send('String값임')
                     // Info.findOne({MACPORT:req.body.MACPORT})
                     //     .then((mb)=>{
@@ -88,6 +89,7 @@ const service = function (){
                     //         res.status(400).json(err)
                     //     })
                 }else{
+                    console.log('스트링값 아니여야함')
                     res.status(400).send('String값 필요')
 
                 }
