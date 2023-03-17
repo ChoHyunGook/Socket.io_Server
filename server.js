@@ -1,6 +1,7 @@
 const express =require('express')
 const dotenv = require('dotenv')
 const morgan = require('morgan')
+const cors = require('cors')
 
 const ResponseService = require('./lambdas/response')
 const applyDotenv = require('./lambdas/applyDotenv')
@@ -21,6 +22,22 @@ async function startServer(){
     app.use(express.static('public'));
     app.use(express.urlencoded({extended: true})); // post 방식 세팅
     app.use(express.json()); // json 사용 하는 경우의 세팅
+
+
+    app.use(cors({
+        origin:true,
+        credentials: true
+    }))
+
+
+    app.use(function(_req, res, next) {
+        res.header(
+            "Access-Control-Allow-Tabletheaders",
+            "x-access-token, Origin, Content-Type, Accept",
+            "Access-Control-Allow-Origin", "*"
+        );
+        next();
+    });
 
 
     db.mongoose.set('strictQuery', false);
@@ -44,6 +61,7 @@ async function startServer(){
 
 
     app.post('/socket', (req,res)=>{
+        console.log(req.body)
         Service().postService(req,res)
     })
 
