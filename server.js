@@ -16,6 +16,11 @@ const Date = require('./Data/date')
     dotenv.config()
     const { MONGO_URI, DB_NAME, PORT } = applyDotenv(dotenv)
 
+//post 방식 일경우 begin
+//post 의 방식은 url 에 추가하는 방식이 아니고 body 라는 곳에 추가하여 전송하는 방식
+    app.use(express.static('public'));
+    app.use(express.urlencoded({extended: true})); // post 방식 세팅
+    app.use(express.json()); // json 사용 하는 경우의 세팅
 
 
     db.mongoose.set('strictQuery', false);
@@ -62,6 +67,7 @@ const Date = require('./Data/date')
         console.log('***************** ***************** *****************')
         console.log('***************** ***************** *****************')
     })
+
 
 
 
