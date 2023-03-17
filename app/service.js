@@ -32,13 +32,13 @@ const service = function (){
         //그외 Error = code 400 => json(err)
 
         postService(req,res){
-            console.log(0)
-
-
             try {
                 console.log('Post...SocketServerCreate...')
                 const data = req.body
-
+                if(typeof data.MAC === 'string'|| typeof data.PORT === 'string'||
+                    typeof data.MACPORT === 'string' || typeof data.IP === 'string'){
+                    res.status(400).send('String값 필요')
+                }
                 Info.findOne({MACPORT:req.body.MACPORT})
                     .then((mb)=>{
                         if(mb === null){

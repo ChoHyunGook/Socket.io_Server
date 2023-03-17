@@ -22,6 +22,7 @@ const socket = function (){
 
             const io = SocketIo(server, { path: ServerName })
 
+
             io.on('connection', (socket)=>{
                 //서버 내에서 커넥된지 로그확인
                 console.log(`Socket Connected Success`);
