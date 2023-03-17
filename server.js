@@ -45,7 +45,6 @@ async function startServer(){
 
 
     app.post('/socket', (req,res)=>{
-        console.log(req.body)
         Service().postService(req,res)
     })
 
