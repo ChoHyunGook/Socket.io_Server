@@ -35,8 +35,6 @@ const service = function (){
             try {
                 console.log('Post...SocketServerCreate...')
                 const data = req.body
-                console.log(data)
-                console.log(typeof data.MAC)
                 if(typeof data.MAC === 'string'|| typeof data.PORT === 'string'||
                     typeof data.MACPORT === 'string' || typeof data.IP === 'string'){
                     Info.findOne({MACPORT:req.body.MACPORT})
