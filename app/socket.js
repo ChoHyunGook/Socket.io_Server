@@ -11,19 +11,13 @@ const Date = require("../Data/date");
 const socket = function (){
     const app = express();
     const server = http.createServer(app)
-    server.listen(8000,()=>{
-        console.log('***************** ***************** *****************')
-        console.log('***************** ***************** *****************')
-        console.log('********** 소켓서버 On **********')
-        console.log('******************* 서버오픈일자 *******************')
-        console.log(`********* ${Date.today()} *********`)
-        console.log('***************** ***************** *****************')
-        console.log('***************** ***************** *****************')
-    });
+
+
 
     const { MESSAGE_NAME } = applyDotenv(dotenv)
 
     const socketLogs = db.logs
+
     return {
         socketService(turnData){
 
@@ -31,8 +25,15 @@ const socket = function (){
 
             const io = SocketIo(server, { path: ServerName })
 
-            console.log(turnData.ip)
-
+            server.listen(8000,()=>{
+                console.log('***************** ***************** *****************')
+                console.log('***************** ***************** *****************')
+                console.log(`********** 소켓서버 ${ServerName} On **********`)
+                console.log('******************* 서버오픈일자 *******************')
+                console.log(`********* ${Date.today()} *********`)
+                console.log('***************** ***************** *****************')
+                console.log('***************** ***************** *****************')
+            });
 
             io.on('connection', (socket)=>{
                 //서버 내에서 커넥된지 로그확인
