@@ -7,7 +7,16 @@ const db = require("../DataBase");
 const Date = require("../Data/date");
 
 const app = express();
-const server = http.createServer(app).listen(8000);
+const server = http.createServer(app)
+    server.listen(8000,()=>{
+        console.log('***************** ***************** *****************')
+        console.log('***************** ***************** *****************')
+        console.log('********** 소켓서버 On **********')
+        console.log('******************* 서버오픈일자 *******************')
+        console.log(`********* ${Date.today()} *********`)
+        console.log('***************** ***************** *****************')
+        console.log('***************** ***************** *****************')
+    });
 
 const { MESSAGE_NAME } = applyDotenv(dotenv)
 
@@ -35,7 +44,7 @@ const socket = function (){
                 // 앱, 디바이스로 커넥됫다고 메세지송신
                 io.emit('Connected Success')
 
-                socket.on('msg', function (data){
+                socket.on(MESSAGE_NAME, function (data){
                     console.log('Server Received Data');
                     console.log(data)
 
