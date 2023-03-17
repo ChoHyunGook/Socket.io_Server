@@ -34,7 +34,14 @@ const socket = function (){
                 console.log('***************** ***************** *****************')
             });
 
-            console.log(turnData.ip)
+            const openDate = Date.today()
+
+            const logDb = {log:`socket.io::${turnData.ip}::${openDate}::${turnData.SERVERNAME}::${turnData.IP}::ServerOpen`}
+
+            new socketLogs(logDb).save()
+                .then(r => console.log('SocketServer Open Log data Save...'))
+                .catch(err => console.log('SocketServer Open Log Save Error',err))
+
 
             io.on('connection', (socket)=>{
                 //서버 내에서 커넥된지 로그확인
@@ -62,6 +69,22 @@ const socket = function (){
 
                 socket.on('disconnect',()=>{
                     console.log('User Disconnected')
+                    console.log('***************** ***************** *****************')
+                    console.log(`********** 소켓서버 Off **********`)
+                    console.log(`********** path: ${ServerName}  **********`)
+                    console.log('******************* 서버off일자 *******************')
+                    console.log(`********* ${Date.today()} *********`)
+                    console.log('***************** ***************** *****************')
+                    const closeDate = Date.today()
+
+                    const logDb = {log:`socket.io::${turnData.ip}::${closeDate}::${turnData.SERVERNAME}::${turnData.IP}::ServerClose`}
+
+                    new socketLogs(logDb).save()
+                        .then(r => console.log('SocketServer Close Log data Save...'))
+                        .catch(err => console.log('SocketServer Close Log Save Error',err))
+
+                    console.log(turnData.ip)
+
                 })
 
             });

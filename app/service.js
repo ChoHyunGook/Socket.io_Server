@@ -75,6 +75,7 @@ const service = function (){
 
                                 //소켓서버생성
                                 socket().socketService(turnData)
+
                                 console.log('Socket Server Creation Completed')
                                 res.status(200).json(ServerName);
 
