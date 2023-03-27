@@ -1,10 +1,11 @@
-const express =require('express')
-const SocketIo = require('socket.io')
+
 const applyDotenv = require("../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const db = require("../DataBase");
 const Date = require("../Data/date");
 const logger = require('morgan')
+const cors = require("cors");
+
 
 
 
@@ -13,15 +14,25 @@ const socket = function (){
     return {
         socketService(turnData){
 
-            const app = express();
-            app.use(logger('dev'))
+            const app = require("express")();
+            const http = require("http");
+            const httpServer = http.createServer(app);
+            const { Server } = require("socket.io");
+            const ServerName = turnData.SERVERNAME
+            app.use(cors());
 
+            const io = new Server(httpServer, {
+                cors: {
+                    origin: "*",
+                },
+                path: ServerName,
+            })
 
             const { MESSAGE_NAME } = applyDotenv(dotenv)
 
             const socketLogs = db.logs
 
-            const server = app.listen(8000,()=>{
+            httpServer.listen(8000,()=>{
                 console.log('***************** ***************** *****************')
                 console.log('***************** ***************** *****************')
                 console.log(`********** 소켓서버 On **********`)
@@ -33,15 +44,6 @@ const socket = function (){
             })
 
 
-            const ServerName = turnData.SERVERNAME
-
-            const io = SocketIo(server, {
-                    path: ServerName,
-                cors: {
-                    origin: "*",
-                    methods: ["GET", "POST"]
-                }
-            })
 
             const openDate = Date.today()
 
@@ -50,6 +52,8 @@ const socket = function (){
             new socketLogs(logDb).save()
                 .then(r => console.log('SocketServer Open Log data Save...'))
                 .catch(err => console.log('SocketServer Open Log Save Error',err))
+
+            app.use(logger('dev'))
 
 
 
@@ -76,6 +80,11 @@ const socket = function (){
 
                     io.broadcast.emit(data)
                 })
+
+                socket.on("connect_error", (err) => {
+                    console.log(`connect_error due to ${err.message}`);
+                });
+
 
                 socket.on('error',(error)=>{
                     console.log(error)

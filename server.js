@@ -23,7 +23,6 @@ async function startServer(){
     app.use(express.json()); // json 사용 하는 경우의 세팅
 
 
-
     db.mongoose.set('strictQuery', false);
     db
         .mongoose
