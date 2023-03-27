@@ -4,6 +4,7 @@ const applyDotenv = require("../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const db = require("../DataBase");
 const Date = require("../Data/date");
+const logger = require('morgan')
 
 
 
@@ -13,6 +14,7 @@ const socket = function (){
         socketService(turnData){
 
             const app = express();
+            app.use(logger('dev'))
 
 
             const { MESSAGE_NAME } = applyDotenv(dotenv)
@@ -72,6 +74,15 @@ const socket = function (){
                         .catch(err => console.log('Socket.msg Log Save Error',err))
 
                     io.broadcast.emit(data)
+                })
+
+                socket.on('error',(error)=>{
+                    console.log(error)
+                    const errorMessage = {log:`socket.io::error::${turnData.ip}::${connectDate}::${turnData.SERVERNAME}::${error}::${turnData.IP}::error`}
+                    new socketLogs(errorMessage).save()
+                        .then(r => console.log('Socket.msg Log data Save...'))
+                        .catch(err => console.log('Socket.msg Log Save Error',err))
+                    socket.emit(error)
                 })
 
                 socket.on('disconnect',()=>{
