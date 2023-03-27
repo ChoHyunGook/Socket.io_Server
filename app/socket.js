@@ -1,4 +1,3 @@
-
 const applyDotenv = require("../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const db = require("../DataBase");
@@ -13,19 +12,18 @@ const socket = function (){
 
     return {
         socketService(turnData){
-
-            const app = require("express")();
-            const http = require("http");
-            const httpServer = http.createServer(app);
-            const { Server } = require("socket.io");
             const ServerName = turnData.SERVERNAME
-            app.use(cors());
+            const app = require('express')();
+            const server = require('http').createServer(app);
 
-            const io = new Server(httpServer, {
+            const PORT = 8000;
+
+            const { Server } = require("socket.io");
+
+            const io = new Server(server, {
                 cors: {
                     origin: "*",
-                    methods: ["GET", "POST"],
-                    credentials: true
+                    methods: ["GET", "POST"]
                 },
                 path: ServerName,
             })
@@ -34,7 +32,7 @@ const socket = function (){
 
             const socketLogs = db.logs
 
-            httpServer.listen(8000,()=>{
+            server.listen(PORT,()=>{
                 console.log('***************** ***************** *****************')
                 console.log('***************** ***************** *****************')
                 console.log(`********** 소켓서버 On **********`)
@@ -44,7 +42,6 @@ const socket = function (){
                 console.log('***************** ***************** *****************')
                 console.log('***************** ***************** *****************')
             })
-
 
 
             const openDate = Date.today()

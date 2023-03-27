@@ -73,11 +73,12 @@ const service = function (){
                                     .catch(err => console.log('Info Save Error', err))
 
 
+
                                 //소켓서버생성
                                 socket().socketService(turnData)
-
                                 console.log('Socket Server Creation Completed')
                                 res.status(200).json(ServerName);
+
 
                             }else {
                                 console.log('Socket Server Creation Fail...(MACPORT Duplication)')
