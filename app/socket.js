@@ -52,9 +52,10 @@ const socket = function (){
                 .catch(err => console.log('SocketServer Open Log Save Error',err))
 
 
+
             io.on('connection', (socket)=>{
                 //서버 내에서 커넥된지 로그확인
-                console.log(`Socket Connected Success`);
+                console.log(`Socket Connected Success ${socket.id}`);
                 const connectDate = Date.connectDate()
                 const logDb = {log:`socket.io::${turnData.ip}::${connectDate}::${turnData.SERVERNAME}::${turnData.IP}::ConnectSuccess`}
                 new socketLogs(logDb).save()
