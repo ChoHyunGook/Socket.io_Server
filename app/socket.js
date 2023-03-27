@@ -1,5 +1,4 @@
 const express =require('express')
-const http =require('http')
 const SocketIo = require('socket.io')
 const applyDotenv = require("../lambdas/applyDotenv");
 const dotenv = require("dotenv");
@@ -9,21 +8,18 @@ const Date = require("../Data/date");
 
 
 const socket = function (){
-    const app = express();
-    const server = http.createServer(app)
-
-    const { MESSAGE_NAME } = applyDotenv(dotenv)
-
-    const socketLogs = db.logs
 
     return {
         socketService(turnData){
 
-            const ServerName = turnData.SERVERNAME
+            const app = express();
 
-            const io = SocketIo(server, { path: ServerName })
 
-            server.listen(8000,()=>{
+            const { MESSAGE_NAME } = applyDotenv(dotenv)
+
+            const socketLogs = db.logs
+
+            const server = app.listen(8000,()=>{
                 console.log('***************** ***************** *****************')
                 console.log('***************** ***************** *****************')
                 console.log(`********** 소켓서버 On **********`)
@@ -32,7 +28,18 @@ const socket = function (){
                 console.log(`********* ${Date.today()} *********`)
                 console.log('***************** ***************** *****************')
                 console.log('***************** ***************** *****************')
-            });
+            })
+
+
+            const ServerName = turnData.SERVERNAME
+
+            const io = SocketIo(server, {
+                    path: ServerName,
+                cors: {
+                    origin: "*",
+                    methods: ["GET", "POST"]
+                }
+            })
 
             const openDate = Date.today()
 
