@@ -10,6 +10,8 @@ const express =require('express')
 
 const socket = function (){
 
+    const Info = db.Info
+
     return {
         socketService(turnData){
             const ServerName = turnData.SERVERNAME
@@ -52,48 +54,55 @@ const socket = function (){
 
             app.use(logger('dev'))
 
-            
-            let deviceData=null;
-            let appData=null;
 
-            app.post(`/device/send/${ServerName}`,(req,res)=>{//디바이스에서 포스트
-                try{
-                    deviceData = req.body
-                    res.status(200).send('Data Transport Success')
-                }catch(e){
-                    res.status(400).send('Data Transport Fail')
-                }
-                
-                
+
+            let deviceData=new Uint8Array();
+            let appData=new Uint8Array();
+            //소켓 서버 연결확인 get(앱, 디바이스)
+            app.get('/',(req,res)=>{
+                res.status(200).send(`http://socket.doorbellsquare.com:8000/${ServerName} SocketServer Connected Success`)
             })
-
-            app.post(`/app/send/${ServerName}`,(req,res)=>{//앱에서 포스트
-                try{
-                    appData = req.body
-                    res.status(200).send('Data Transport Success')
-                }catch(e){
-                    res.status(400).send('Data Transport Fail')
-                }
-            })
-
-
-            app.get(`/device/${ServerName}`,(req,res)=>{//디바이스쪽에서 계속 get요청
-                if(appData !== null){
+            //디바이스쪽에서 계속 get요청
+            app.get(`${ServerName}/device`,(req,res)=>{
+                if(appData !== undefined){
                     res.status(200).send(appData)
-                    appData=null;
+                    appData = new Uint8Array();
                 }else{
-                    
+                    console.log(`get: /${ServerName}/device requseting...`)
+                }
+            })
+            //앱 쪽에서 계속 get요청
+            app.get(`${ServerName}/app`,(req,res)=>{
+                if(deviceData !== undefined){
+                    res.status(200).send(deviceData)
+                    deviceData = new Uint8Array();
+                }else{
+                    console.log(`get: /${ServerName}/app requseting...`)
+                }
+            })
+            //디바이스=> 앱 메세지전송
+            app.post(`${ServerName}/device/send`,(req,res)=>{
+                try{
+                    deviceData=new Uint8Array(req.body)
+                    res.status(200).send('Data Transport Success')
+                }catch(e){
+                    res.status(400).send('Data Transport Fail')
+                }
+                
+            })
+            //앱 => 디바이스 메세지전송
+            app.post(`${ServerName}/app/send`,(req,res)=>{
+                try{
+                    appData=new Uint8Array(req.body)
+                    res.status(200).send('Data Transport Success')
+                }catch(e){
+                    res.status(400).send('Data Transport Fail')
                 }
             })
 
-            app.get(`/app/${ServerName}`,(req,res)=>{//app쪽에서 계속 get요청
-                if(deviceData !== null){
-                    res.status(200).send(deviceData)
-                    deviceData=null;
-                }else{
-                    
-                }
-            })
+
+
+            
 
 
 

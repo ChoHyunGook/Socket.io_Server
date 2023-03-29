@@ -45,13 +45,14 @@ const service = function (){
 
                                 const socketData = data.MACPORT
 
-                                const ServerName = `/socket.io/${socketData}`
+                                const ServerName = `/${socketData}`
                                 const infoData = {
                                     SERVERNAME: ServerName,
                                     MAC: data.MAC,
                                     IP: data.IP,
                                     PORT: data.PORT,
-                                    MACPORT: socketData
+                                    MACPORT: socketData,
+                                    connectDate: connectDate
                                 }
                                 const logDb = {log: `API::POST::${connectDate}::${ServerName}::${infoData.MAC}::${ip}::${logOpenDay}::/SocketServerCreate`}
 
