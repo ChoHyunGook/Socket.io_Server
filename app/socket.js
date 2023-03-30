@@ -30,7 +30,7 @@ const socket = function (){
             //     path: ServerName,
             // })
 
-            const { MESSAGE_NAME } = applyDotenv(dotenv)
+            const { SOCKET_URL } = applyDotenv(dotenv)
 
             const socketLogs = db.logs
 
@@ -60,7 +60,7 @@ const socket = function (){
             let appData=new Uint8Array();
             //소켓 서버 연결확인 get(앱, 디바이스)
             app.get('/',(req,res)=>{
-                res.status(200).send(`http://socket.doorbellsquare.com:8000/${ServerName} SocketServer Connected Success`)
+                res.status(200).send(`${SOCKET_URL}/${ServerName} SocketServer Connected Success`)
             })
             //디바이스쪽에서 계속 get요청
             app.get(`${ServerName}/device`,(req,res)=>{
