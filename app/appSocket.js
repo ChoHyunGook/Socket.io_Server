@@ -32,8 +32,8 @@ const appSocket = function (){
             const logDb = {log:`SocketServer::${infoData.ip}::${openDate}::${PORT}::${infoData.IP}::AppServerOpen`}
 
             new socketLogs(logDb).save()
-                .then(r => console.log('SocketServer Open Log data Save...'))
-                .catch(err => console.log('SocketServer Open Log Save Error',err))
+                .then(r => console.log(`AppSocketServer:${PORT} Open Log data Save...`))
+                .catch(err => console.log(`AppSocketServer:${PORT} Open Log Save Error`,err))
 
             app.use(logger('dev'))
 

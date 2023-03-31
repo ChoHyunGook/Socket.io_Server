@@ -40,9 +40,7 @@ const service = function (){
             try {
                 console.log('Post...SocketServerCreate...')
                 const data = req.body
-                if(typeof data.MAC === 'string'|| typeof data.PORT === 'string'||
-                    typeof data.MACPORT === 'string' || typeof data.IP === 'string'){
-                    Info.findOne({PORT:req.body.PORT})
+                    Info.findOne({APP_PORT:req.body.APP_PORT})
                         .then((mb)=>{
                             if(mb === null){
                                 const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -71,7 +69,6 @@ const service = function (){
                                     .catch(err => console.log('Info Save Error', err))
 
 
-
                                 //소켓서버생성(app)
                                 appSocket().appSocket(infoData)
                                 //소켓서버생성(device)
@@ -85,19 +82,13 @@ const service = function (){
 
 
                             }else {
-                                console.log('Socket Server Creation Fail...(MACPORT Duplication)')
-                                res.status(400).send('사용중인 MACPORT 주소입니다.')
+                                console.log('Socket Server Creation Fail...(Port Duplication)')
+                                res.status(400).send('사용중인 Port 주소입니다.')
                             }
                         })
                         .catch(err=>{
                             res.status(400).json(err)
                         })
-                }else{
-                    console.log('string값 아님')
-                    res.status(400).send('키:밸류 값을 string으로 입력해주세요')
-
-                }
-
             }catch (err){
                 res.status(400).json(err)
             }

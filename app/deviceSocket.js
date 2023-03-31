@@ -33,8 +33,8 @@ const deviceSocket = function (){
             const logDb = {log:`SocketServer::${infoData.ip}::${openDate}::${PORT}::${infoData.IP}::DeviceServerOpen`}
 
             new socketLogs(logDb).save()
-                .then(r => console.log('[Success] SocketServer Open Log data Save...'))
-                .catch(err => console.log('[Fail] SocketServer Open Log Save Error',err))
+                .then(r => console.log(`[Success] DeviceSocketServer:${PORT} Open Log data Save...`))
+                .catch(err => console.log(`[Fail] DeviceSocketServer:${PORT} Open Log Save Error`,err))
 
             app.use(logger('dev'))
 
