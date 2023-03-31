@@ -70,9 +70,9 @@ const service = function (){
 
 
                                 //소켓서버생성(app)
-                                appSocket().appSocket(infoData)
+                                appSocket(infoData)
                                 //소켓서버생성(device)
-                                deviceSocket().deviceSocket(infoData)
+                                deviceSocket(infoData)
 
                                 console.log('Socket Server Creation Completed')
                                 const appInfo = `${SOCKET_URL}:${infoData.APP_PORT}`
