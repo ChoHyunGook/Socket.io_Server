@@ -1,6 +1,9 @@
 const Date = require("../Data/date");
 const db = require('../DataBase/index');
-const socket = require('./socket')
+const appSocket = require('./appSocket');
+const deviceSocket = require('./deviceSocket')
+const applyDotenv = require("../lambdas/applyDotenv");
+const dotenv = require("dotenv");
 
 const apiLogs = db.logs
 const Info = db.Info
@@ -8,6 +11,8 @@ const Info = db.Info
 
 const openDay = Date.today()
 const logOpenDay = Date.logOpenDay()
+
+const { SOCKET_URL } = applyDotenv(dotenv)
 
 
 const service = function (){
@@ -37,33 +42,25 @@ const service = function (){
                 const data = req.body
                 if(typeof data.MAC === 'string'|| typeof data.PORT === 'string'||
                     typeof data.MACPORT === 'string' || typeof data.IP === 'string'){
-                    Info.findOne({MACPORT:req.body.MACPORT})
+                    Info.findOne({PORT:req.body.PORT})
                         .then((mb)=>{
                             if(mb === null){
                                 const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                                 const connectDate = Date.connectDate()
+                                const devicePort = data.APP_PORT+2000
 
-                                const socketData = data.MACPORT
-
-                                const ServerName = `/${socketData}`
                                 const infoData = {
-                                    SERVERNAME: ServerName,
+                                    ip: ip,
                                     MAC: data.MAC,
                                     IP: data.IP,
                                     PORT: data.PORT,
-                                    MACPORT: socketData,
+                                    APP_PORT:data.APP_PORT,
+                                    DEVICE_PORT:devicePort,
                                     connectDate: connectDate
                                 }
-                                const logDb = {log: `API::POST::${connectDate}::${ServerName}::${infoData.MAC}::${ip}::${logOpenDay}::/SocketServerCreate`}
 
-                                const turnData = {
-                                    ip: ip,
-                                    SERVERNAME: ServerName,
-                                    MAC: data.MAC,
-                                    IP: data.IP,
-                                    PORT: data.PORT,
-                                    MACPORT: socketData
-                                }
+                                const logDb = {log: `API::POST::${connectDate}::app:${infoData.APP_PORT}::device:${infoData.DEVICE_PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
+
 
                                 new apiLogs(logDb).save()
                                     .then(r => console.log('Log data Save...'))
@@ -75,10 +72,16 @@ const service = function (){
 
 
 
-                                //소켓서버생성
-                                socket().socketService(turnData)
+                                //소켓서버생성(app)
+                                appSocket().appSocket(infoData)
+                                //소켓서버생성(device)
+                                deviceSocket().deviceSocket(infoData)
+
                                 console.log('Socket Server Creation Completed')
-                                res.status(200).json(ServerName);
+                                const appInfo = `${SOCKET_URL}:${infoData.APP_PORT}`
+                                const deviceInfo =`${SOCKET_URL}:${infoData.DEVICE_PORT}`
+
+                                res.status(200).json({app:appInfo, device:deviceInfo});
 
 
                             }else {
