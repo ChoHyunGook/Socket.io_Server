@@ -17,6 +17,22 @@ const { SOCKET_URL } = applyDotenv(dotenv)
 
 const service = function (){
     return{
+        checkPortService(req,res){
+            Info.find({})
+                .then(data=>{
+                    const AppPortData= data.map(e=>e.APP_PORT)
+                    const DevicePortData = data.map(e=>e.DEVICE_PORT)
+                    let InfoData ={
+                        APP_PORT: AppPortData,
+                        DEVICE_PORT: DevicePortData
+                    }
+                    res.status(200).send(InfoData)
+                    })
+                .catch(e=>{
+                    res.status(400).send(e)
+                })
+
+        },
 
         getService(req,res){
             console.log('get...')
@@ -32,7 +48,7 @@ const service = function (){
                 .catch(err => console.log('Log Save Error',err))
         },
 
-        //api = '/socket', Data={ MAC:xxxx, IP:xxxxx, PORT:xxxxxx, MACPORT:xxxxxxx }
+        //api = '/socket', Data={ MAC:xxxx, IP:xxxxx, PORT:xxxxxx, APP_PORT:xxxxxxx }
         //동일한 MACPORT 있을 때 Error Message = 이미 사용중인 MACPORT 입니다.
         //그외 Error = code 400 => json(err)
 

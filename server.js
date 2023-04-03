@@ -47,6 +47,9 @@ async function startServer(){
         Service().postService(req,res)
     })
 
+    app.get('/checkPort',(req,res)=>{
+        Service().checkPortService(req,res)
+    })
 
     app.set('trust proxy', true);
 
