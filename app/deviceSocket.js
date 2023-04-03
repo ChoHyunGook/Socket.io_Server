@@ -3,7 +3,8 @@ const db = require("../DataBase");
 const Date = require("../Data/date");
 const logger = require('morgan')
 const express =require('express')
-const ApplicationSocket = require("./appSocket");
+const socketMessage = require("./socketMessage");
+const axios = require("axios");
 
 
 
@@ -17,12 +18,12 @@ const DeviceSocket = function (infoData){
     app.use(express.urlencoded({extended: true})); // post 방식 세팅
     app.use(express.json()); // json 사용 하는 경우의 세팅
 
-    const PORT = infoData.DEVICE_PORT;
+    const DEVICE_PORT = infoData.DEVICE_PORT;
 
-    app.listen(PORT,()=>{
+    let server = app.listen(DEVICE_PORT,()=>{
         console.log('***************** ***************** *****************')
         console.log('***************** ***************** *****************')
-        console.log(`********** Device 소켓서버(port :${PORT}) On **********`)
+        console.log(`********** Device 소켓서버(port :${DEVICE_PORT}) On **********`)
         console.log(`********* 서버오픈일자: ${Date.today()} *********`)
         console.log('***************** ***************** *****************')
         console.log('***************** ***************** *****************')
@@ -32,34 +33,35 @@ const DeviceSocket = function (infoData){
 
     const openDate = Date.today()
 
-    const logDb = {log:`DeviceSocketServer::${infoData.ip}::${openDate}::${PORT}::${infoData.IP}::DeviceServerOpen`}
+    const logDb = {log:`DeviceSocketServer::${infoData.ip}::${openDate}::${DEVICE_PORT}::${infoData.IP}::DeviceServerOpen`}
 
     new socketLogs(logDb).save()
-        .then(r => console.log(`[Success] DeviceSocketServer:${PORT} Open Log data Save...`))
-        .catch(err => console.log(`[Fail] DeviceSocketServer:${PORT} Open Log Save Error`,err))
+        .then(r => console.log(`[Success] DeviceSocketServer:${DEVICE_PORT} Open Log data Save...`))
+        .catch(err => console.log(`[Fail] DeviceSocketServer:${DEVICE_PORT} Open Log Save Error`,err))
 
     app.use(logger('dev'))
 
-
+    // 디바이스 연결확인
     app.get('/connect',(req,res)=>{
-        const logDb = {log:`DeviceSocketServer::Connect::${infoData.ip}::${openDate}::${PORT}::${infoData.IP}::DeviceServerConnect`}
+        const logDb = {log:`DeviceSocketServer::Connect::${infoData.ip}::${openDate}::${DEVICE_PORT}::${infoData.IP}::DeviceServerConnect`}
 
         new socketLogs(logDb).save()
-            .then(r => console.log(`[Success] DeviceSocketServer:${PORT} Connected Log data Save...`))
-            .catch(err => console.log(`[Fail] DeviceSocketServer:${PORT} Connected Log Save Error`,err))
-        res.status(200).send(`Device Socket Port:${PORT} Connected Success`)
+            .then(r => console.log(`[Success] DeviceSocketServer:${DEVICE_PORT} Connected Log data Save...`))
+            .catch(err => console.log(`[Fail] DeviceSocketServer:${DEVICE_PORT} Connected Log Save Error`,err))
+        res.status(200).send(`Device Socket Port:${DEVICE_PORT} Connected Success`)
     })
 
-    //디바이스=> 앱 메세지전송
-    app.post(`/message`,(req,res)=>{
+    //디바이스=> 앱 메세지전송 {msg:rstp이진화코드, APP_PORT:앱포트번호}
+    app.post(`/msg`,(req,res)=>{
         try{
-            let devicePostData =req.body
-            ApplicationSocket(devicePostData)
-            const devicePost={log:`DeviceSocket::POST::${PORT}::${openDate}::${devicePostData}::DevicePOSTMessage`}
+            let message =req.body
+            socketMessage().devicePostSocketMessage(message)
+
+            res.status(200).json({message:'Data Transport Success'})
+            const devicePost={log:`DeviceSocket::POST::${DEVICE_PORT}::${openDate}::${message}::DevicePOSTMessage`}
             new socketLogs(devicePost).save()
                 .then(r=>console.log('[Success] DeviceSocket POST Message...'))
                 .catch(e=>console.log('[Fail] DeviceSocket POST Message...',e))
-            res.status(200).json({message:'Data Transport Success'})
         }catch(e){
             console.log(e)
             res.status(400).send('Data Transport Fail')
@@ -67,30 +69,52 @@ const DeviceSocket = function (infoData){
 
     })
 
+    //디바이스쪽에서 계속 get요청
+    app.get(`/`,(req,res)=>{
+        const appPostData = socketMessage().deviceGetSocketMessage(DEVICE_PORT)
+        const sendMSG = appPostData.map(e => e.msg)
+        const deviceGet = {log: `DeviceSocket::GET::${DEVICE_PORT}::${openDate}::${appPostData}::DeviceGetMessage`}
+        new socketLogs(deviceGet).save()
+            .then(r => console.log('[Success] DeviceSocket Get Message...'))
+            .catch(e => console.log('[Fail] DeviceSocket Get Message...', e))
+        res.status(200).send(sendMSG.join())
+        socketMessage().appPostDataInitialization(DEVICE_PORT)
 
-    return {
-        getService(appPostData){
+    })
 
-            //디바이스쪽에서 계속 get요청
-            app.get(`/`,(req,res)=>{
-                if(appPostData === undefined){
-                    console.log(`get: ${PORT}/device requseting...`)
+    //서버종료
+    app.get('/disConnect',(req,res)=>{
+        const Info = db.Info
+        Info.findOne({APP_PORT:infoData.APP_PORT,DEVICE_PORT:DEVICE_PORT})
+            .then(cl=>{
+                if(cl !== null){
+                    Info.deleteMany({APP_PORT:infoData.APP_PORT,DEVICE_PORT:DEVICE_PORT})
+                        .then(com=>{
+                            server.close(()=>{
+                                console.log(`${DEVICE_PORT} 서버 종료`)
+                            })
+                            res.status(200).send(`Device PORT:${DEVICE_PORT} 서버가 종료되었습니다.`)
+                        })
+                        .catch(e=>{
+                            res.status(400).send(e)
+                        })
                 }else{
-                    const deviceGet={log:`DeviceSocket::GET::${PORT}::${openDate}::${appPostData}::DeviceGetMessage`}
-                    new socketLogs(deviceGet).save()
-                        .then(r=>console.log('[Success] DeviceSocket Get Message...'))
-                        .catch(e=>console.log('[Fail] DeviceSocket Get Message...',e))
-
-                    res.status(200).send(appPostData)
-                    appPostData = undefined;
-
+                    server.close(()=>{
+                        console.log(`PORT: ${DEVICE_PORT} 서버 종료`)
+                    })
+                    res.status(400).send(`PORT:${DEVICE_PORT} 이미 삭제된 서버입니다.`)
                 }
+
             })
+            .catch(e=>{
+                server.close(()=>{
+                    console.log(`${DEVICE_PORT} 서버 종료`)
+                })
+                res.status(400).send(`PORT:${DEVICE_PORT} 이미 삭제된 서버입니다.`)
+            })
+    })
 
 
 
-
-        }
-    }
 }
 module.exports = DeviceSocket

@@ -2,12 +2,13 @@ const db = require("../DataBase");
 const Date = require("../Data/date");
 const logger = require('morgan')
 const express =require('express')
-const DeviceSocket = require("./deviceSocket");
+const socketMessage = require("./socketMessage");
+const deviceSocket = require('./deviceSocket')
 
 
 
 
-const ApplicationSocket = function (infoData,devicePostData){
+const ApplicationSocket = function (infoData){
     const app = express();
 
     //post 방식 일경우 begin
@@ -16,12 +17,12 @@ const ApplicationSocket = function (infoData,devicePostData){
     app.use(express.urlencoded({extended: true})); // post 방식 세팅
     app.use(express.json()); // json 사용 하는 경우의 세팅
 
-    const PORT = infoData.APP_PORT;
+    const APP_PORT = infoData.APP_PORT;
 
-    app.listen(PORT,()=>{
+    const server = app.listen(APP_PORT,()=>{
         console.log('***************** ***************** *****************')
         console.log('***************** ***************** *****************')
-        console.log(`********** App 소켓서버(port :${PORT}) On **********`)
+        console.log(`********** App 소켓서버(port :${APP_PORT}) On **********`)
         console.log(`********* 서버오픈일자: ${Date.today()} *********`)
         console.log('***************** ***************** *****************')
         console.log('***************** ***************** *****************')
@@ -31,32 +32,39 @@ const ApplicationSocket = function (infoData,devicePostData){
 
     const openDate = Date.today()
 
-    const logDb = {log:`AppSocketServer::${infoData.ip}::${openDate}::${PORT}::${infoData.IP}::AppServerOpen`}
+    const logDb = {log:`AppSocketServer::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.IP}::AppServerOpen`}
 
     new socketLogs(logDb).save()
-        .then(r => console.log(`AppSocketServer:${PORT} Open Log data Save...`))
-        .catch(err => console.log(`AppSocketServer:${PORT} Open Log Save Error`,err))
+        .then(r => console.log(`AppSocketServer:${APP_PORT} Open Log data Save...`))
+        .catch(err => console.log(`AppSocketServer:${APP_PORT} Open Log Save Error`,err))
 
     app.use(logger('dev'))
 
+
+    // 앱 연결확인
     app.get('/connect',(req,res)=>{
-        const logDb = {log:`AppSocketServer::Connect::${infoData.ip}::${openDate}::${PORT}::${infoData.IP}::DeviceServerConnect`}
+        try {
+            const logDb = {log:`AppSocketServer::Connect::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.IP}::DeviceServerConnect`}
 
-        new socketLogs(logDb).save()
-            .then(r => console.log(`[Success] AppSocketServer:${PORT} Connected Log data Save...`))
-            .catch(err => console.log(`[Fail] AppSocketServer:${PORT} Connected Log Save Error`,err))
+            new socketLogs(logDb).save()
+                .then(r => console.log(`[Success] AppSocketServer:${APP_PORT} Connected Log data Save...`))
+                .catch(err => console.log(`[Fail] AppSocketServer:${APP_PORT} Connected Log Save Error`,err))
 
-        res.status(200).send(`App Socket Port:${PORT} Connected Success`)
+            res.status(200).send(`App Socket Port:${APP_PORT} Connected Success`)
+        }catch (e){
+            res.status(400).send(`App Socket Connected Fail...`)
+        }
+
     })
 
 
-    //앱 => 디바이스 메세지전송
-    app.post(`/message`,(req,res)=>{
+    //앱 => 디바이스 메세지전송 {msg:rstp이진화코드, DEVICE_PORT:디바이스포트번호}
+    app.post(`/msg`,(req,res)=>{
         try {
-            let appPostData=req.body
-            DeviceSocket().getService(appPostData)
+            let message=req.body
+            socketMessage().appPostSocketMessage(message)
             res.status(200).send('Data Transport Success')
-            const appPost={log:`AppSocket::POST::${PORT}::${openDate}::${appPostData}::DevicePOSTMessage`}
+            const appPost={log:`AppSocket::POST::${APP_PORT}::${openDate}::${message}::DevicePOSTMessage`}
             new socketLogs(appPost).save()
                 .then(r=>console.log('[Success] AppSocket POST Message...'))
                 .catch(e=>console.log('[Fail] AppSocket POST Message...',e))
@@ -70,17 +78,49 @@ const ApplicationSocket = function (infoData,devicePostData){
 
     //앱 쪽에서 계속 get요청
 
-    app.get(`/`,(req,res)=>{
-        if(devicePostData === undefined){
-            console.log(`get: ${PORT}/device requseting...`)
-        }else {
-            const deviceGet={log:`AppSocket::GET::${PORT}::${openDate}::${devicePostData}::AppGetMessage`}
-            new socketLogs(deviceGet).save()
-                .then(r=>console.log('[Success] AppSocket Get Message...'))
-                .catch(e=>console.log('[Fail] AppSocket Get Message...',e))
+    app.get(`/`, (req, res) => {
+        const devicePostData = socketMessage().appGetSocketMessage(APP_PORT)
+        const sendMSG = devicePostData.map(e => e.msg)
+        const deviceGet = {log: `AppSocket::GET::${APP_PORT}::${openDate}::${devicePostData}::AppGetMessage`}
+        new socketLogs(deviceGet).save()
+            .then(r => console.log('[Success] AppSocket Get Message...'))
+            .catch(e => console.log('[Fail] AppSocket Get Message...', e))
+        res.status(200).send(sendMSG.join())
+        socketMessage().devicePostDataInitialization(APP_PORT)
 
-            res.status(200).send(devicePostData)
-        }
+    })
+
+    //DB내 삭제 및 app종료
+    app.get('/disConnect',(req,res)=>{
+        const Info = db.Info
+        Info.findOne({APP_PORT:APP_PORT,DEVICE_PORT:infoData.DEVICE_PORT})
+            .then(cl=>{
+                if(cl !== null){
+                    Info.deleteMany({APP_PORT:APP_PORT,DEVICE_PORT:infoData.DEVICE_PORT})
+                        .then(com=>{
+                            server.close(()=>{
+                                console.log(`${APP_PORT} 서버 종료`)
+                            })
+                            res.status(200).send(`App PORT:${APP_PORT} 앱 서버가 종료되었습니다.`)
+                        })
+                        .catch(e=>{
+                            res.status(400).send(e)
+                        })
+                }else{
+                    server.close(()=>{
+                        console.log(`${APP_PORT} 서버 종료`)
+                    })
+                    res.status(400).send(`PORT:${APP_PORT} 이미 삭제된 서버입니다.`)
+                }
+            })
+            .catch(e=>{
+                server.close(()=>{
+                    console.log(`${APP_PORT} 서버 종료`)
+                })
+                res.status(400).send(`PORT:${APP_PORT} 이미 삭제된 서버입니다.`)
+            })
+
+
     })
 
 }
