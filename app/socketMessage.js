@@ -4,9 +4,9 @@ let appPostData=[];
 const socketMessage = function (){
 
     return{
-        devicePostSocketMessage(message){
+        devicePostSocketMessage(message,APP_PORT){
             let data = {
-                APP_PORT: message.APP_PORT,
+                APP_PORT: APP_PORT,
                 msg: message.msg
             }
             devicePostData.push(data)
@@ -22,9 +22,9 @@ const socketMessage = function (){
 
 
 
-        appPostSocketMessage(message){
+        appPostSocketMessage(message,DEVICE_PORT){
             let data = {
-                DEVICE_PORT: message.DEVICE_PORT,
+                DEVICE_PORT: DEVICE_PORT,
                 msg: message.msg
             }
             appPostData.push(data)

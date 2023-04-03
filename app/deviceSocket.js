@@ -51,11 +51,12 @@ const DeviceSocket = function (infoData){
         res.status(200).send(`Device Socket Port:${DEVICE_PORT} Connected Success`)
     })
 
-    //디바이스=> 앱 메세지전송 {msg:rstp이진화코드, APP_PORT:앱포트번호}
+    //디바이스=> 앱 메세지전송 {msg:rstp이진화코드}
     app.post(`/msg`,(req,res)=>{
         try{
             let message =req.body
-            socketMessage().devicePostSocketMessage(message)
+            let APP_PORT=infoData.APP_PORT
+            socketMessage().devicePostSocketMessage(message,APP_PORT)
 
             res.status(200).json({message:'Data Transport Success'})
             const devicePost={log:`DeviceSocket::POST::${DEVICE_PORT}::${openDate}::${message}::DevicePOSTMessage`}

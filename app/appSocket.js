@@ -58,11 +58,12 @@ const ApplicationSocket = function (infoData){
     })
 
 
-    //앱 => 디바이스 메세지전송 {msg:rstp이진화코드, DEVICE_PORT:디바이스포트번호}
+    //앱 => 디바이스 메세지전송 {msg:rstp이진화코드}
     app.post(`/msg`,(req,res)=>{
         try {
             let message=req.body
-            socketMessage().appPostSocketMessage(message)
+            let DEVICE_PORT = infoData.DEVICE_PORT
+            socketMessage().appPostSocketMessage(message,DEVICE_PORT)
             res.status(200).send('Data Transport Success')
             const appPost={log:`AppSocket::POST::${APP_PORT}::${openDate}::${message}::DevicePOSTMessage`}
             new socketLogs(appPost).save()
