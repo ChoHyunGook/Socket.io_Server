@@ -22,10 +22,18 @@ const service = function (){
                 .then(data=>{
                     const AppPortData= data.map(e=>e.APP_PORT)
                     const DevicePortData = data.map(e=>e.DEVICE_PORT)
+                    const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
+                    const connectDate = Date.connectDate()
                     let InfoData ={
                         APP_PORT: AppPortData,
                         DEVICE_PORT: DevicePortData
                     }
+                    const logDb = { log: `API::GET::/checkPort::${connectDate}::${ip}::${logOpenDay}::/CheckPort` }
+
+                    new apiLogs(logDb).save()
+                        .then(r => console.log('Log data Save...'))
+                        .catch(err => console.log('Log Save Error',err))
+
                     res.status(200).send(InfoData)
                     })
                 .catch(e=>{
