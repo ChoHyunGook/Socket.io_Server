@@ -3,7 +3,7 @@
 
 # 🎨Socket Server(Socket.io 라이브러리 없이 로직구성)🎡
 
-# 📱Portfolio PowerPoint DownLoadLink => https://github.com/ChoHyunGook/MERN_Project/raw/main/DoorbellSquare%20AdminSite%20Portfolio.pptx
+# 📱Portfolio PowerPoint DownLoadLink => https://github.com/ChoHyunGook/Socket.io_Server/raw/main/Socket%20Server%20%EC%82%AC%EC%9A%A9%EC%84%A4%EB%AA%85%EC%84%9C.pptx
 
 # 📑 Language<br><br>
 ![JavaScript](https://img.shields.io/badge/javascript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
