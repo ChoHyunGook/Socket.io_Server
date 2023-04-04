@@ -33,7 +33,7 @@ const DeviceSocket = function (infoData){
 
     const openDate = Date.today()
 
-    const logDb = {log:`DeviceSocketServer::${infoData.ip}::${openDate}::${DEVICE_PORT}::${infoData.IP}::DeviceServerOpen`}
+    const logDb = {log:`DeviceSocketServer::${infoData.ip}::${openDate}::${DEVICE_PORT}::${infoData.MAC}::DeviceServerOpen`}
 
     new socketLogs(logDb).save()
         .then(r => console.log(`[Success] DeviceSocketServer:${DEVICE_PORT} Open Log data Save...`))
@@ -43,7 +43,7 @@ const DeviceSocket = function (infoData){
 
     // 디바이스 연결확인
     app.get('/connect',(req,res)=>{
-        const logDb = {log:`DeviceSocketServer::Connect::${infoData.ip}::${openDate}::${DEVICE_PORT}::${infoData.IP}::DeviceServerConnect`}
+        const logDb = {log:`DeviceSocketServer::Connect::${infoData.ip}::${openDate}::${DEVICE_PORT}::${infoData.MAC}::DeviceServerConnect`}
 
         new socketLogs(logDb).save()
             .then(r => console.log(`[Success] DeviceSocketServer:${DEVICE_PORT} Connected Log data Save...`))

@@ -32,7 +32,7 @@ const ApplicationSocket = function (infoData){
 
     const openDate = Date.today()
 
-    const logDb = {log:`AppSocketServer::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.IP}::AppServerOpen`}
+    const logDb = {log:`AppSocketServer::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.MAC}::AppServerOpen`}
 
     new socketLogs(logDb).save()
         .then(r => console.log(`AppSocketServer:${APP_PORT} Open Log data Save...`))
@@ -44,7 +44,7 @@ const ApplicationSocket = function (infoData){
     // 앱 연결확인
     app.get('/connect',(req,res)=>{
         try {
-            const logDb = {log:`AppSocketServer::Connect::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.IP}::DeviceServerConnect`}
+            const logDb = {log:`AppSocketServer::Connect::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.MAC}::DeviceServerConnect`}
 
             new socketLogs(logDb).save()
                 .then(r => console.log(`[Success] AppSocketServer:${APP_PORT} Connected Log data Save...`))

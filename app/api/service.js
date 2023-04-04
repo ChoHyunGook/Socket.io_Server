@@ -56,31 +56,27 @@ const service = function (){
                 .catch(err => console.log('Log Save Error',err))
         },
 
-        //api = '/socket', Data={ MAC:xxxx, IP:xxxxx, PORT:xxxxxx, APP_PORT:xxxxxxx }
+        //api = '/socket', Data={ MAC:xxxx, APP_PORT:xxxxxxx }
         postService(req, res) {
             try {
                 console.log('Post...SocketServerCreate...')
                 const data = req.body
 
-                if (typeof data.APP_PORT !== "number" || typeof  data.MAC !== "string" || typeof data.IP !== "string" || typeof data.PORT !== "string") {
+                if (typeof data.APP_PORT !== "number" || typeof  data.MAC !== "string") {
                     res.status(400).send(`소켓서버 생성 실패...
         
-                    오류내용 : APP_PORT 값은 Number(Int)값이며 MAC,IP,PORT의 값은 String입니다. 다시 한번 확인해주세요. 
+                    오류내용 : APP_PORT 값은 Number(Int)값이며 MAC 값은 String입니다. 다시 한번 확인해주세요. 
                     
                     기입하신 타입 =>
                     {
                     APP_PORT : ${typeof data.APP_PORT}, 
-                    MAC : ${typeof data.MAC}, 
-                    IP : ${typeof data.IP}, 
-                    PORT : ${typeof data.PORT} 
+                    MAC : ${typeof data.MAC}
                     }
                     
                     올바른 예시 =>
                     {
-                     APP_PORT : 3000
-                     MAC : "맥주소",
-                     IP : "아이피주소",
-                     PORT : "포트번호",
+                     APP_PORT : 3000,
+                     MAC : "맥주소"
                      }`
                     )
                 } else {
@@ -98,8 +94,6 @@ const service = function (){
                                         const infoData = {
                                             ip: ip,
                                             MAC: data.MAC,
-                                            IP: data.IP,
-                                            PORT: data.PORT,
                                             APP_PORT: data.APP_PORT,
                                             DEVICE_PORT: devicePort,
                                             connectDate: connectDate
