@@ -54,7 +54,6 @@ const service = function (){
                 console.log('Post...SocketServerCreate...')
                 const data = req.body
 
-
                 if (typeof data.APP_PORT !== "number" || typeof  data.MAC !== "string" || typeof data.IP !== "string" || typeof data.PORT !== "string") {
                     res.status(400).send(`소켓서버 생성 실패...
         
@@ -77,12 +76,10 @@ const service = function (){
                      }`
                     )
                 } else {
-                    if (data.APP_PORT < 3000) {
+                    if (data.APP_PORT < 3000 || data.APP_PORT > 4999) {
                         res.status(400).send(`APP_PORT 앱의 포트 값은 3000~4999까지 입니다. 기입하신 APP_PORT : ${data.APP_PORT}`)
-                    } else {
-                        if (data.APP_PORT > 4999) {
-                            res.status(400).send(`APP_PORT 앱의 포트 값은 3000~4999까지 입니다. 기입하신 APP_PORT : ${data.APP_PORT}`)
-                        } else {
+                    }
+                    else {
                             Info.findOne({APP_PORT: req.body.APP_PORT})
                                 .then((mb) => {
                                     if (mb === null) {
@@ -141,7 +138,7 @@ const service = function (){
                                 .catch(err => {
                                     res.status(400).json(err)
                                 })
-                        }
+
                     }
 
 
