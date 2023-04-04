@@ -17,10 +17,7 @@ const socketMessage = function (){
 
         devicePostDataInitialization(APP_PORT){
             devicePostData = devicePostData.filter(e=>e.APP_PORT !== APP_PORT)
-            console.log(devicePostData)
         },
-
-
 
         appPostSocketMessage(message,DEVICE_PORT){
             let data = {
@@ -36,7 +33,6 @@ const socketMessage = function (){
 
         appPostDataInitialization(DEVICE_PORT){
             appPostData = appPostData.filter(e=>e.DEVICE_PORT !== DEVICE_PORT)
-            console.log(appPostData)
         }
     }
 }

@@ -49,8 +49,6 @@ const service = function (){
         },
 
         //api = '/socket', Data={ MAC:xxxx, IP:xxxxx, PORT:xxxxxx, APP_PORT:xxxxxxx }
-        //동일한 MACPORT 있을 때 Error Message = 이미 사용중인 MACPORT 입니다.
-        //그외 Error = code 400 => json(err)
 
         postService(req,res){
             try {

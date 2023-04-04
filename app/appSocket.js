@@ -3,7 +3,7 @@ const Date = require("../Data/date");
 const logger = require('morgan')
 const express =require('express')
 const socketMessage = require("./socketMessage");
-const deviceSocket = require('./deviceSocket')
+
 
 
 
@@ -65,10 +65,6 @@ const ApplicationSocket = function (infoData){
             let DEVICE_PORT = infoData.DEVICE_PORT
             socketMessage().appPostSocketMessage(message,DEVICE_PORT)
             res.status(200).send('Data Transport Success')
-            const appPost={log:`AppSocket::POST::${APP_PORT}::${openDate}::${message}::DevicePOSTMessage`}
-            new socketLogs(appPost).save()
-                .then(r=>console.log('[Success] AppSocket POST Message...'))
-                .catch(e=>console.log('[Fail] AppSocket POST Message...',e))
 
         }catch (e){
             res.status(400).send('Data Transport Fail')
@@ -82,13 +78,8 @@ const ApplicationSocket = function (infoData){
     app.get(`/`, (req, res) => {
         const devicePostData = socketMessage().appGetSocketMessage(APP_PORT)
         const sendMSG = devicePostData.map(e => e.msg)
-        const deviceGet = {log: `AppSocket::GET::${APP_PORT}::${openDate}::${devicePostData}::AppGetMessage`}
-        new socketLogs(deviceGet).save()
-            .then(r => console.log('[Success] AppSocket Get Message...'))
-            .catch(e => console.log('[Fail] AppSocket Get Message...', e))
         res.status(200).send(sendMSG.join())
         socketMessage().devicePostDataInitialization(APP_PORT)
-
     })
 
     //DB내 삭제 및 app종료
@@ -99,6 +90,10 @@ const ApplicationSocket = function (infoData){
                 if(cl !== null){
                     Info.deleteMany({APP_PORT:APP_PORT,DEVICE_PORT:infoData.DEVICE_PORT})
                         .then(com=>{
+                            const deviceGet = {log: `AppSocket::GET::/disConnect::${APP_PORT}::${openDate}::AppDisConnect`}
+                            new socketLogs(deviceGet).save()
+                                .then(r => console.log('[Success] AppSocket DisConnect Message...'))
+                                .catch(e => console.log('[Fail] AppSocket DisConnect Message...', e))
                             server.close(()=>{
                                 console.log(`${APP_PORT} 서버 종료`)
                             })
