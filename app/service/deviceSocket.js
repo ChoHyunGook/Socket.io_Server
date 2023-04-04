@@ -1,9 +1,9 @@
 
-const db = require("../DataBase");
-const Date = require("../Data/date");
+const db = require("../../DataBase");
+const Date = require("../../Data/date");
 const logger = require('morgan')
 const express =require('express')
-const socketMessage = require("./socketMessage");
+const socketRouter = require("../router/socketRouter");
 
 
 
@@ -56,7 +56,7 @@ const DeviceSocket = function (infoData){
         try{
             let message =req.body
             let APP_PORT=infoData.APP_PORT
-            socketMessage().devicePostSocketMessage(message,APP_PORT)
+            socketRouter().devicePostSocketMessage(message,APP_PORT)
             res.status(200).json({message:'Data Transport Success'})
         }catch(e){
             console.log(e)
@@ -67,10 +67,10 @@ const DeviceSocket = function (infoData){
 
     //디바이스쪽에서 계속 get요청
     app.get(`/`,(req,res)=>{
-        const appPostData = socketMessage().deviceGetSocketMessage(DEVICE_PORT)
+        const appPostData = socketRouter().deviceGetSocketMessage(DEVICE_PORT)
         const sendMSG = appPostData.map(e => e.msg)
         res.status(200).send(sendMSG.join())
-        socketMessage().appPostDataInitialization(DEVICE_PORT)
+        socketRouter().appPostDataInitialization(DEVICE_PORT)
 
     })
 

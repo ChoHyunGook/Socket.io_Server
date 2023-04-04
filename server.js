@@ -5,7 +5,7 @@ const morgan = require('morgan')
 const ResponseService = require('./lambdas/response')
 const applyDotenv = require('./lambdas/applyDotenv')
 const db = require('./DataBase/index')
-const Service = require('./app/service')
+const Service = require('./app/api/service')
 const Date = require('./Data/date')
 
 

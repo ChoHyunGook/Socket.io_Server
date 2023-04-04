@@ -1,7 +1,7 @@
 let devicePostData=[];
 let appPostData=[];
 
-const socketMessage = function (){
+const socketRouter = function (){
 
     return{
         devicePostSocketMessage(message,APP_PORT){
@@ -37,6 +37,6 @@ const socketMessage = function (){
     }
 }
 
-module.exports = socketMessage
+module.exports = socketRouter
 
 

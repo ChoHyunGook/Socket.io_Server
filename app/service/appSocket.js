@@ -1,8 +1,8 @@
-const db = require("../DataBase");
-const Date = require("../Data/date");
+const db = require("../../DataBase");
+const Date = require("../../Data/date");
 const logger = require('morgan')
 const express =require('express')
-const socketMessage = require("./socketMessage");
+const socketRouter = require("../router/socketRouter");
 
 
 
@@ -63,7 +63,7 @@ const ApplicationSocket = function (infoData){
         try {
             let message=req.body
             let DEVICE_PORT = infoData.DEVICE_PORT
-            socketMessage().appPostSocketMessage(message,DEVICE_PORT)
+            socketRouter().appPostSocketMessage(message,DEVICE_PORT)
             res.status(200).send('Data Transport Success')
 
         }catch (e){
@@ -76,10 +76,10 @@ const ApplicationSocket = function (infoData){
     //앱 쪽에서 계속 get요청
 
     app.get(`/`, (req, res) => {
-        const devicePostData = socketMessage().appGetSocketMessage(APP_PORT)
+        const devicePostData = socketRouter().appGetSocketMessage(APP_PORT)
         const sendMSG = devicePostData.map(e => e.msg)
         res.status(200).send(sendMSG.join())
-        socketMessage().devicePostDataInitialization(APP_PORT)
+        socketRouter().devicePostDataInitialization(APP_PORT)
     })
 
     //DB내 삭제 및 app종료
