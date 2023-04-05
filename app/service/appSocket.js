@@ -78,7 +78,6 @@ const ApplicationSocket = function (infoData){
     app.get(`/`, (req, res) => {
         const devicePostData = socketRouter().appGetSocketMessage(APP_PORT)
         const data = devicePostData.map(e => e.msg)
-        console.log(data)
         res.status(200).send(data)
         socketRouter().devicePostDataInitialization(APP_PORT)
     })
