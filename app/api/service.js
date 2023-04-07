@@ -84,6 +84,7 @@ const service = function (){
                     devicePort=[];
                 })
                 .catch(err=>{
+                    console.log('여긴가?')
                     res.status(400).send(err)
                 })
         },

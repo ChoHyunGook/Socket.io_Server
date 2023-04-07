@@ -42,11 +42,7 @@ const ApplicationSocket = function (infoData,Restart){
             .then(r => console.log(`AppSocketServer:${APP_PORT} Open Log data Save...`))
             .catch(err => console.log(`AppSocketServer:${APP_PORT} Open Log Save Error`,err))
     }else{
-        server = app.listen(APP_PORT,(err)=>{
-            if(err){
-                console.log(err)
-                console.log('여긴가?')
-            }
+        server = app.listen(APP_PORT,()=>{
             console.log('***************** ***************** *****************')
             console.log('***************** ***************** *****************')
             console.log(`********** App 소켓서버(port :${APP_PORT}) On **********`)
