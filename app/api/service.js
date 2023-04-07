@@ -84,7 +84,7 @@ const service = function (){
                         })
                         console.log('Socket Server Update & Restart Server Completed')
                         res.status(200).json({Message:'Restart SocketServer List',APP_PORT:appPort,devicePort:devicePort})
-                        count++;
+                        count=1;
                         appPort=[];
                         devicePort=[];
                     })
