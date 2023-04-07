@@ -26,8 +26,7 @@ const ApplicationSocket = function (infoData,Restart){
     let server;
 
     if(Restart.reStart === 'None'){
-        server = app.listen(APP_PORT,(err)=>{
-            if(err) throw err
+        server = app.listen(APP_PORT,()=>{
             console.log('***************** ***************** *****************')
             console.log('***************** ***************** *****************')
             console.log(`********** App 소켓서버(port :${APP_PORT}) On **********`)

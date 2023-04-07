@@ -10,6 +10,7 @@ const Info = db.Info
 
 let appPort = []
 let devicePort = []
+let count;
 
 const openDay = Date.today()
 const logOpenDay = Date.logOpenDay()
@@ -46,47 +47,52 @@ const service = function (){
 
         serverUpdate(req,res){
 
-            const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
+            if(count === 1){
+                res.status(400).send('업데이트가 이미 완료되었습니다.')
+            }else{
+                const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
+                Info.find({})
+                    .then(info=>{
 
-            Info.find({})
-                .then(info=>{
+                        const today = Date.today()
 
-                    const today = Date.today()
+                        const logDb = {log: `ServerUpdate::UpDateDay:${today}::UpdateIp:${ip}::/SocketServerUpdate`}
 
-                    const logDb = {log: `ServerUpdate::UpDateDay:${today}::UpdateIp:${ip}::/SocketServerUpdate`}
+                        new apiLogs(logDb).save()
+                            .then(r => console.log('Update Server Log data Save...'))
+                            .catch(err => console.log('Log Save Error',err))
 
-                    new apiLogs(logDb).save()
-                        .then(r => console.log('Update Server Log data Save...'))
-                        .catch(err => console.log('Log Save Error',err))
+                        info.map(port=>{
+                            const infoData = {
+                                ip: port.ip,
+                                MAC: port.MAC,
+                                APP_PORT: port.APP_PORT,
+                                DEVICE_PORT: port.DEVICE_PORT,
+                                connectDate: port.connectDate
+                            }
+                            const Restart = {
+                                reStart:'restart'
+                            }
+                            //소켓서버생성(app)
+                            appSocket(infoData,Restart)
+                            //소켓서버생성(device)
+                            deviceSocket(infoData,Restart)
 
-                    info.map(port=>{
-                        const infoData = {
-                            ip: port.ip,
-                            MAC: port.MAC,
-                            APP_PORT: port.APP_PORT,
-                            DEVICE_PORT: port.DEVICE_PORT,
-                            connectDate: port.connectDate
-                        }
-                        const Restart = {
-                            reStart:'restart'
-                        }
-                        //소켓서버생성(app)
-                        appSocket(infoData,Restart)
-                        //소켓서버생성(device)
-                        deviceSocket(infoData,Restart)
 
-                        appPort.push(`${SOCKET_URL}:${infoData.APP_PORT}`)
-                        devicePort.push(`${SOCKET_URL}:${infoData.DEVICE_PORT}`)
+                            appPort.push(`${SOCKET_URL}:${infoData.APP_PORT}`)
+                            devicePort.push(`${SOCKET_URL}:${infoData.DEVICE_PORT}`)
+                        })
+                        console.log('Socket Server Update & Restart Server Completed')
+                        res.status(200).json({Message:'Restart SocketServer List',APP_PORT:appPort,devicePort:devicePort})
+                        count++;
+                        appPort=[];
+                        devicePort=[];
                     })
-                    console.log('Socket Server Update & Restart Server Completed')
-                    res.status(200).json({Message:'Restart SocketServer List',APP_PORT:appPort,devicePort:devicePort})
-                    appPort=[];
-                    devicePort=[];
-                })
-                .catch(err=>{
-                    console.log('여긴가?')
-                    res.status(400).send(err)
-                })
+                    .catch(err=>{
+                        res.status(400).send(err)
+                    })
+            }
+
         },
 
 
