@@ -7,7 +7,7 @@ const socketRouter = function (){
         devicePostSocketMessage(message,APP_PORT){
             let data = {
                 APP_PORT: APP_PORT,
-                msg: message.msg
+                msg: message
             }
             devicePostData.push(data)
         },
@@ -22,7 +22,7 @@ const socketRouter = function (){
         appPostSocketMessage(message,DEVICE_PORT){
             let data = {
                 DEVICE_PORT: DEVICE_PORT,
-                msg: message.msg
+                msg: message
             }
             appPostData.push(data)
         },
