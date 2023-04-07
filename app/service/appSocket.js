@@ -25,9 +25,9 @@ const ApplicationSocket = function (infoData,Restart){
 
     let server;
 
-
     if(Restart.reStart === 'None'){
-        server = app.listen(APP_PORT,()=>{
+        server = app.listen(APP_PORT,(err)=>{
+            if(err) throw err
             console.log('***************** ***************** *****************')
             console.log('***************** ***************** *****************')
             console.log(`********** App 소켓서버(port :${APP_PORT}) On **********`)
@@ -42,7 +42,8 @@ const ApplicationSocket = function (infoData,Restart){
             .then(r => console.log(`AppSocketServer:${APP_PORT} Open Log data Save...`))
             .catch(err => console.log(`AppSocketServer:${APP_PORT} Open Log Save Error`,err))
     }else{
-        server = app.listen(APP_PORT,()=>{
+        server = app.listen(APP_PORT,(err)=>{
+            if(err) throw err
             console.log('***************** ***************** *****************')
             console.log('***************** ***************** *****************')
             console.log(`********** App 소켓서버(port :${APP_PORT}) On **********`)
