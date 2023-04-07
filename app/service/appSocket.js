@@ -58,15 +58,10 @@ const ApplicationSocket = function (infoData){
     })
 
 
-    //앱 => 디바이스 메세지전송 {msg:rstp이진화코드}
     app.post(`/msg`,(req,res)=>{
         try {
-            let data = req.body
-            let message=data[0]
-            let DEVICE_PORT = infoData.DEVICE_PORT
-            socketRouter().appPostSocketMessage(message,DEVICE_PORT)
+            socketRouter().appPostSocketMessage(req.body[0], infoData.DEVICE_PORT)
             res.status(200).send('Data Transport Success')
-
         }catch (e){
             res.status(400).send('Data Transport Fail')
         }
@@ -77,10 +72,7 @@ const ApplicationSocket = function (infoData){
     //앱 쪽에서 계속 get요청
 
     app.get(`/`, (req, res) => {
-        const devicePostData = socketRouter().appGetSocketMessage(APP_PORT)
-        const data = devicePostData.map(e => e.msg)
-        const sendData = data.join(',')
-        res.status(200).send(sendData)
+        res.status(200).send(socketRouter().appGetSocketMessage(APP_PORT))
         socketRouter().devicePostDataInitialization(APP_PORT)
     })
 

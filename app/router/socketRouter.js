@@ -5,14 +5,13 @@ const socketRouter = function (){
 
     return{
         devicePostSocketMessage(message,APP_PORT){
-            let data = {
+            devicePostData.push({
                 APP_PORT: APP_PORT,
                 msg: message
-            }
-            devicePostData.push(data)
+            })
         },
         appGetSocketMessage(APP_PORT){
-            return (devicePostData || []).filter(e=>e.APP_PORT === APP_PORT)
+            return (devicePostData || []).filter(e=>e.APP_PORT === APP_PORT).map(e => e.msg).join(',')
         },
 
         devicePostDataInitialization(APP_PORT){
@@ -20,15 +19,14 @@ const socketRouter = function (){
         },
 
         appPostSocketMessage(message,DEVICE_PORT){
-            let data = {
+            appPostData.push({
                 DEVICE_PORT: DEVICE_PORT,
                 msg: message
-            }
-            appPostData.push(data)
+            })
         },
 
         deviceGetSocketMessage(DEVICE_PORT){
-            return (appPostData || []).filter(e=>e.DEVICE_PORT === DEVICE_PORT)
+            return (appPostData || []).filter(e=>e.DEVICE_PORT === DEVICE_PORT).map(e => e.msg).join(',')
         },
 
         appPostDataInitialization(DEVICE_PORT){

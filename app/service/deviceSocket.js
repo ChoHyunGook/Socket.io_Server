@@ -51,16 +51,11 @@ const DeviceSocket = function (infoData){
         res.status(200).send(`Device Socket Port:${DEVICE_PORT} Connected Success`)
     })
 
-    //디바이스=> 앱 메세지전송 {msg:rstp이진화코드}
     app.post(`/msg`,(req,res)=>{
         try{
-            let data =req.body
-            let message = data[0]
-            let APP_PORT=infoData.APP_PORT
-            socketRouter().devicePostSocketMessage(message,APP_PORT)
+            socketRouter().devicePostSocketMessage(req.body[0],infoData.APP_PORT)
             res.status(200).json({message:'Data Transport Success'})
         }catch(e){
-            console.log(e)
             res.status(400).send('Data Transport Fail')
         }
 
@@ -68,12 +63,8 @@ const DeviceSocket = function (infoData){
 
     //디바이스쪽에서 계속 get요청
     app.get(`/`,(req,res)=>{
-        const appPostData = socketRouter().deviceGetSocketMessage(DEVICE_PORT)
-        const sendMSG = appPostData.map(e => e.msg)
-        const sendData = sendMSG.join(',')
-        res.status(200).send(sendData)
+        res.status(200).send(socketRouter().deviceGetSocketMessage(DEVICE_PORT))
         socketRouter().appPostDataInitialization(DEVICE_PORT)
-
     })
 
     //서버종료
