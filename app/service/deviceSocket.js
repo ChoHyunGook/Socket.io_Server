@@ -54,8 +54,8 @@ const DeviceSocket = function (infoData){
     //디바이스=> 앱 메세지전송 {msg:rstp이진화코드}
     app.post(`/msg`,(req,res)=>{
         try{
-            console.log(req.body)
-            let message = Object.keys(req.body)[0]
+            let data =req.body
+            let message = data[0]
             let APP_PORT=infoData.APP_PORT
             socketRouter().devicePostSocketMessage(message,APP_PORT)
             res.status(200).json({message:'Data Transport Success'})
