@@ -8,7 +8,7 @@ const socketRouter = require("../router/socketRouter");
 
 
 
-const DeviceSocket = function (infoData){
+const DeviceSocket = function (infoData,Restart){
 
     const app = express();
 
@@ -20,24 +20,45 @@ const DeviceSocket = function (infoData){
 
     const DEVICE_PORT = infoData.DEVICE_PORT;
 
-    let server = app.listen(DEVICE_PORT,()=>{
-        console.log('***************** ***************** *****************')
-        console.log('***************** ***************** *****************')
-        console.log(`********** Device 소켓서버(port :${DEVICE_PORT}) On **********`)
-        console.log(`********* 서버오픈일자: ${Date.today()} *********`)
-        console.log('***************** ***************** *****************')
-        console.log('***************** ***************** *****************')
-    })
-
     const socketLogs = db.logs
 
     const openDate = Date.today()
 
-    const logDb = {log:`DeviceSocketServer::${infoData.ip}::${openDate}::${DEVICE_PORT}::${infoData.MAC}::DeviceServerOpen`}
+    let server;
 
-    new socketLogs(logDb).save()
-        .then(r => console.log(`[Success] DeviceSocketServer:${DEVICE_PORT} Open Log data Save...`))
-        .catch(err => console.log(`[Fail] DeviceSocketServer:${DEVICE_PORT} Open Log Save Error`,err))
+    if(Restart.reStart === 'None'){
+        server = app.listen(DEVICE_PORT,()=>{
+            console.log('***************** ***************** *****************')
+            console.log('***************** ***************** *****************')
+            console.log(`********** Device 소켓서버(port :${DEVICE_PORT}) On **********`)
+            console.log(`********* 서버오픈일자: ${Date.today()} *********`)
+            console.log('***************** ***************** *****************')
+            console.log('***************** ***************** *****************')
+        })
+
+        const logDb = {log:`DeviceSocketServer::${infoData.ip}::${openDate}::${DEVICE_PORT}::${infoData.MAC}::DeviceServerOpen`}
+
+        new socketLogs(logDb).save()
+            .then(r => console.log(`[Success] DeviceSocketServer:${DEVICE_PORT} Open Log data Save...`))
+            .catch(err => console.log(`[Fail] DeviceSocketServer:${DEVICE_PORT} Open Log Save Error`,err))
+    }else{
+        server = app.listen(DEVICE_PORT,()=>{
+            console.log('***************** ***************** *****************')
+            console.log('***************** ***************** *****************')
+            console.log(`********** Device 소켓서버(port :${DEVICE_PORT}) On **********`)
+            console.log(`********* 서버 재오픈일자: ${Date.today()} *********`)
+            console.log('***************** ***************** *****************')
+            console.log('***************** ***************** *****************')
+        })
+
+        const logDb = {log:`RestartDeviceSocketServer::${infoData.ip}::${openDate}::${DEVICE_PORT}::${infoData.MAC}::RestartDeviceServerOpen`}
+
+        new socketLogs(logDb).save()
+            .then(r => console.log(`[Success] RestartDeviceSocketServer:${DEVICE_PORT} Open Log data Save...`))
+            .catch(err => console.log(`[Fail] RestartDeviceSocketServer:${DEVICE_PORT} Open Log Save Error`,err))
+    }
+
+
 
     app.use(logger('dev'))
 

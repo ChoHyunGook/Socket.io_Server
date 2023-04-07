@@ -10,6 +10,7 @@ const socketRouter = function (){
                 msg: message
             })
         },
+
         appGetSocketMessage(APP_PORT){
             return (devicePostData || []).filter(e=>e.APP_PORT === APP_PORT).map(e => e.msg).join(',')
         },

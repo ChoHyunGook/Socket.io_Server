@@ -8,6 +8,8 @@ const dotenv = require("dotenv");
 const apiLogs = db.logs
 const Info = db.Info
 
+let appPort = []
+let devicePort = []
 
 const openDay = Date.today()
 const logOpenDay = Date.logOpenDay()
@@ -41,6 +43,52 @@ const service = function (){
                 })
 
         },
+
+        serverUpdate(req,res){
+
+            const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
+
+            Info.find({})
+                .then(info=>{
+
+                    const today = Date.today()
+
+                    const logDb = {log: `ServerUpdate::UpDateDay:${today}::UpdateIp:${ip}::/SocketServerUpdate`}
+
+                    new apiLogs(logDb).save()
+                        .then(r => console.log('Update Server Log data Save...'))
+                        .catch(err => console.log('Log Save Error',err))
+
+                    info.map(port=>{
+                        const infoData = {
+                            ip: port.ip,
+                            MAC: port.MAC,
+                            APP_PORT: port.APP_PORT,
+                            DEVICE_PORT: port.DEVICE_PORT,
+                            connectDate: port.connectDate
+                        }
+                        const Restart = {
+                            reStart:'restart'
+                        }
+                        //소켓서버생성(app)
+                        appSocket(infoData,Restart)
+                        //소켓서버생성(device)
+                        deviceSocket(infoData,Restart)
+
+                        appPort.push(`${SOCKET_URL}:${infoData.APP_PORT}`)
+                        devicePort.push(`${SOCKET_URL}:${infoData.DEVICE_PORT}`)
+                    })
+                    console.log('Socket Server Update & Restart Server Completed')
+                    res.status(200).json({Message:'Restart SocketServer List',APP_PORT:appPort,devicePort:devicePort})
+                    appPort=[];
+                    devicePort=[];
+                })
+                .catch(err=>{
+                    res.status(400).send(err)
+                })
+        },
+
+
 
         getService(req,res){
             console.log('get...')
@@ -98,6 +146,9 @@ const service = function (){
                                             DEVICE_PORT: devicePort,
                                             connectDate: connectDate
                                         }
+                                        const Restart = {
+                                            reStart:'None'
+                                        }
 
                                         const logDb = {log: `API::POST::${connectDate}::app:${infoData.APP_PORT}::device:${infoData.DEVICE_PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
 
@@ -121,9 +172,9 @@ const service = function (){
                                             )
 
                                         //소켓서버생성(app)
-                                        appSocket(infoData)
+                                        appSocket(infoData,Restart)
                                         //소켓서버생성(device)
-                                        deviceSocket(infoData)
+                                        deviceSocket(infoData,Restart)
 
                                         console.log('Socket Server Creation Completed')
                                         const appInfo = `${SOCKET_URL}:${infoData.APP_PORT}`

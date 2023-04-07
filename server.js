@@ -51,6 +51,10 @@ async function startServer(){
         Service().checkPortService(req,res)
     })
 
+    app.get('/serverUpdate',(req,res)=>{
+        Service().serverUpdate(req,res)
+    })
+
     app.set('trust proxy', true);
 
     const responseService = new ResponseService()

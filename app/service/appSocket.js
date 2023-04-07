@@ -8,7 +8,7 @@ const socketRouter = require("../router/socketRouter");
 
 
 
-const ApplicationSocket = function (infoData){
+const ApplicationSocket = function (infoData,Restart){
     const app = express();
 
     //post 방식 일경우 begin
@@ -19,24 +19,45 @@ const ApplicationSocket = function (infoData){
 
     const APP_PORT = infoData.APP_PORT;
 
-    const server = app.listen(APP_PORT,()=>{
-        console.log('***************** ***************** *****************')
-        console.log('***************** ***************** *****************')
-        console.log(`********** App 소켓서버(port :${APP_PORT}) On **********`)
-        console.log(`********* 서버오픈일자: ${Date.today()} *********`)
-        console.log('***************** ***************** *****************')
-        console.log('***************** ***************** *****************')
-    })
-
     const socketLogs = db.logs
 
     const openDate = Date.today()
 
-    const logDb = {log:`AppSocketServer::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.MAC}::AppServerOpen`}
+    let server;
 
-    new socketLogs(logDb).save()
-        .then(r => console.log(`AppSocketServer:${APP_PORT} Open Log data Save...`))
-        .catch(err => console.log(`AppSocketServer:${APP_PORT} Open Log Save Error`,err))
+
+    if(Restart.reStart === 'None'){
+        server = app.listen(APP_PORT,()=>{
+            console.log('***************** ***************** *****************')
+            console.log('***************** ***************** *****************')
+            console.log(`********** App 소켓서버(port :${APP_PORT}) On **********`)
+            console.log(`********* 서버오픈일자: ${Date.today()} *********`)
+            console.log('***************** ***************** *****************')
+            console.log('***************** ***************** *****************')
+        })
+
+        const logDb = {log:`AppSocketServer::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.MAC}::AppServerOpen`}
+
+        new socketLogs(logDb).save()
+            .then(r => console.log(`AppSocketServer:${APP_PORT} Open Log data Save...`))
+            .catch(err => console.log(`AppSocketServer:${APP_PORT} Open Log Save Error`,err))
+    }else{
+        server = app.listen(APP_PORT,()=>{
+            console.log('***************** ***************** *****************')
+            console.log('***************** ***************** *****************')
+            console.log(`********** App 소켓서버(port :${APP_PORT}) On **********`)
+            console.log(`********* 서버 재오픈일자: ${Date.today()} *********`)
+            console.log('***************** ***************** *****************')
+            console.log('***************** ***************** *****************')
+        })
+
+        const logDb = {log:`RestartAppSocketServer::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.MAC}::RestartAppServerOpen`}
+
+        new socketLogs(logDb).save()
+            .then(r => console.log(`RestartAppSocketServer:${APP_PORT} Open Log data Save...`))
+            .catch(err => console.log(`RestartAppSocketServer:${APP_PORT} Open Log Save Error`,err))
+    }
+
 
     app.use(logger('dev'))
 
@@ -70,11 +91,11 @@ const ApplicationSocket = function (infoData){
     })
 
     //앱 쪽에서 계속 get요청
-
     app.get(`/`, (req, res) => {
         res.status(200).send(socketRouter().appGetSocketMessage(APP_PORT))
         socketRouter().devicePostDataInitialization(APP_PORT)
     })
+
 
     //DB내 삭제 및 app종료
     app.get('/disConnect',(req,res)=>{
