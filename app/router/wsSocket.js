@@ -9,7 +9,7 @@ const WsSocket = function (infoData,Restart){
 
     const app = express()
 
-    const APP_PORT = infoData.APP_PORT;
+    const PORT = infoData.PORT;
 
     const socketLogs = db.logs
 
@@ -18,20 +18,20 @@ const WsSocket = function (infoData,Restart){
     let server
 
     if(Restart.reStart === 'None'){
-        server = app.listen(APP_PORT,()=>{
+        server = app.listen(PORT,()=>{
             console.log('***************** ***************** *****************')
             console.log('***************** ***************** *****************')
-            console.log(`********** 소켓서버(port :${APP_PORT}) On **********`)
+            console.log(`********** 소켓서버(port :${PORT}) On **********`)
             console.log(`********* 서버오픈일자: ${Date.today()} *********`)
             console.log('***************** ***************** *****************')
             console.log('***************** ***************** *****************')
         })
 
-        const logDb = {log:`SocketServer::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.MAC}::SocketServerOpen`}
+        const logDb = {log:`SocketServer::${infoData.ip}::${openDate}::${PORT}::${infoData.MAC}::SocketServerOpen`}
 
         new socketLogs(logDb).save()
-            .then(r => console.log(`[Success] SocketServer:${APP_PORT} Open Log data Save...`))
-            .catch(err => console.log(`[Fail] SocketServer:${APP_PORT} Open Log Save Error`,err))
+            .then(r => console.log(`[Success] SocketServer:${PORT} Open Log data Save...`))
+            .catch(err => console.log(`[Fail] SocketServer:${PORT} Open Log Save Error`,err))
 
         const webSocketServer = new wsModule.WebSocketServer({
             server:server
@@ -46,20 +46,20 @@ const WsSocket = function (infoData,Restart){
         WsService(webSocketServer,broadcast)
     }else {
 
-        server = app.listen(APP_PORT,()=>{
+        server = app.listen(PORT,()=>{
             console.log('***************** ***************** *****************')
             console.log('***************** ***************** *****************')
-            console.log(`********** 소켓서버(port :${APP_PORT}) On **********`)
+            console.log(`********** 소켓서버(port :${PORT}) On **********`)
             console.log(`********* 서버 재오픈일자: ${Date.today()} *********`)
             console.log('***************** ***************** *****************')
             console.log('***************** ***************** *****************')
         })
 
-        const logDb = {log:`RestartSocketServer::${infoData.ip}::${openDate}::${APP_PORT}::${infoData.MAC}::RestartServerOpen`}
+        const logDb = {log:`RestartSocketServer::${infoData.ip}::${openDate}::${PORT}::${infoData.MAC}::RestartServerOpen`}
 
         new socketLogs(logDb).save()
-            .then(r => console.log(`[Success] RestartSocketServer:${APP_PORT} Open Log data Save...`))
-            .catch(err => console.log(`[Fail] RestartSocketServer:${APP_PORT} Open Log Save Error`,err))
+            .then(r => console.log(`[Success] RestartSocketServer:${PORT} Open Log data Save...`))
+            .catch(err => console.log(`[Fail] RestartSocketServer:${PORT} Open Log Save Error`,err))
 
         const webSocketServer = new wsModule.WebSocketServer({
             server:server

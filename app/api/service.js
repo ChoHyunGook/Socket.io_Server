@@ -10,7 +10,7 @@ const apiLogs = db.logs
 const Info = db.Info
 
 let appPort = []
-let devicePort = []
+//let devicePort = []
 let count;
 
 const openDay = Date.today()
@@ -24,13 +24,12 @@ const service = function (){
         checkPortService(req,res){
             Info.find({})
                 .then(data=>{
-                    const AppPortData= data.map(e=>e.APP_PORT)
-                    const DevicePortData = data.map(e=>e.DEVICE_PORT)
+                    //const DevicePortData = data.map(e=>e.DEVICE_PORT)
                     const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
                     const connectDate = Date.connectDate()
                     let InfoData ={
-                        APP_PORT: AppPortData,
-                        DEVICE_PORT: DevicePortData
+                        USE_PORT: data.map(e=>e.PORT),
+                        WSAddress: data.map(e=>e.WSAddr)
                     }
                     const logDb = { log: `API::GET::/checkPort::${connectDate}::${ip}::${logOpenDay}::/CheckPort` }
 
@@ -66,33 +65,31 @@ const service = function (){
                             const infoData = {
                                 ip: port.ip,
                                 MAC: port.MAC,
-                                APP_PORT: port.APP_PORT,
-                                DEVICE_PORT: port.DEVICE_PORT,
+                                PORT: port.PORT,
+                                WSAddr: `${WS_URL}:${port.PORT}`,
                                 connectDate: port.connectDate
                             }
                             const Restart = {
                                 reStart:'restart'
                             }
-                            //소켓서버생성(app)
-                            appSocket(infoData,Restart)
-                            //소켓서버생성(device)
-                            deviceSocket(infoData,Restart)
+                            // //소켓서버생성(app)
+                            // appSocket(infoData,Restart)
+                            // //소켓서버생성(device)
+                            // deviceSocket(infoData,Restart)
+                            WsSocket(infoData,Restart)
 
-
-                            appPort.push(`${SOCKET_URL}:${infoData.APP_PORT}`)
-                            devicePort.push(`${SOCKET_URL}:${infoData.DEVICE_PORT}`)
+                            appPort.push(`${WS_URL}:${infoData.PORT}`)
                         })
                         console.log('Socket Server Update & Restart Server Completed')
-                        res.status(200).json({Message:'Restart SocketServer List',APP_PORT:appPort,devicePort:devicePort})
+                        res.status(200).json({Message:'Restart SocketServer List',PORT:appPort})
                         count=1;
                         appPort=[];
-                        devicePort=[];
+                        //devicePort=[];
                     })
                     .catch(err=>{
                         res.status(400).send(err)
                     })
             }
-
         },
 
 
@@ -111,53 +108,53 @@ const service = function (){
                 .catch(err => console.log('Log Save Error',err))
         },
 
-        //api = '/socket', Data={ MAC:xxxx, APP_PORT:xxxxxxx }
+        //api = '/socket', Data={ MAC:xxxx, PORT:xxxxxxx }
         postService(req, res) {
             try {
                 console.log('Post...SocketServerCreate...')
                 const data = req.body
 
-                if (typeof data.APP_PORT !== "number" || typeof  data.MAC !== "string") {
+                if (typeof data.PORT !== "number" || typeof  data.MAC !== "string") {
                     res.status(400).send(`소켓서버 생성 실패...
         
-                    오류내용 : APP_PORT 값은 Number(Int)값이며 MAC 값은 String입니다. 다시 한번 확인해주세요. 
+                    오류내용 : PORT 값은 Number(Int)값이며 MAC 값은 String입니다. 다시 한번 확인해주세요. 
                     
                     기입하신 타입 =>
                     {
-                    APP_PORT : ${typeof data.APP_PORT}, 
+                    PORT : ${typeof data.PORT}, 
                     MAC : ${typeof data.MAC}
                     }
                     
                     올바른 예시 =>
                     {
-                     APP_PORT : 3000,
+                     PORT : 3000,
                      MAC : "맥주소"
                      }`
                     )
                 } else {
-                    if (data.APP_PORT < 3000 || data.APP_PORT > 4999) {
-                        res.status(400).send(`APP_PORT 앱의 포트 값은 3000~4999까지 입니다. 기입하신 APP_PORT : ${data.APP_PORT}`)
+                    if (data.PORT < 3000 || data.PORT > 5000) {
+                        res.status(400).send(`PORT 값은 3000~5000까지 입니다. 기입하신 PORT : ${data.PORT}`)
                     }
                     else {
-                            Info.findOne({APP_PORT: req.body.APP_PORT})
+                            Info.findOne({PORT: req.body.PORT})
                                 .then((mb) => {
                                     if (mb === null) {
                                         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                                         const connectDate = Date.connectDate()
-                                        const devicePort = data.APP_PORT + 2000
+                                        //const devicePort = data.PORT + 2000
 
                                         const infoData = {
                                             ip: ip,
                                             MAC: data.MAC,
-                                            APP_PORT: data.APP_PORT,
-                                            DEVICE_PORT: devicePort,
+                                            PORT: data.PORT,
+                                            WSAddr:`${WS_URL}:${data.PORT}`,
                                             connectDate: connectDate
                                         }
                                         const Restart = {
                                             reStart:'None'
                                         }
 
-                                        const logDb = {log: `API::POST::${connectDate}::app:${infoData.APP_PORT}::device:${infoData.DEVICE_PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
+                                        const logDb = {log: `API::POST::${connectDate}::app:${infoData.PORT}::device:${infoData.DEVICE_PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
 
 
                                         new apiLogs(logDb).save()
@@ -186,7 +183,7 @@ const service = function (){
                                         // deviceSocket(infoData,Restart)
 
                                         console.log('Socket Server Creation Completed')
-                                        const appInfo = `${WS_URL}:${infoData.APP_PORT}`
+                                        const appInfo = `${WS_URL}:${infoData.PORT}`
                                         //const deviceInfo = `${SOCKET_URL}:${infoData.DEVICE_PORT}`
 
                                         res.status(200).json({wsAddress:appInfo});
