@@ -1,7 +1,12 @@
 const db = require("../../DataBase");
+const applyDotenv = require("../../lambdas/applyDotenv");
+const dotenv = require("dotenv");
+const wsModule = require("ws");
 
 
 const WsVideoService = function (webSocketServer, broadcast, infoData, server, openDate, socketLogs){
+
+    const { WS_URL } = applyDotenv(dotenv)
 
     webSocketServer.on('connection',(ws,req)=>{
 
@@ -34,21 +39,26 @@ const WsVideoService = function (webSocketServer, broadcast, infoData, server, o
             const Info = db.Info
             Info.findOne({VOICE_PORT:infoData.VOICE_PORT,VIDEO_PORT:infoData.VIDEO_PORT})
                 .then(cl=>{
-                    if(cl !== null){
+                    if(cl === null){
+                        server.close(()=>{
+                            console.log(`VoicePort에서 PORT: ${infoData.VIDEO_PORT} 서버 종료`)
+                        })
+                    }else{
                         Info.deleteMany({VOICE_PORT:infoData.VOICE_PORT,VIDEO_PORT:infoData.VIDEO_PORT})
                             .then(res=>{
                                 const deviceGet = {log: `disConnect::${infoData.VIDEO_PORT}::${openDate}::${infoData.MAC}::DisConnect`}
                                 new socketLogs(deviceGet).save()
-                                    .then(r => console.log('[Success] AppSocket DisConnect Message...'))
-                                    .catch(e => console.log('[Fail] AppSocket DisConnect Message...', e))
+                                    .then(r => console.log('[Success] VIDEO_PORT DisConnect Message...'))
+                                    .catch(e => console.log('[Fail] VIDEO_PORT DisConnect Message...', e))
                                 server.close(()=>{
                                     console.log(`${infoData.VIDEO_PORT} 서버 종료`)
+                                    const wsModule = require('ws')
+                                    const wss = new wsModule(`${WS_URL}:${infoData.VOICE_PORT}`);
+                                    wss.onopen = () => {
+                                        wss.close();
+                                    }
                                 })
                             })
-                    }else{
-                        server.close(()=>{
-                            console.log(`PORT: ${infoData.VIDEO_PORT} 서버 종료`)
-                        })
                     }
                 })
                 .catch(e=>{

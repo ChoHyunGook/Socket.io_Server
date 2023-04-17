@@ -1,7 +1,11 @@
 const db = require("../../DataBase");
+const applyDotenv = require("../../lambdas/applyDotenv");
+const dotenv = require("dotenv");
 
 
 const WsVoiceService = function (webSocketServer, broadcast, infoData, server, openDate, socketLogs){
+
+    const { WS_URL } = applyDotenv(dotenv)
 
     webSocketServer.on('connection',(ws,req)=>{
 
@@ -39,15 +43,20 @@ const WsVoiceService = function (webSocketServer, broadcast, infoData, server, o
                             .then(res=>{
                                 const deviceGet = {log: `disConnect::${infoData.VOICE_PORT}::${openDate}::${infoData.MAC}::DisConnect`}
                                 new socketLogs(deviceGet).save()
-                                    .then(r => console.log('[Success] AppSocket DisConnect Message...'))
-                                    .catch(e => console.log('[Fail] AppSocket DisConnect Message...', e))
+                                    .then(r => console.log('[Success] VOICE_PORT DisConnect Message...'))
+                                    .catch(e => console.log('[Fail] VOICE_PORT DisConnect Message...', e))
                                 server.close(()=>{
                                     console.log(`${infoData.VOICE_PORT} 서버 종료`)
+                                    const wsModule = require('ws')
+                                    const wss = new wsModule(`${WS_URL}:${infoData.VIDEO_PORT}`);
+                                    wss.onopen = () => {
+                                        wss.close();
+                                    }
                                 })
                             })
                     }else{
                         server.close(()=>{
-                            console.log(`PORT: ${infoData.VOICE_PORT} 서버 종료`)
+                            console.log(`VideoPort에서 PORT: ${infoData.VOICE_PORT} 서버 종료`)
                         })
                     }
                 })
