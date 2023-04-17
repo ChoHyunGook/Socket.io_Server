@@ -71,7 +71,7 @@ const WsSocket = function (infoData,Restart){
             })
         }
 
-        WsService(webSocketServer,broadcast)
+        WsService(webSocketServer,broadcast,PORT,server,openDate,socketLogs)
     }
 
 
