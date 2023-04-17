@@ -32,10 +32,10 @@ const WsVoiceService = function (webSocketServer, broadcast, infoData, server, o
 
         ws.on('close',()=>{
             const Info = db.Info
-            Info.findOne({VOICE_PORT:infoData.VOICE_PORT})
+            Info.findOne({VOICE_PORT:infoData.VOICE_PORT,VIDEO_PORT:infoData.VIDEO_PORT})
                 .then(cl=>{
                     if(cl !== null){
-                        Info.deleteMany({VOICE_PORT:infoData.VOICE_PORT})
+                        Info.deleteMany({VOICE_PORT:infoData.VOICE_PORT,VIDEO_PORT:infoData.VIDEO_PORT})
                             .then(res=>{
                                 const deviceGet = {log: `disConnect::${infoData.VOICE_PORT}::${openDate}::${infoData.MAC}::DisConnect`}
                                 new socketLogs(deviceGet).save()
@@ -45,7 +45,16 @@ const WsVoiceService = function (webSocketServer, broadcast, infoData, server, o
                                     console.log(`${infoData.VOICE_PORT} 서버 종료`)
                                 })
                             })
+                    }else{
+                        server.close(()=>{
+                            console.log(`PORT: ${infoData.VOICE_PORT} 서버 종료`)
+                        })
                     }
+                })
+                .catch(e=>{
+                    server.close(()=>{
+                        console.log(`PORT: ${infoData.VOICE_PORT} 서버 종료`)
+                    })
                 })
         })
 
