@@ -47,13 +47,13 @@ const WsVideoService = function (webSocketServer, broadcast, infoData, server, o
                             })
                     }else{
                         server.close(()=>{
-                            console.log(`PORT: ${infoData.VOICE_PORT} 서버 종료`)
+                            console.log(`PORT: ${infoData.VIDEO_PORT} 서버 종료`)
                         })
                     }
                 })
                 .catch(e=>{
                     server.close(()=>{
-                        console.log(`PORT: ${infoData.VOICE_PORT} 서버 종료`)
+                        console.log(`PORT: ${infoData.VIDEO_PORT} 서버 종료`)
                     })
                 })
         })
