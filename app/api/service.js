@@ -4,6 +4,7 @@ const appSocket = require('../service/appSocket');
 const deviceSocket = require('../service/deviceSocket')
 const applyDotenv = require("../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
+const WsSocket = require("../router/wsSocket");
 
 const apiLogs = db.logs
 const Info = db.Info
@@ -15,7 +16,7 @@ let count;
 const openDay = Date.today()
 const logOpenDay = Date.logOpenDay()
 
-const { SOCKET_URL } = applyDotenv(dotenv)
+const { SOCKET_URL,WS_URL } = applyDotenv(dotenv)
 
 
 const service = function (){
@@ -46,7 +47,6 @@ const service = function (){
         },
 
         serverUpdate(req,res){
-
             if(count === 1){
                 res.status(400).send('업데이트가 이미 완료되었습니다.')
             }else{
@@ -178,16 +178,18 @@ const service = function (){
                                                 }
                                             )
 
-                                        //소켓서버생성(app)
-                                        appSocket(infoData,Restart)
-                                        //소켓서버생성(device)
-                                        deviceSocket(infoData,Restart)
+
+                                        WsSocket(infoData,Restart)
+                                        // //소켓서버생성(app)
+                                        // appSocket(infoData,Restart)
+                                        // //소켓서버생성(device)
+                                        // deviceSocket(infoData,Restart)
 
                                         console.log('Socket Server Creation Completed')
-                                        const appInfo = `${SOCKET_URL}:${infoData.APP_PORT}`
-                                        const deviceInfo = `${SOCKET_URL}:${infoData.DEVICE_PORT}`
+                                        const appInfo = `${WS_URL}:${infoData.APP_PORT}`
+                                        //const deviceInfo = `${SOCKET_URL}:${infoData.DEVICE_PORT}`
 
-                                        res.status(200).json({app: appInfo, device: deviceInfo});
+                                        res.status(200).json({wsAddress:appInfo});
 
 
                                     } else {

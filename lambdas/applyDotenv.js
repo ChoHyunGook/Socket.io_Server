@@ -6,7 +6,8 @@ const applyDotenv = dotenv => {
         DB_NAME:process.env.DB_NAME,
         PORT:process.env.PORT,
         MESSAGE_NAME:process.env.MESSAGE_NAME,
-        SOCKET_URL:process.env.SOCKET_URL
+        SOCKET_URL:process.env.SOCKET_URL,
+        WS_URL:process.env.WS_URL
     }
 }
 
