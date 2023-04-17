@@ -1,16 +1,15 @@
 const Date = require("../../Data/date");
 const db = require('../../DataBase');
-const appSocket = require('../service/appSocket');
-const deviceSocket = require('../service/deviceSocket')
 const applyDotenv = require("../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
-const WsSocket = require("../router/wsSocket");
+const WsVoiceSocket = require("../router/wsVoiceSocket");
+const WsVideoSocket = require("../router/wsVideoSocket");
 
 const apiLogs = db.logs
 const Info = db.Info
 
-let appPort = []
-//let devicePort = []
+let Voice_Port = []
+let Video_Port = []
 let count;
 
 const openDay = Date.today()
@@ -27,10 +26,28 @@ const service = function (){
                     //const DevicePortData = data.map(e=>e.DEVICE_PORT)
                     const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
                     const connectDate = Date.connectDate()
+
+
                     let InfoData ={
-                        USE_PORT: data.map(e=>e.PORT),
-                        WSAddress: data.map(e=>e.WSAddr)
+                        PORT: data.map(e=>{
+                            let dd = {
+                                VIDEO_PORT: e.VIDEO_PORT,
+                                VOICE_PORT: e.VOICE_PORT
+                            }
+
+                            return dd
+                        }),
+                        WsAddress: data.map(e=>{
+                            let ad ={
+                                Voice_WSAddr:e.Voice_WSAddr,
+                                Video_WSAddr:e.Video_WSAddr
+                            }
+                            return ad
+                        })
+
                     }
+
+
                     const logDb = { log: `API::GET::/checkPort::${connectDate}::${ip}::${logOpenDay}::/CheckPort` }
 
                     new apiLogs(logDb).save()
@@ -63,28 +80,29 @@ const service = function (){
 
                         info.map(port=>{
                             const infoData = {
-                                ip: port.ip,
+                                ip: ip,
                                 MAC: port.MAC,
-                                PORT: port.PORT,
-                                WSAddr: `${WS_URL}:${port.PORT}`,
+                                VOICE_PORT: port.VOICE_PORT,
+                                VIDEO_PORT: port.VIDEO_PORT,
+                                Voice_WSAddr:port.Voice_WSAddr,
+                                Video_WSAddr:port.Video_WSAddr,
                                 connectDate: port.connectDate
                             }
                             const Restart = {
                                 reStart:'restart'
                             }
-                            // //소켓서버생성(app)
-                            // appSocket(infoData,Restart)
-                            // //소켓서버생성(device)
-                            // deviceSocket(infoData,Restart)
-                            WsSocket(infoData,Restart)
 
-                            appPort.push(`${WS_URL}:${infoData.PORT}`)
+                            WsVoiceSocket(infoData,Restart)
+                            WsVideoSocket(infoData,Restart)
+
+                            Voice_Port.push(`${WS_URL}:${infoData.VOICE_PORT}`)
+                            Video_Port.push(`${WS_URL}:${infoData.VIDEO_PORT}`)
                         })
                         console.log('Socket Server Update & Restart Server Completed')
-                        res.status(200).json({Message:'Restart SocketServer List',PORT:appPort})
+                        res.status(200).json({Message:'Restart SocketServer List', Voice_Addr:Voice_Port, Video_Addr:Video_Port})
                         count=1;
-                        appPort=[];
-                        //devicePort=[];
+                        Voice_Port=[];
+                        Video_Port=[];
                     })
                     .catch(err=>{
                         res.status(400).send(err)
@@ -132,29 +150,32 @@ const service = function (){
                      }`
                     )
                 } else {
-                    if (data.PORT < 3000 || data.PORT > 5000) {
-                        res.status(400).send(`PORT 값은 3000~5000까지 입니다. 기입하신 PORT : ${data.PORT}`)
+                    if (data.PORT < 3000 || data.PORT > 4999) {
+                        res.status(400).send(`PORT 값은 3000~4999까지 입니다. 기입하신 PORT : ${data.PORT}`)
                     }
                     else {
-                            Info.findOne({PORT: req.body.PORT})
+                            Info.findOne({VOICE_PORT: req.body.PORT})
                                 .then((mb) => {
                                     if (mb === null) {
                                         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
                                         const connectDate = Date.connectDate()
-                                        //const devicePort = data.PORT + 2000
 
                                         const infoData = {
                                             ip: ip,
                                             MAC: data.MAC,
-                                            PORT: data.PORT,
-                                            WSAddr:`${WS_URL}:${data.PORT}`,
+                                            VOICE_PORT: data.PORT,
+                                            VIDEO_PORT: data.PORT+2000,
+                                            Voice_WSAddr:`${WS_URL}:${data.PORT}`,
+                                            Video_WSAddr:`${WS_URL}:${data.PORT+2000}`,
                                             connectDate: connectDate
                                         }
+
                                         const Restart = {
                                             reStart:'None'
                                         }
 
-                                        const logDb = {log: `API::POST::${connectDate}::app:${infoData.PORT}::device:${infoData.DEVICE_PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
+
+                                        const logDb = {log: `API::POST::${connectDate}::voice:${infoData.PORT}::device:${infoData.PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
 
 
                                         new apiLogs(logDb).save()
@@ -176,17 +197,13 @@ const service = function (){
                                             )
 
 
-                                        WsSocket(infoData,Restart)
-                                        // //소켓서버생성(app)
-                                        // appSocket(infoData,Restart)
-                                        // //소켓서버생성(device)
-                                        // deviceSocket(infoData,Restart)
+                                        WsVoiceSocket(infoData,Restart)
+                                        WsVideoSocket(infoData,Restart)
+
 
                                         console.log('Socket Server Creation Completed')
-                                        const appInfo = `${WS_URL}:${infoData.PORT}`
-                                        //const deviceInfo = `${SOCKET_URL}:${infoData.DEVICE_PORT}`
 
-                                        res.status(200).json({wsAddress:appInfo});
+                                        res.status(200).json({voiceAddr:infoData.Voice_WSAddr, videoAddr:infoData.Video_WSAddr});
 
 
                                     } else {
