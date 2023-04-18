@@ -55,6 +55,10 @@ async function startServer(){
         Service().serverUpdate(req,res)
     })
 
+    app.post('/deletePort',(req,res)=>{
+        Service().deletePort(req,res)
+    })
+
     app.set('trust proxy', true);
 
     const responseService = new ResponseService()

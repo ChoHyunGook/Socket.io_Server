@@ -4,6 +4,8 @@ const applyDotenv = require("../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const WsVoiceSocket = require("../router/wsVoiceSocket");
 const WsVideoSocket = require("../router/wsVideoSocket");
+const wsModule = require("ws");
+
 
 const apiLogs = db.logs
 const Info = db.Info
@@ -15,7 +17,8 @@ let count;
 const openDay = Date.today()
 const logOpenDay = Date.logOpenDay()
 
-const { SOCKET_URL,WS_URL } = applyDotenv(dotenv)
+const { WS_URL } = applyDotenv(dotenv)
+
 
 
 const service = function (){
@@ -110,6 +113,38 @@ const service = function (){
             }
         },
 
+
+
+        deletePort(req,res){
+            const data = req.body.PORT
+            const wsModule = require('ws')
+
+            Info.find({$or:[{VOICE_PORT:data.map(e=>e)},{VIDEO_PORT:data.map(e=>e)}]})
+                .then(dataBase=>{
+                    if(dataBase.length !== 0){
+                        dataBase.map(item=>{
+                            const wss = new wsModule(`${WS_URL}:${item.VOICE_PORT}`)
+                            wss.onopen = () => {
+                                wss.close()
+                            }
+                        })
+                        res.status(200).json({wsClose:`Success`, DeleteDataBase:"Success"})
+                    }else{
+                        res.status(400).send('해당하는 포트번호가 없습니다.')
+                    }
+
+                })
+                .catch(e=>{
+                    res.status(400).send(e)
+                })
+
+
+
+
+
+            
+
+        },
 
 
         getService(req,res){
