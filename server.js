@@ -7,6 +7,7 @@ const applyDotenv = require('./lambdas/applyDotenv')
 const db = require('./DataBase/index')
 const Service = require('./app/api/service')
 const Date = require('./Data/date')
+const WebRtc = require('./app/api/webRtc/index')
 
 
 
@@ -14,14 +15,13 @@ const Date = require('./Data/date')
 async function startServer(){
     const app = express();
     dotenv.config()
-    const { MONGO_URI, DB_NAME, PORT } = applyDotenv(dotenv)
+    const { MONGO_URI, DB_NAME, PORT, admin_db_name } = applyDotenv(dotenv)
 
 //post 방식 일경우 begin
 //post 의 방식은 url 에 추가하는 방식이 아니고 body 라는 곳에 추가하여 전송하는 방식
     app.use(express.static('public'));
     app.use(express.urlencoded({extended: true})); // post 방식 세팅
     app.use(express.json()); // json 사용 하는 경우의 세팅
-
 
     db.mongoose.set('strictQuery', false);
     db
@@ -36,11 +36,17 @@ async function startServer(){
         });
 
 
+
     app.use(morgan('dev'))
 
     app.get('/', (req,res)=>{
         Service().getService(req,res)
     })
+
+    // app.get('/webRtc',(req,res)=>{
+    //     Service().webRtc(req,res)
+    // })
+    WebRtc()
 
 
     app.post('/socket', (req,res)=>{
@@ -58,6 +64,10 @@ async function startServer(){
     app.post('/deletePort',(req,res)=>{
         Service().deletePort(req,res)
     })
+
+    // app.post('/startUpInfo',(req,res)=>{
+    //     Service().start_up(req,res)
+    // })
 
     app.set('trust proxy', true);
 

@@ -4,15 +4,17 @@ const applyDotenv = require("../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const WsVoiceSocket = require("../router/wsVoiceSocket");
 const WsVideoSocket = require("../router/wsVideoSocket");
-const wsModule = require("ws");
-
+const WebRtcServer = require("../api/webRtc/index")
 
 const apiLogs = db.logs
 const Info = db.Info
 
+
+
 let Voice_Port = []
 let Video_Port = []
 let count;
+
 
 const openDay = Date.today()
 const logOpenDay = Date.logOpenDay()
@@ -23,6 +25,20 @@ const { WS_URL } = applyDotenv(dotenv)
 
 const service = function (){
     return{
+        // //{id:xx, tel:xx}
+        // start_up(req,res){
+        //     const data =req.body
+        //     Users.find({id:data.id,tel:data.tel})
+        //         .then(findData=>{
+        //             console.log(findData)
+        //             res.status(200).send(findData)
+        //         })
+        //         .catch(err=>{
+        //             res.status(400).send('개통된 정보가 없습니다. 개통 완료 후 이용해주세요.')
+        //         })
+        // },
+
+
         checkPortService(req,res){
             Info.find({})
                 .then(data=>{
@@ -139,11 +155,6 @@ const service = function (){
                 })
 
 
-
-
-
-            
-
         },
 
 
@@ -252,7 +263,6 @@ const service = function (){
 
                     }
 
-
                 }
 
 
@@ -260,6 +270,46 @@ const service = function (){
                 res.status(400).json(err)
             }
         },
+
+        // //화상통화
+        // webRtc(req,res){
+        //     WebRtcServer()
+        //     res.status(200).send('WebRtc Start Success')
+        //     // let Rtc = db.Rtc
+        //     // Rtc.find({})
+        //     //     .then(data=>{
+        //     //         let i;
+        //     //         let randomIndexArray=data.map(e=>e.RTC_PORT)
+        //     //         for (i=0; i<1; i++) {
+        //     //             let randomNum;
+        //     //             randomNum = Math.floor(Math.random() * 1000 +7000)
+        //     //             if (randomIndexArray.indexOf(randomNum) === -1) {
+        //     //                 randomIndexArray.push(randomNum)
+        //     //             } else {
+        //     //                 i--
+        //     //             }
+        //     //         }
+        //     //         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+        //     //
+        //     //         let webRtcData = {
+        //     //             ip:ip,
+        //     //             RTC_PORT:randomIndexArray[randomIndexArray.length -1]
+        //     //         }
+        //     //
+        //     //         new Rtc(webRtcData).save()
+        //     //             .then(trans=>{
+        //     //                 WebRtcServer(webRtcData)
+        //     //             })
+        //     //             .catch(e=>{
+        //     //                 res.status(400).send('데이터 저장실패',e)
+        //     //             })
+        //     //
+        //     //     })
+        //     //     .catch(e=>{
+        //     //         console.log(e)
+        //     //     })
+        //
+        // },
 
     }
 }
