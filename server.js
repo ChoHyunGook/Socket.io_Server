@@ -48,6 +48,9 @@ async function startServer(){
     // })
     WebRtc()
 
+    app.post('/testSocket',(req,res)=>{
+        Service().testSocket(req,res)
+    })
 
     app.post('/socket', (req,res)=>{
         Service().postService(req,res)

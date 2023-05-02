@@ -172,144 +172,287 @@ const service = function (){
                 .catch(err => console.log('Log Save Error',err))
         },
 
-        //api = '/socket', Data={ MAC:xxxx, PORT:xxxxxxx }
+
         postService(req, res) {
-            try {
-                console.log('Post...SocketServerCreate...')
-                const data = req.body
 
-                if (typeof data.PORT !== "number" || typeof  data.MAC !== "string") {
-                    res.status(400).send(`소켓서버 생성 실패...
-        
-                    오류내용 : PORT 값은 Number(Int)값이며 MAC 값은 String입니다. 다시 한번 확인해주세요. 
-                    
-                    기입하신 타입 =>
-                    {
-                    PORT : ${typeof data.PORT}, 
-                    MAC : ${typeof data.MAC}
+            // api = '/socket', Data={ MAC:xxxx }
+            const data = req.body
+
+            Info.find({})
+                .then(mb=>{
+                    let i;
+                    let randomIndexArray=mb.map(e=>e.VOICE_PORT)
+                    for (i=0; i<1; i++) {
+                        let randomNum;
+                        randomNum = Math.floor(Math.random() * 1999 +3000)
+                        if (randomIndexArray.indexOf(randomNum) === -1) {
+                            randomIndexArray.push(randomNum)
+                        } else {
+                            i--
+                        }
                     }
-                    
-                    올바른 예시 =>
-                    {
-                     PORT : 3000,
-                     MAC : "맥주소"
-                     }`
-                    )
-                } else {
-                    if (data.PORT < 3000 || data.PORT > 4999) {
-                        res.status(400).send(`PORT 값은 3000~4999까지 입니다. 기입하신 PORT : ${data.PORT}`)
+
+                    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+                    const connectDate = Date.connectDate()
+                    let voice = randomIndexArray[randomIndexArray.length -1]
+
+                    const infoData = {
+                        ip: ip,
+                        MAC: data.MAC,
+                        VOICE_PORT: voice,
+                        VIDEO_PORT: voice+2000,
+                        Voice_WSAddr:`${WS_URL}:${voice}`,
+                        Video_WSAddr:`${WS_URL}:${voice+2000}`,
+                        connectDate: connectDate
                     }
-                    else {
-                            Info.findOne({VOICE_PORT: req.body.PORT})
-                                .then((mb) => {
-                                    if (mb === null) {
-                                        const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-                                        const connectDate = Date.connectDate()
 
-                                        const infoData = {
-                                            ip: ip,
-                                            MAC: data.MAC,
-                                            VOICE_PORT: data.PORT,
-                                            VIDEO_PORT: data.PORT+2000,
-                                            Voice_WSAddr:`${WS_URL}:${data.PORT}`,
-                                            Video_WSAddr:`${WS_URL}:${data.PORT+2000}`,
-                                            connectDate: connectDate
-                                        }
-
-                                        const Restart = {
-                                            reStart:'None'
-                                        }
+                    const Restart = {
+                        reStart:'None'
+                    }
 
 
-                                        const logDb = {log: `API::POST::${connectDate}::voice:${infoData.PORT}::device:${infoData.PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
+                    const logDb = {log: `API::POST::${connectDate}::voice:${infoData.PORT}::device:${infoData.PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
 
 
-                                        new apiLogs(logDb).save()
-                                            .then(r => {
-                                                console.log('API Log data Save...')
-                                                new Info(infoData).save()
-                                                    .then(rdata => {
-                                                        console.log('Info Data Save...')
+                    new apiLogs(logDb).save()
+                        .then(r => {
+                            console.log('API Log data Save...')
+                            new Info(infoData).save()
+                                .then(rdata => {
+                                    console.log('Info Data Save...')
 
-                                                    })
-                                                    .catch(error => {
-                                                        console.log('Info Save Error', error)
-
-                                                    })
-                                            })
-                                            .catch(err => {
-                                                    console.log('Log Save Error', err)
-                                                }
-                                            )
-
-
-                                        WsVoiceSocket(infoData,Restart)
-                                        WsVideoSocket(infoData,Restart)
-
-
-                                        console.log('Socket Server Creation Completed')
-
-                                        res.status(200).json({voiceAddr:infoData.Voice_WSAddr, videoAddr:infoData.Video_WSAddr});
-
-
-                                    } else {
-                                        console.log('Socket Server Creation Fail...(Port Duplication)')
-                                        res.status(400).send('사용중인 Port 주소입니다.')
-                                    }
                                 })
-                                .catch(err => {
-                                    res.status(400).json(err)
+                                .catch(error => {
+                                    console.log('Info Save Error', error)
+
                                 })
+                        })
+                        .catch(err => {
+                                console.log('Log Save Error', err)
+                            }
+                        )
 
-                    }
 
-                }
+                    WsVoiceSocket(infoData,Restart)
+                    WsVideoSocket(infoData,Restart)
 
 
-            } catch (err) {
-                res.status(400).json(err)
-            }
+                    console.log('Socket Server Creation Completed')
+
+                    res.status(200).json({voiceAddr:infoData.Voice_WSAddr, videoAddr:infoData.Video_WSAddr});
+
+                })
+                .catch(e=>{
+                    console.log(e)
+                    res.status(400).send(e)
+                })
+
+            //api = '/socket', Data={ MAC:xxxx, PORT:xxxxxxx }
+            // try {
+            //     console.log('Post...SocketServerCreate...')
+            //     const data = req.body
+            //
+            //     if (typeof data.PORT !== "number" || typeof  data.MAC !== "string") {
+            //         res.status(400).send(`소켓서버 생성 실패...
+            //
+            //         오류내용 : PORT 값은 Number(Int)값이며 MAC 값은 String입니다. 다시 한번 확인해주세요.
+            //
+            //         기입하신 타입 =>
+            //         {
+            //         PORT : ${typeof data.PORT},
+            //         MAC : ${typeof data.MAC}
+            //         }
+            //
+            //         올바른 예시 =>
+            //         {
+            //          PORT : 3000,
+            //          MAC : "맥주소"
+            //          }`
+            //         )
+            //     } else {
+            //         if (data.PORT < 3000 || data.PORT > 4999) {
+            //             res.status(400).send(`PORT 값은 3000~4999까지 입니다. 기입하신 PORT : ${data.PORT}`)
+            //         }
+            //         else {
+            //                 Info.findOne({VOICE_PORT: req.body.PORT})
+            //                     .then((mb) => {
+            //                         if (mb === null) {
+            //                             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+            //                             const connectDate = Date.connectDate()
+            //
+            //                             const infoData = {
+            //                                 ip: ip,
+            //                                 MAC: data.MAC,
+            //                                 VOICE_PORT: data.PORT,
+            //                                 VIDEO_PORT: data.PORT+2000,
+            //                                 Voice_WSAddr:`${WS_URL}:${data.PORT}`,
+            //                                 Video_WSAddr:`${WS_URL}:${data.PORT+2000}`,
+            //                                 connectDate: connectDate
+            //                             }
+            //
+            //                             const Restart = {
+            //                                 reStart:'None'
+            //                             }
+            //
+            //
+            //                             const logDb = {log: `API::POST::${connectDate}::voice:${infoData.PORT}::device:${infoData.PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
+            //
+            //
+            //                             new apiLogs(logDb).save()
+            //                                 .then(r => {
+            //                                     console.log('API Log data Save...')
+            //                                     new Info(infoData).save()
+            //                                         .then(rdata => {
+            //                                             console.log('Info Data Save...')
+            //
+            //                                         })
+            //                                         .catch(error => {
+            //                                             console.log('Info Save Error', error)
+            //
+            //                                         })
+            //                                 })
+            //                                 .catch(err => {
+            //                                         console.log('Log Save Error', err)
+            //                                     }
+            //                                 )
+            //
+            //
+            //                             WsVoiceSocket(infoData,Restart)
+            //                             WsVideoSocket(infoData,Restart)
+            //
+            //
+            //                             console.log('Socket Server Creation Completed')
+            //
+            //                             res.status(200).json({voiceAddr:infoData.Voice_WSAddr, videoAddr:infoData.Video_WSAddr});
+            //
+            //
+            //                         } else {
+            //                             console.log('Socket Server Creation Fail...(Port Duplication)')
+            //                             res.status(400).send('사용중인 Port 주소입니다.')
+            //                         }
+            //                     })
+            //                     .catch(err => {
+            //                         res.status(400).json(err)
+            //                     })
+            //
+            //         }
+            //
+            //     }
+            //
+            //
+            // } catch (err) {
+            //     res.status(400).json(err)
+            // }
         },
 
-        // //화상통화
-        // webRtc(req,res){
-        //     WebRtcServer()
-        //     res.status(200).send('WebRtc Start Success')
-        //     // let Rtc = db.Rtc
-        //     // Rtc.find({})
-        //     //     .then(data=>{
-        //     //         let i;
-        //     //         let randomIndexArray=data.map(e=>e.RTC_PORT)
-        //     //         for (i=0; i<1; i++) {
-        //     //             let randomNum;
-        //     //             randomNum = Math.floor(Math.random() * 1000 +7000)
-        //     //             if (randomIndexArray.indexOf(randomNum) === -1) {
-        //     //                 randomIndexArray.push(randomNum)
-        //     //             } else {
-        //     //                 i--
-        //     //             }
-        //     //         }
-        //     //         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        //     //
-        //     //         let webRtcData = {
-        //     //             ip:ip,
-        //     //             RTC_PORT:randomIndexArray[randomIndexArray.length -1]
-        //     //         }
-        //     //
-        //     //         new Rtc(webRtcData).save()
-        //     //             .then(trans=>{
-        //     //                 WebRtcServer(webRtcData)
-        //     //             })
-        //     //             .catch(e=>{
-        //     //                 res.status(400).send('데이터 저장실패',e)
-        //     //             })
-        //     //
-        //     //     })
-        //     //     .catch(e=>{
-        //     //         console.log(e)
-        //     //     })
-        //
-        // },
+        testSocket(req,res){
+
+            // const data = req.body
+            //
+            // Info.find({})
+            //     .then(mb=>{
+            //         let i;
+            //         let randomIndexArray=mb.map(e=>e.VOICE_PORT)
+            //         for (i=0; i<1; i++) {
+            //             let randomNum;
+            //             randomNum = Math.floor(Math.random() * 1999 +3000)
+            //             if (randomIndexArray.indexOf(randomNum) === -1) {
+            //                 randomIndexArray.push(randomNum)
+            //             } else {
+            //                 i--
+            //             }
+            //         }
+            //
+            //         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+            //         const connectDate = Date.connectDate()
+            //         let voice = randomIndexArray[randomIndexArray.length -1]
+            //
+            //         const infoData = {
+            //             ip: ip,
+            //             MAC: data.MAC,
+            //             VOICE_PORT: voice,
+            //             VIDEO_PORT: voice+2000,
+            //             Voice_WSAddr:`${WS_URL}:${voice}`,
+            //             Video_WSAddr:`${WS_URL}:${voice+2000}`,
+            //             connectDate: connectDate
+            //         }
+            //
+            //         const Restart = {
+            //             reStart:'None'
+            //         }
+            //
+            //
+            //         const logDb = {log: `API::POST::${connectDate}::voice:${infoData.PORT}::device:${infoData.PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
+            //
+            //
+            //         new apiLogs(logDb).save()
+            //             .then(r => {
+            //                 console.log('API Log data Save...')
+            //                 new Info(infoData).save()
+            //                     .then(rdata => {
+            //                         console.log('Info Data Save...')
+            //
+            //                     })
+            //                     .catch(error => {
+            //                         console.log('Info Save Error', error)
+            //
+            //                     })
+            //             })
+            //             .catch(err => {
+            //                     console.log('Log Save Error', err)
+            //                 }
+            //             )
+            //
+            //
+            //         WsVoiceSocket(infoData,Restart)
+            //         WsVideoSocket(infoData,Restart)
+            //
+            //
+            //         console.log('Socket Server Creation Completed')
+            //
+            //         res.status(200).json({voiceAddr:infoData.Voice_WSAddr, videoAddr:infoData.Video_WSAddr});
+            //
+            //     })
+            //     .catch(e=>{
+            //         console.log(e)
+            //         res.status(400).send(e)
+            //     })
+
+            // let Rtc = db.Rtc
+            // Rtc.find({})
+            //     .then(data=>{
+            //         let i;
+            //         let randomIndexArray=data.map(e=>e.RTC_PORT)
+            //         for (i=0; i<1; i++) {
+            //             let randomNum;
+            //             randomNum = Math.floor(Math.random() * 1000 +7000)
+            //             if (randomIndexArray.indexOf(randomNum) === -1) {
+            //                 randomIndexArray.push(randomNum)
+            //             } else {
+            //                 i--
+            //             }
+            //         }
+            //         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+            //
+            //         let webRtcData = {
+            //             ip:ip,
+            //             RTC_PORT:randomIndexArray[randomIndexArray.length -1]
+            //         }
+            //
+            //         new Rtc(webRtcData).save()
+            //             .then(trans=>{
+            //                 WebRtcServer(webRtcData)
+            //             })
+            //             .catch(e=>{
+            //                 res.status(400).send('데이터 저장실패',e)
+            //             })
+            //
+            //     })
+            //     .catch(e=>{
+            //         console.log(e)
+            //     })
+
+        },
 
     }
 }
