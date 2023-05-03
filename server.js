@@ -8,6 +8,7 @@ const db = require('./DataBase/index')
 const Service = require('./app/api/service')
 const Date = require('./Data/date')
 const WebRtc = require('./app/api/webRtc/index')
+const mongoose = require("mongoose");
 
 
 
@@ -15,13 +16,16 @@ const WebRtc = require('./app/api/webRtc/index')
 async function startServer(){
     const app = express();
     dotenv.config()
-    const { MONGO_URI, DB_NAME, PORT, admin_db_name } = applyDotenv(dotenv)
+    const { MONGO_URI, DB_NAME, PORT, ADMIN_DB_NAME } = applyDotenv(dotenv)
 
 //post 방식 일경우 begin
 //post 의 방식은 url 에 추가하는 방식이 아니고 body 라는 곳에 추가하여 전송하는 방식
     app.use(express.static('public'));
     app.use(express.urlencoded({extended: true})); // post 방식 세팅
     app.use(express.json()); // json 사용 하는 경우의 세팅
+
+    const socketDB = mongoose.createConnection(MONGO_URI,{dbName:DB_NAME});
+    const AdminDB = mongoose.createConnection(MONGO_URI,{dbName:ADMIN_DB_NAME});
 
     db.mongoose.set('strictQuery', false);
     db
@@ -48,9 +52,9 @@ async function startServer(){
     // })
     WebRtc()
 
-    app.post('/testSocket',(req,res)=>{
-        Service().testSocket(req,res)
-    })
+    // app.post('/testSocket',(req,res)=>{
+    //     Service().testSocket(req,res)
+    // })
 
     app.post('/socket', (req,res)=>{
         Service().postService(req,res)

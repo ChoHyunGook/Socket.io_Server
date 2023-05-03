@@ -4,7 +4,8 @@ const applyDotenv = require("../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const WsVoiceSocket = require("../router/wsVoiceSocket");
 const WsVideoSocket = require("../router/wsVideoSocket");
-const WebRtcServer = require("../api/webRtc/index")
+
+const Admin_Find = require('./Admin_Find')
 
 const apiLogs = db.logs
 const Info = db.Info
@@ -174,78 +175,11 @@ const service = function (){
 
 
         postService(req, res) {
-
-            // api = '/socket', Data={ MAC:xxxx }
+            // api = '/socket', Data={ userId:xxxx, tel:xxxx }
             const data = req.body
 
-            Info.find({})
-                .then(mb=>{
-                    let i;
-                    let randomIndexArray=mb.map(e=>e.VOICE_PORT)
-                    for (i=0; i<1; i++) {
-                        let randomNum;
-                        randomNum = Math.floor(Math.random() * 1999 +3000)
-                        if (randomIndexArray.indexOf(randomNum) === -1) {
-                            randomIndexArray.push(randomNum)
-                        } else {
-                            i--
-                        }
-                    }
+            Admin_Find(Info,data,WS_URL,apiLogs,req,res,logOpenDay)
 
-                    const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-                    const connectDate = Date.connectDate()
-                    let voice = randomIndexArray[randomIndexArray.length -1]
-
-                    const infoData = {
-                        ip: ip,
-                        MAC: data.MAC,
-                        VOICE_PORT: voice,
-                        VIDEO_PORT: voice+2000,
-                        Voice_WSAddr:`${WS_URL}:${voice}`,
-                        Video_WSAddr:`${WS_URL}:${voice+2000}`,
-                        connectDate: connectDate
-                    }
-
-                    const Restart = {
-                        reStart:'None'
-                    }
-
-
-                    const logDb = {log: `API::POST::${connectDate}::voice:${infoData.PORT}::device:${infoData.PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
-
-
-                    new apiLogs(logDb).save()
-                        .then(r => {
-                            console.log('API Log data Save...')
-                            new Info(infoData).save()
-                                .then(rdata => {
-                                    console.log('Info Data Save...')
-
-                                })
-                                .catch(error => {
-                                    console.log('Info Save Error', error)
-
-                                })
-                        })
-                        .catch(err => {
-                                console.log('Log Save Error', err)
-                            }
-                        )
-
-
-                    WsVoiceSocket(infoData,Restart)
-                    WsVideoSocket(infoData,Restart)
-
-
-                    console.log('Socket Server Creation Completed')
-
-                    res.status(200).json({voiceAddr:infoData.Voice_WSAddr, videoAddr:infoData.Video_WSAddr});
-
-                })
-                .catch(e=>{
-                    console.log(e)
-                    res.status(400).send(e)
-                })
 
             //api = '/socket', Data={ MAC:xxxx, PORT:xxxxxxx }
             // try {
@@ -345,114 +279,6 @@ const service = function (){
             // }
         },
 
-        testSocket(req,res){
-
-            // const data = req.body
-            //
-            // Info.find({})
-            //     .then(mb=>{
-            //         let i;
-            //         let randomIndexArray=mb.map(e=>e.VOICE_PORT)
-            //         for (i=0; i<1; i++) {
-            //             let randomNum;
-            //             randomNum = Math.floor(Math.random() * 1999 +3000)
-            //             if (randomIndexArray.indexOf(randomNum) === -1) {
-            //                 randomIndexArray.push(randomNum)
-            //             } else {
-            //                 i--
-            //             }
-            //         }
-            //
-            //         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-            //         const connectDate = Date.connectDate()
-            //         let voice = randomIndexArray[randomIndexArray.length -1]
-            //
-            //         const infoData = {
-            //             ip: ip,
-            //             MAC: data.MAC,
-            //             VOICE_PORT: voice,
-            //             VIDEO_PORT: voice+2000,
-            //             Voice_WSAddr:`${WS_URL}:${voice}`,
-            //             Video_WSAddr:`${WS_URL}:${voice+2000}`,
-            //             connectDate: connectDate
-            //         }
-            //
-            //         const Restart = {
-            //             reStart:'None'
-            //         }
-            //
-            //
-            //         const logDb = {log: `API::POST::${connectDate}::voice:${infoData.PORT}::device:${infoData.PORT}::${ip}::${logOpenDay}::/SocketServerCreate`}
-            //
-            //
-            //         new apiLogs(logDb).save()
-            //             .then(r => {
-            //                 console.log('API Log data Save...')
-            //                 new Info(infoData).save()
-            //                     .then(rdata => {
-            //                         console.log('Info Data Save...')
-            //
-            //                     })
-            //                     .catch(error => {
-            //                         console.log('Info Save Error', error)
-            //
-            //                     })
-            //             })
-            //             .catch(err => {
-            //                     console.log('Log Save Error', err)
-            //                 }
-            //             )
-            //
-            //
-            //         WsVoiceSocket(infoData,Restart)
-            //         WsVideoSocket(infoData,Restart)
-            //
-            //
-            //         console.log('Socket Server Creation Completed')
-            //
-            //         res.status(200).json({voiceAddr:infoData.Voice_WSAddr, videoAddr:infoData.Video_WSAddr});
-            //
-            //     })
-            //     .catch(e=>{
-            //         console.log(e)
-            //         res.status(400).send(e)
-            //     })
-
-            // let Rtc = db.Rtc
-            // Rtc.find({})
-            //     .then(data=>{
-            //         let i;
-            //         let randomIndexArray=data.map(e=>e.RTC_PORT)
-            //         for (i=0; i<1; i++) {
-            //             let randomNum;
-            //             randomNum = Math.floor(Math.random() * 1000 +7000)
-            //             if (randomIndexArray.indexOf(randomNum) === -1) {
-            //                 randomIndexArray.push(randomNum)
-            //             } else {
-            //                 i--
-            //             }
-            //         }
-            //         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-            //
-            //         let webRtcData = {
-            //             ip:ip,
-            //             RTC_PORT:randomIndexArray[randomIndexArray.length -1]
-            //         }
-            //
-            //         new Rtc(webRtcData).save()
-            //             .then(trans=>{
-            //                 WebRtcServer(webRtcData)
-            //             })
-            //             .catch(e=>{
-            //                 res.status(400).send('데이터 저장실패',e)
-            //             })
-            //
-            //     })
-            //     .catch(e=>{
-            //         console.log(e)
-            //     })
-
-        },
 
     }
 }
