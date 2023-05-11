@@ -100,7 +100,11 @@ const service = function (){
 
                         info.map(port=>{
                             const infoData = {
+                                company:port.company,
+                                contract_num: port.contract_num,
                                 ip: ip,
+                                id: port.id,
+                                name: port.name,
                                 MAC: port.MAC,
                                 VOICE_PORT: port.VOICE_PORT,
                                 VIDEO_PORT: port.VIDEO_PORT,

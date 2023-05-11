@@ -24,8 +24,6 @@ async function startServer(){
     app.use(express.urlencoded({extended: true})); // post 방식 세팅
     app.use(express.json()); // json 사용 하는 경우의 세팅
 
-    const socketDB = mongoose.createConnection(MONGO_URI,{dbName:DB_NAME});
-    const AdminDB = mongoose.createConnection(MONGO_URI,{dbName:ADMIN_DB_NAME});
 
     db.mongoose.set('strictQuery', false);
     db
