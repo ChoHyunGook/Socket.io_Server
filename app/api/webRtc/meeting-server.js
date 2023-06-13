@@ -24,10 +24,9 @@ function handleMessage(meetingId, socket, message, meetingServer) {
     }
 
     console.log('handleMessage: ');
-
     switch(payload.type) {
         case MeetingPayloadEnum.JOIN_MEETING:
-
+            console.log('handleMessage: JOIN_MEETING');
             console.log('handleMessage: JOIN_MEETING');
             meetingHelper.joinMeeting(meetingId, socket, meetingServer, payload)
             break;
@@ -64,20 +63,20 @@ function handleMessage(meetingId, socket, message, meetingServer) {
             console.log('handleMessage: UNKNOWN');
             break;
         default:
-        break;
+            break;
     }
 }
 
 function initMeetingServer(server) {
     const {Server} = require('socket.io');
     const meetingServer = new Server(server, {transports: ['websocket']});
-
+    console.log('! ! initMeetingServer');
     meetingServer.on('connection', socket => {
         const meetingId = socket.handshake.query.id;
-
+        console.log("meetingServer" + meetingId);
         listenMessage(meetingId, socket, meetingServer);
     });
-    console.log("meetingServer" + meetingServer.id);
+
 }
 
 module.exports = {

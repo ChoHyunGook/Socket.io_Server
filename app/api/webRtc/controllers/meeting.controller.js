@@ -39,6 +39,7 @@ exports.startMeeting = (req, res, next) => {
 exports.checkMeetingExists = (req, res, next) => {
     const {meetingId} = req.query;
     console.log('checkMeetingExists');
+    console.log('checkMeetingExists' + meetingId);
     meetingServices.checkMeetingExists(meetingId, (error, results) => {
         if(error) {
             return next(error);

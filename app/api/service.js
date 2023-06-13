@@ -9,6 +9,7 @@ const Admin_Find = require('./Admin_Find')
 
 const apiLogs = db.logs
 const Info = db.Info
+const History = db.history
 
 
 
@@ -38,6 +39,24 @@ const service = function (){
         //             res.status(400).send('개통된 정보가 없습니다. 개통 완료 후 이용해주세요.')
         //         })
         // },
+
+        getHistory(req,res){
+            const data = req.body
+
+            History.find({device_id:data.device_id})
+                .then(findData=>{
+                    let pushData = []
+                    findData.map(e=>{
+                        if(findData.date === e.date){
+                            pushData.push(e)
+                        }
+                    })
+                    res.status(200).send(pushData)
+                })
+                .catch(err=>{
+                    res.status(400).send(err)
+                })
+        },
 
 
         checkPortService(req,res){

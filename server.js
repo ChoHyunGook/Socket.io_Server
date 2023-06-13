@@ -70,6 +70,10 @@ async function startServer(){
         Service().deletePort(req,res)
     })
 
+    app.post('/getHistory',(req,res)=>{
+        Service().getHistory(req,res)
+    })
+
     // app.post('/startUpInfo',(req,res)=>{
     //     Service().start_up(req,res)
     // })

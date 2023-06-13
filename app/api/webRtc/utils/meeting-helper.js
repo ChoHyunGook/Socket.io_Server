@@ -3,36 +3,39 @@ const { meeting } = require("../models/meeting.model");
 const {MeetingPayloadEnum} = require("../utils/meeting-payload.enum");
 
 async function joinMeeting(meetingId, socket, meetingServer, payload) {
-    const {userId, name} = payload.data;
+    const {userId, name, selectedMeetingId} = payload.data;
 
-    meetingServices.isMeetingPresent(meetingId, async (error, results) => {
-        console.log('isMeetingPresent meeting helper');
+    console.log('joinMeeting helper start' + selectedMeetingId);
+
+    meetingServices.isMeetingPresent(selectedMeetingId, async (error, results) => {
+        console.log('isMeetingPresent helper 2');
         if(error && !results) {
-            console.log('isMeetingPresent meeting helper error !redults');
+            console.log('isMeetingPresent meeting helper error!!');
             sendMessage(socket, {
                 type: MeetingPayloadEnum.NOT_FOUND
             });
         }
         if(results) {
-            console.log('isMeetingPresent meeting helper results');
-
-            addUser(socket, {meetingId, userId, name}).then((result) => {
+            addUser(socket, {meetingId, selectedMeetingId, userId, name}).then((result) => {
                 console.log('isMeetingPresent meeting helper results addUser');
 
                 if(result) {
                     console.log('isMeetingPresent meeting helper results result result');
                     sendMessage(socket, {
                         type: MeetingPayloadEnum.JOINED_MEETING, data: {
-                            userId
+                            userId,
+                            selectedMeetingId
                         }
                     });
 
-                    //NOT
+
+                    //NOT // 멤버 화면에 추가
                     broadcastUsers(meetingId, socket, meetingServer, {
                         type: MeetingPayloadEnum.USER_JOINED,
                         data: {
                             userId,
                             name,
+                            selectedMeetingId,
                             ...payload.data
                         }
                     });
@@ -47,34 +50,42 @@ async function joinMeeting(meetingId, socket, meetingServer, payload) {
 }
 
 function forwardConnectionRequest(meetingId, socket, meetingServer, payload) {
-    const {userId, otherUserId, name} = payload.data;
-    console.log('forwardConnectionRequest meeting helper');
+    const {userId, otherUserId, name, selectedMeetingId} = payload.data;
+    console.log('forwardConnectionRequest meeting helper: ' + selectedMeetingId);
     var model = {
-        meetingId: meetingId,
+        meetingId: selectedMeetingId,
         userId: otherUserId
     };
 
     meetingServices.getMeetingUser(model, (error, result) => {
         if(result) {
+            console.log('forwardConnectionRequest meeting helper: result ' + selectedMeetingId);
             var sendPayload = JSON.stringify({
                 type: MeetingPayloadEnum.CONNECTION_REQUEST,
                 data: {
                     userId,
                     name,
+                    selectedMeetingId,
                     ...payload.data
                 }
             });
+            console.log('forwardConnectionRequest meeting helper: result socketId ' + result.socketId);
+            console.log('forwardConnectionRequest meeting helper: result socketId ' + result.socketId);
 
-            meetingServer.to(result.socketId).emit('message', sendPayload);
+            // meetingServer.broadcast.emit('message', sendPayload);
+            meetingServer.emit('message', sendPayload);
+            // meetingServer.to(result.socketId).emit('message', sendPayload);
+
+
         }
     })
 }
 
 function forwardIceCandidate(meetingId, socket, meetingServer, payload) {
-    const {userId, otherUserId, candidate} = payload.data;
+    const {userId, selectedMeetingId, otherUserId, candidate} = payload.data;
     console.log('forwardIceCandidate meeting helper');
     var model = {
-        meetingId: meetingId,
+        meetingId: selectedMeetingId,
         userId: otherUserId
     };
 
@@ -84,21 +95,24 @@ function forwardIceCandidate(meetingId, socket, meetingServer, payload) {
                 type: MeetingPayloadEnum.ICECANDIDATE,
                 data: {
                     userId,
+                    selectedMeetingId,
                     candidate
                 }
             });
 
-            meetingServer.to(result.socketId).emit('message', sendPayload);
+            // meetingServer.broadcast.emit('message', sendPayload);
+            meetingServer.emit('message', sendPayload);
+            // meetingServer.to(result.socketId).emit('message', sendPayload);
         }
     })
 }
 
 function forwardOfferSDP(meetingId, socket, meetingServer, payload) {
-    const {userId, otherUserId, sdp} = payload.data;
+    const {userId, selectedMeetingId, otherUserId, sdp} = payload.data;
     console.log('forwardOfferSDP meeting helper');
 
     var model = {
-        meetingId: meetingId,
+        meetingId: selectedMeetingId,
         userId: otherUserId
     };
 
@@ -108,21 +122,24 @@ function forwardOfferSDP(meetingId, socket, meetingServer, payload) {
                 type: MeetingPayloadEnum.OFFER_SDP,
                 data: {
                     userId,
+                    selectedMeetingId,
                     sdp
                 }
             });
 
-            meetingServer.to(result.socketId).emit('message', sendPayload);
+            // meetingServer.broadcast.emit('message', sendPayload);
+            meetingServer.emit('message', sendPayload);
+            // meetingServer.to(result.socketId).emit('message', sendPayload);
         }
     })
 }
 
 function forwardAnswerSDP(meetingId, socket, meetingServer, payload) {
-    const {userId, otherUserId, sdp} = payload.data;
+    const {userId, selectedMeetingId, otherUserId, sdp} = payload.data;
     console.log('forwardAnswerSDP meeting helper');
 
     var model = {
-        meetingId: meetingId,
+        meetingId: selectedMeetingId,
         userId: otherUserId
     };
 
@@ -132,45 +149,50 @@ function forwardAnswerSDP(meetingId, socket, meetingServer, payload) {
                 type: MeetingPayloadEnum.ANSWER_SDP,
                 data: {
                     userId,
+                    selectedMeetingId,
                     sdp
                 }
             });
-
-            meetingServer.to(result.socketId).emit('message', sendPayload);
+            // meetingServer.broadcast.emit('message', sendPayload);
+            meetingServer.emit('message', sendPayload);
+            // meetingServer.to(result.socketId).emit('message', sendPayload);
         }
     })
 }
 
 function userLeft(meetingId, socket, meetingServer, payload) {
-    const {userId} = payload.data;
+    const {userId, selectedMeetingId} = payload.data;
     console.log('userLeft meeting helper');
 
     var model = {
-        meetingId: meetingId,
+        meetingId: selectedMeetingId,
         userId: userId
     };
 
     console.log('forwardEvent meeting helper');
 
-    broadcastUsers(meetingId, socket, meetingServer, {
+    broadcastUsers(selectedMeetingId, socket, meetingServer, {
         type: MeetingPayloadEnum.USER_LEFT,
         data: {
             userId: userId,
+            selectedMeetingId,
             ...payload.data
         }
     });
 
     meetingServices.leftMeetingUser(model, (error, result) => {
         if(result) {
-            console.log("leftMeetingUser: " + result.data);
+            // console.log("leftMeetingUser: " + result.data);
             var sendPayload = JSON.stringify({
                 type: MeetingPayloadEnum.USER_LEFT,
                 data: {
-                    userId: userId
+                    userId: userId,
+                    selectedMeetingId,
                 }
             });
-
-            meetingServer.to(result.socketId).emit('message', sendPayload);
+            // meetingServer.broadcast.emit('message', sendPayload);
+            meetingServer.emit('message', sendPayload);
+            // meetingServer.to(result.socketId).emit('message', sendPayload);
         }
     })
 
@@ -199,37 +221,39 @@ function endMeeting(meetingId, socket, meetingServer, payload) {
                     userId: userId
                 }
             });
-
-            meetingServer.to(result.socketId).emit('message', sendPayload);
+            // meetingServer.broadcast.emit('message', sendPayload);
+            meetingServer.emit('message', sendPayload);
+            // meetingServer.to(result.socketId).emit('message', sendPayload);
         }
     });
 }
 
 function forwardEvent(meetingId, socket, meetingServer, payload) {
-    const {userId} = payload.data;
+    const {userId, selectedMeetingId} = payload.data;
     console.log('forwardEvent meeting helper');
 
     broadcastUsers(meetingId, socket, meetingServer, {
         type: payload.type,
         data: {
             userId: userId,
+            selectedMeetingId: selectedMeetingId,
             ...payload.data
         }
     });
 
 }
 
-function addUser(socket, {meetingId, userId, name}) {
-    console.log("addUser meeting-helper");
+function addUser(socket, {meetingId, selectedMeetingId, userId, name}) {
+
     let promise = new Promise(function (resolve, reject) {
-        meetingServices.getMeetingUser({meetingId, userId}, (error, result) => {
+        meetingServices.getMeetingUser({selectedMeetingId, userId}, (error, result) => {
             if(!result) {
                 console.log("addUser meeting-helper !result");
                 var model = {
                     socketId: socket.id,
-                    meetingId: meetingId,
+                    meetingId: selectedMeetingId,
                     userId: userId,
-                    joined: true, 
+                    joined: true,
                     name: name,
                     isAlive: true
                 };
@@ -243,7 +267,7 @@ function addUser(socket, {meetingId, userId, name}) {
                 });
             }
             else {
-                console.log("addUser meeting-helper result okok");
+                console.log("addUser meeting-helper result ok ok");
                 meetingServices.updateMeetingUser({
                     userId: userId,
                     socketId: socket.id,
