@@ -6,6 +6,8 @@ const WsVoiceSocket = require("../router/wsVoiceSocket");
 const WsVideoSocket = require("../router/wsVideoSocket");
 
 const Admin_Find = require('./Admin_Find')
+var Client = require('mongodb').MongoClient;
+
 
 const apiLogs = db.logs
 const Info = db.Info
@@ -21,24 +23,27 @@ let count;
 const openDay = Date.today()
 const logOpenDay = Date.logOpenDay()
 
-const { WS_URL } = applyDotenv(dotenv)
+const { WS_URL,MONGO_URI,ADMIN_DB_NAME } = applyDotenv(dotenv)
 
 
 
 const service = function (){
     return{
-        // //{id:xx, tel:xx}
-        // start_up(req,res){
-        //     const data =req.body
-        //     Users.find({id:data.id,tel:data.tel})
-        //         .then(findData=>{
-        //             console.log(findData)
-        //             res.status(200).send(findData)
-        //         })
-        //         .catch(err=>{
-        //             res.status(400).send('개통된 정보가 없습니다. 개통 완료 후 이용해주세요.')
-        //         })
-        // },
+        //{id:xx, tel:xx}
+        start_up(req,res){
+            const data =req.body
+            Client.connect(MONGO_URI)
+                .then(dbs=>{
+                    let database = dbs.db(ADMIN_DB_NAME)
+                    database.collection('tables').find({id:data.id,tel:data.tel}).toArray().then(data=>{
+                        if(data.length === 0){
+                            res.status(400).send('해당하는 가입정보가 없습니다. 개통 완료 후 이용해주세요.')
+                        }else{
+                            res.status(200).send(data)
+                        }
+                    })
+                })
+        },
 
         getHistory(req,res){
             const data = req.body

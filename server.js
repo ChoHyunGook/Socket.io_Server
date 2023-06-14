@@ -74,9 +74,9 @@ async function startServer(){
         Service().getHistory(req,res)
     })
 
-    // app.post('/startUpInfo',(req,res)=>{
-    //     Service().start_up(req,res)
-    // })
+    app.post('/startUpInfo',(req,res)=>{
+        Service().start_up(req,res)
+    })
 
     app.set('trust proxy', true);
 
