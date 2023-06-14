@@ -45,6 +45,10 @@ const service = function (){
                 })
         },
 
+        saveHistory(req,res){
+            const data = req.body
+        },
+
         getHistory(req,res){
             const data = req.body
 

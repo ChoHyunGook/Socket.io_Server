@@ -78,6 +78,10 @@ async function startServer(){
         Service().start_up(req,res)
     })
 
+    app.post('/saveHistory',(req,res)=>{
+        Service().saveHistory(req,res)
+    })
+
     app.set('trust proxy', true);
 
     const responseService = new ResponseService()
