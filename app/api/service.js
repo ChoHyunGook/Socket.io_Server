@@ -47,6 +47,17 @@ const service = function (){
 
         saveHistory(req,res){
             const data = req.body
+
+            let saveData = {
+                his:data
+            }
+
+
+            new History(saveData).save()
+                .then(r=> res.status(200).send('History Save Success'))
+                .catch(err=>res.status(400).send('History Save Fail',err))
+
+
         },
 
         getHistory(req,res){
