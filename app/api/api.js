@@ -56,7 +56,7 @@ const api = function (){
                     body:e.data.body,
                     token:e.token,
                     date:historyDay,
-                    createAt:exDate,
+                    createAt:Date.now,
                     expiresAt:exDate+10
                 }
                 new History(saveData).save()
