@@ -1,4 +1,4 @@
-const Date = require("../../Data/date");
+const semiDate = require("../../Data/date");
 const db = require('../../DataBase');
 const applyDotenv = require("../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
@@ -19,9 +19,9 @@ let Video_Port = []
 let count;
 
 
-const openDay = Date.today()
-const logOpenDay = Date.logOpenDay()
-const historyDay = Date.historyDate()
+const openDay = semiDate.today()
+const logOpenDay = semiDate.logOpenDay()
+const historyDay = semiDate.historyDate()
 
 const { WS_URL,MONGO_URI,ADMIN_DB_NAME } = applyDotenv(dotenv)
 
@@ -48,14 +48,16 @@ const api = function (){
         saveHistory(req,res){
             const data = req.body
 
-            console.log(data)
+            let exDate = Date.now
 
             data.map(e=>{
                 let saveData = {
                     title:e.data.title,
                     body:e.data.body,
                     token:e.token,
-                    date:historyDay
+                    date:historyDay,
+                    createAt:exDate,
+                    expiresAt:exDate+10
                 }
                 new History(saveData).save()
                     .then(r=>console.log('History Save Success'))
