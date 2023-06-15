@@ -50,6 +50,8 @@ const api = function (){
 
             let exDate = Date.now
 
+            console.log(data)
+
             data.map(e=>{
                 let saveData = {
                     title:e.data.title,
