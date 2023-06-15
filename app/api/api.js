@@ -53,7 +53,8 @@ const api = function (){
                 let saveData = {
                     title:e.data.title,
                     body:e.data.body,
-                    token:e.token
+                    token:e.token,
+                    date:logOpenDay
                 }
                 new History(saveData).save()
                     .then(r=>console.log('History Save Success'))
