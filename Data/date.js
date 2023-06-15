@@ -81,8 +81,13 @@ const Date3 = function (){
     return opens.format('YYYY:MM:DD:dddd:HH:mm:ss')
 }
 
+const Date4 = function (){
+    return opens.format('YYYY:MM:DD.HH:mm')
+}
+
 
 
 module.exports.today = Date
 module.exports.logOpenDay = Date2
 module.exports.connectDate = Date3
+module.exports.historyDate = Date4

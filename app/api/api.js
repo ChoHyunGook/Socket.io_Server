@@ -21,6 +21,7 @@ let count;
 
 const openDay = Date.today()
 const logOpenDay = Date.logOpenDay()
+const historyDay = Date.historyDate()
 
 const { WS_URL,MONGO_URI,ADMIN_DB_NAME } = applyDotenv(dotenv)
 
@@ -54,21 +55,13 @@ const api = function (){
                     title:e.data.title,
                     body:e.data.body,
                     token:e.token,
-                    date:logOpenDay
+                    date:historyDay
                 }
                 new History(saveData).save()
                     .then(r=>console.log('History Save Success'))
                     .catch(err=>console.log('History Save Fail',err))
             })
 
-            // let saveData = {
-            //     his:data
-            // }
-            //
-            //
-            // new History(saveData).save()
-            //     .then(r=> res.status(200).send('History Save Success'))
-            //     .catch(err=>res.status(400).send('History Save Fail',err))
 
 
         },
