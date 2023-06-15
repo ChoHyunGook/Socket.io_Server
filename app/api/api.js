@@ -5,14 +5,13 @@ const dotenv = require("dotenv");
 const WsVoiceSocket = require("../router/wsVoiceSocket");
 const WsVideoSocket = require("../router/wsVideoSocket");
 
-const Admin_Find = require('./Admin_Find')
+const Admin_Find = require('../service/Admin_Find')
 var Client = require('mongodb').MongoClient;
 
 
 const apiLogs = db.logs
 const Info = db.Info
 const History = db.history
-
 
 
 let Voice_Port = []
@@ -27,7 +26,7 @@ const { WS_URL,MONGO_URI,ADMIN_DB_NAME } = applyDotenv(dotenv)
 
 
 
-const service = function (){
+const api = function (){
     return{
         //{id:xx, tel:xx}
         start_up(req,res){
@@ -326,4 +325,4 @@ const service = function (){
     }
 }
 
-module.exports = service
+module.exports = api

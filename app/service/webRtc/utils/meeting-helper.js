@@ -1,6 +1,6 @@
 const meetingServices = require("../services/meeting.service");
 const { meeting } = require("../models/meeting.model");
-const {MeetingPayloadEnum} = require("../utils/meeting-payload.enum");
+const {MeetingPayloadEnum} = require("./meeting-payload.enum");
 
 async function joinMeeting(meetingId, socket, meetingServer, payload) {
     const {userId, name, selectedMeetingId} = payload.data;

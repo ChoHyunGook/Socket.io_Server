@@ -5,9 +5,9 @@ const morgan = require('morgan')
 const ResponseService = require('./lambdas/response')
 const applyDotenv = require('./lambdas/applyDotenv')
 const db = require('./DataBase/index')
-const Service = require('./app/api/service')
+const Api = require('./app/api/api')
 const Date = require('./Data/date')
-const WebRtc = require('./app/api/webRtc/index')
+const WebRtc = require('./app/service/webRtc/index')
 const mongoose = require("mongoose");
 
 
@@ -42,7 +42,7 @@ async function startServer(){
     app.use(morgan('dev'))
 
     app.get('/', (req,res)=>{
-        Service().getService(req,res)
+        Api().getService(req,res)
     })
 
     // app.get('/webRtc',(req,res)=>{
@@ -55,31 +55,31 @@ async function startServer(){
     // })
 
     app.post('/socket', (req,res)=>{
-        Service().postService(req,res)
+        Api().postService(req,res)
     })
 
     app.get('/checkPort',(req,res)=>{
-        Service().checkPortService(req,res)
+        Api().checkPortService(req,res)
     })
 
     app.get('/serverUpdate',(req,res)=>{
-        Service().serverUpdate(req,res)
+        Api().serverUpdate(req,res)
     })
 
     app.post('/deletePort',(req,res)=>{
-        Service().deletePort(req,res)
+        Api().deletePort(req,res)
     })
 
     app.post('/getHistory',(req,res)=>{
-        Service().getHistory(req,res)
+        Api().getHistory(req,res)
     })
 
     app.post('/startUpInfo',(req,res)=>{
-        Service().start_up(req,res)
+        Api().start_up(req,res)
     })
 
     app.post('/saveHistory',(req,res)=>{
-        Service().saveHistory(req,res)
+        Api().saveHistory(req,res)
     })
 
     app.set('trust proxy', true);
