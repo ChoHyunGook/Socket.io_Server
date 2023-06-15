@@ -49,6 +49,17 @@ const api = function (){
 
             console.log(data)
 
+            data.map(e=>{
+                let saveData = {
+                    title:e.data.title,
+                    body:e.data.body,
+                    token:e.token
+                }
+                new History(saveData).save()
+                    .then(r=>console.log('History Save Success'))
+                    .catch(err=>console.log('History Save Fail',err))
+            })
+
             // let saveData = {
             //     his:data
             // }
