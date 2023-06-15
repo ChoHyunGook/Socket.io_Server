@@ -48,19 +48,36 @@ const api = function (){
         saveHistory(req,res){
             const data = req.body
 
+            let dd = {
+                "push" : [
+                    {
+                        "user_key": "2236fab2-7ea2-4029-a01a-5070fdf7e207",
+                        "title": "message test",
+                        "message": {
+                            "dev" : "",
+                            "ip_addr" : "",
+                            "memberNum" : "",
+                            "push_title" : "test",
+                            "push_message" : "test test",
+                            "file_name" : "",
+                            "file_size" : ""
+                        }
+                    }
+                ]
+            }
 
             console.log(data)
 
-            data.map(e=>{
-                let saveData = {
-                    title:e.data.title,
-                    body:e.data.body,
-                    token:e.token
-                }
-                new History(saveData).save()
-                    .then(r=>console.log('History Save Success'))
-                    .catch(err=>console.log('History Save Fail',err))
-            })
+            // data.map(e=>{
+            //     let saveData = {
+            //         title:e.data.title,
+            //         body:e.data.body,
+            //         token:e.token
+            //     }
+            //     new History(saveData).save()
+            //         .then(r=>console.log('History Save Success'))
+            //         .catch(err=>console.log('History Save Fail',err))
+            // })
 
 
 
