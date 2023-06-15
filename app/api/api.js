@@ -48,7 +48,6 @@ const api = function (){
         saveHistory(req,res){
             const data = req.body
 
-            let exDate = Date.now
 
             console.log(data)
 
@@ -56,10 +55,7 @@ const api = function (){
                 let saveData = {
                     title:e.data.title,
                     body:e.data.body,
-                    token:e.token,
-                    date:historyDay,
-                    createAt:Date.now,
-                    expiresAt:exDate+10
+                    token:e.token
                 }
                 new History(saveData).save()
                     .then(r=>console.log('History Save Success'))

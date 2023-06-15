@@ -4,8 +4,7 @@ const history = function (mongoose){
         body:{type:String, trim:true},
         token:{type:String, trim:true},
         date:{type:String, trim:true},
-        createAt:{type:Date, index:{expires:'1d'}},
-        expiresAt:{type:Date}
+        createAt:{type:Date, index:{expires:5}}
     },{ versionKey : false })
     return mongoose.model('history',historySchema)
 }
