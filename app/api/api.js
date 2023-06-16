@@ -21,7 +21,7 @@ let count;
 
 const openDay = semiDate.today()
 const logOpenDay = semiDate.logOpenDay()
-const historyDay = semiDate.historyDate()
+
 
 const { WS_URL,MONGO_URI,ADMIN_DB_NAME } = applyDotenv(dotenv)
 
@@ -48,40 +48,84 @@ const api = function (){
         saveHistory(req,res){
             const data = req.body
 
-
             console.log(data)
-
-            // data.map(e=>{
-            //     let saveData = {
-            //         title:e.data.title,
-            //         body:e.data.body,
-            //         token:e.token
-            //     }
-            //     new History(saveData).save()
-            //         .then(r=>console.log('History Save Success'))
-            //         .catch(err=>console.log('History Save Fail',err))
-            // })
-
-
+            let saveData
+            if(typeof data.fileName === 'undefined'){
+                saveData = {
+                    title:data.title,
+                    body:data.body,
+                    uuid:data.uuid,
+                    device_id:"",
+                    fileName:"",
+                    date:logOpenDay
+                }
+            }else{
+                saveData = {
+                    title:data.title,
+                    body:data.body,
+                    uuid:"",
+                    device_id:data.device_id,
+                    fileName:data.fileName,
+                    date:logOpenDay
+                }
+            }
+            new History(saveData).save()
+                .then(r=>console.log('History Save Success'))
+                .catch(err=>console.log('History Save Fail',err))
 
         },
+
+        // startDate와 endDate는 년도-월-일자 필수
+        // 디바이스 기준 data = { device_id: x, startDate: 2023-06-12, endDate: 2023-06-16 }
+        // 폰 기준 data = { uuid: x, startDate: 2023-06-12, endDate: 2023-06-16 }
 
         getHistory(req,res){
             const data = req.body
 
-            History.find({device_id:data.device_id})
-                .then(findData=>{
-                    let pushData = []
-                    findData.map(e=>{
-                        if(findData.date === e.date){
-                            pushData.push(e)
+            if(typeof data.uuid === 'undefined'){
+                History.find({device_id:data.device_id})
+                    .then(findData=>{
+                        let pushData = []
+                        findData.map(e=>{
+                            let start = data.startDate.split("-").join("")
+                            let end = data.endDate.split("-").join("")
+                            let findDate = e.date.split(".")[0].replace(/:/g,'')
+                            if(end >= findDate && start <= findDate){
+                                pushData.push(e)
+                            }
+                        })
+                        if(pushData.length === 0){
+                            res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
+                        }else{
+                            res.status(200).send(pushData)
                         }
                     })
-                    res.status(200).send(pushData)
-                })
-                .catch(err=>{
-                    res.status(400).send(err)
-                })
+                    .catch(err=>{
+                        res.status(400).send('검색하려는 device_id로 저장된 히스토리가 없습니다.',err)
+                    })
+            }else{
+                History.find({uuid:data.uuid})
+                    .then(findData=>{
+                        let pushData = []
+                        findData.map(e=>{
+                            let start = data.startDate.split("-").join("")
+                            let end = data.endDate.split("-").join("")
+                            let findDate = e.date.split(".")[0].replace(/:/g,'')
+                            if(end >= findDate && start <= findDate){
+                                pushData.push(e)
+                            }
+                        })
+                        if(pushData.length === 0){
+                            res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
+                        }else{
+                            res.status(200).send(pushData)
+                        }
+                    })
+                    .catch(err=>{
+                        res.status(400).send('검색하려는 uuid로 저장된 히스토리가 없습니다.',err)
+                    })
+            }
+
         },
 
 
