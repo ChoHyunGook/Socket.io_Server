@@ -48,23 +48,6 @@ const api = function (){
         saveHistory(req,res){
             const data = req.body
 
-            let dd = {
-                "push" : [
-                    {
-                        "user_key": "2236fab2-7ea2-4029-a01a-5070fdf7e207",
-                        "title": "message test",
-                        "message": {
-                            "dev" : "",
-                            "ip_addr" : "",
-                            "memberNum" : "",
-                            "push_title" : "test",
-                            "push_message" : "test test",
-                            "file_name" : "",
-                            "file_size" : ""
-                        }
-                    }
-                ]
-            }
 
             console.log(data)
 
@@ -152,7 +135,7 @@ const api = function (){
                 Info.find({})
                     .then(info=>{
 
-                        const today = Date.today()
+                        const today = semiDate.today()
 
                         const logDb = {log: `ServerUpdate::UpDateDay:${today}::UpdateIp:${ip}::/SocketServerUpdate`}
 
@@ -228,8 +211,8 @@ const api = function (){
         getService(req,res){
             console.log('get...')
             const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
-            const today = Date.today()
-            const connectDate = Date.connectDate()
+            const today = semiDate.today()
+            const connectDate = semiDate.connectDate()
 
             res.send(`@@@@@ ${today} 서버 ON 접속 IP: ${ip} @@@@@ 서버오픈 ${openDay} @@@@@`)
             const logDb = { log: `API::GET::${connectDate}::${ip}::${logOpenDay}::/getSign` }
