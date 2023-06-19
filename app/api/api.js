@@ -54,7 +54,7 @@ const api = function (){
                 saveData = {
                     title:data.title,
                     body:data.body,
-                    uuid:data.uuid,
+                    upKey:data.upKey,
                     device_id:"",
                     fileName:"",
                     date:logOpenDay
@@ -63,7 +63,7 @@ const api = function (){
                 saveData = {
                     title:data.title,
                     body:data.body,
-                    uuid:"",
+                    upKey:"",
                     device_id:data.device_id,
                     fileName:data.fileName,
                     date:logOpenDay
@@ -104,7 +104,7 @@ const api = function (){
                         res.status(400).send('검색하려는 device_id로 저장된 히스토리가 없습니다.',err)
                     })
             }else{
-                History.find({uuid:data.uuid})
+                History.find({upKey:data.upKey})
                     .then(findData=>{
                         let pushData = []
                         findData.map(e=>{
