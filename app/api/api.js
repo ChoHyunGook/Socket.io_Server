@@ -77,12 +77,12 @@ const api = function (){
 
         // startDate와 endDate는 년도-월-일자 필수
         // 디바이스 기준 data = { device_id: x, startDate: 2023-06-12, endDate: 2023-06-16 }
-        // 폰 기준 data = { uuid: x, startDate: 2023-06-12, endDate: 2023-06-16 }
+        // 폰 기준 data = { upKey: x, startDate: 2023-06-12, endDate: 2023-06-16 }
 
         getHistory(req,res){
             const data = req.body
 
-            if(typeof data.uuid === 'undefined'){
+            if(typeof data.upKey === 'undefined'){
                 History.find({device_id:data.device_id})
                     .then(findData=>{
                         let pushData = []
