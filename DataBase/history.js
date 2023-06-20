@@ -6,7 +6,7 @@ const history = function (mongoose){
         device_id:{type:String, trim:true},
         fileName:{type:String, trim:true},
         date:{type:String, trim:true},
-        createAt:{type:Date, expires:30, default:Date.now}
+        createAt:{type:Date, expires: '1440m', default:Date.now}
     },{ versionKey : false })
     return mongoose.model('history',historySchema)
 }
