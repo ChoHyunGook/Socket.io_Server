@@ -51,23 +51,28 @@ const api = function (){
             console.log(data)
             let saveData
             if(typeof data.fileName === 'undefined'){
-                saveData = {
-                    title:data.title,
-                    body:data.body,
-                    upKey:data.upKey,
-                    device_id:"",
-                    fileName:"",
-                    date:logOpenDay
-                }
+                data.map(e=>{
+                    saveData = {
+                        title:e.title,
+                        body:e.message,
+                        upKey:e.upKey,
+                        device_id:"",
+                        fileName:"",
+                        date:logOpenDay
+                    }
+                })
+
             }else{
-                saveData = {
-                    title:data.title,
-                    body:data.body,
-                    upKey:"",
-                    device_id:data.device_id,
-                    fileName:data.fileName,
-                    date:logOpenDay
-                }
+                data.map(e=>{
+                    saveData = {
+                        title:e.title,
+                        body:e.message,
+                        upKey:"",
+                        device_id:e.MacAddr,
+                        fileName:e.fileName,
+                        date:logOpenDay
+                    }
+                })
             }
             new History(saveData).save()
                 .then(r=>console.log('History Save Success'))
