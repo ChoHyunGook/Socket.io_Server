@@ -74,6 +74,7 @@ const api = function (){
                     }
                 })
             }
+            console.log(saveData)
             new History(saveData).save()
                 .then(r=>console.log('History Save Success'))
                 .catch(err=>console.log('History Save Fail',err))
