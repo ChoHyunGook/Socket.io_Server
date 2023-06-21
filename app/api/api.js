@@ -6,6 +6,7 @@ const WsVoiceSocket = require("../router/wsVoiceSocket");
 const WsVideoSocket = require("../router/wsVideoSocket");
 
 const Admin_Find = require('../service/Admin_Find')
+const moment = require("moment-timezone");
 var Client = require('mongodb').MongoClient;
 
 
@@ -49,6 +50,9 @@ const api = function (){
             const data = req.body
 
             console.log(data)
+
+            const opens = moment().tz('Asia/Seoul')
+
             let saveData
             data.map(item=>{
                 if(typeof item.fileName === 'undefined'){
@@ -58,7 +62,7 @@ const api = function (){
                         upKey:item.upKey,
                         device_id:"",
                         fileName:"",
-                        date:logOpenDay
+                        date:opens.format('YYYY:MM:DD.HH:mm:ss')
                     }
                 }else{
                     saveData = {
@@ -67,7 +71,7 @@ const api = function (){
                         upKey:"",
                         device_id:item.MacAddr,
                         fileName:item.fileName,
-                        date:logOpenDay
+                        date:opens.format('YYYY:MM:DD.HH:mm:ss')
                     }
                 }
             })
@@ -79,55 +83,59 @@ const api = function (){
         },
 
         // startDate와 endDate는 년도-월-일자 필수
-        // 디바이스 기준 data = { device_id: x, startDate: 2023-06-12, endDate: 2023-06-16 }
-        // 폰 기준 data = { upKey: x, startDate: 2023-06-12, endDate: 2023-06-16 }
+        // 이벤트 data = { startDate: 2023-06-12, endDate: 2023-06-16, event:true }
+        // 디바이스 기준 data = { device_id: x, startDate: 2023-06-12, endDate: 2023-06-16, event:false }
+        // 폰 기준 data = { upKey: x, startDate: 2023-06-12, endDate: 2023-06-16, event:false }
 
         getHistory(req,res){
             const data = req.body
 
-            if(typeof data.upKey === 'undefined'){
-                History.find({device_id:data.device_id})
-                    .then(findData=>{
-                        let pushData = []
-                        findData.map(e=>{
-                            let start = data.startDate.split("-").join("")
-                            let end = data.endDate.split("-").join("")
-                            let findDate = e.date.split(".")[0].replace(/:/g,'')
-                            if(end >= findDate && start <= findDate){
-                                pushData.push(e)
+                if(typeof data.upKey === 'undefined'){
+                    History.find({device_id:data.device_id})
+                        .then(findData=>{
+                            let pushData = []
+                            findData.map(e=>{
+                                let start = data.startDate.split("-").join("")
+                                let end = data.endDate.split("-").join("")
+                                let findDate = e.date.split(".")[0].replace(/:/g,'')
+                                if(end >= findDate && start <= findDate){
+                                    pushData.push(e)
+                                }
+                            })
+                            if(pushData.length === 0){
+                                res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
+                            }else{
+                                res.status(200).send(pushData)
                             }
                         })
-                        if(pushData.length === 0){
-                            res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
-                        }else{
-                            res.status(200).send(pushData)
-                        }
-                    })
-                    .catch(err=>{
-                        res.status(400).send('검색하려는 device_id로 저장된 히스토리가 없습니다.',err)
-                    })
-            }else{
-                History.find({upKey:data.upKey})
-                    .then(findData=>{
-                        let pushData = []
-                        findData.map(e=>{
-                            let start = data.startDate.split("-").join("")
-                            let end = data.endDate.split("-").join("")
-                            let findDate = e.date.split(".")[0].replace(/:/g,'')
-                            if(end >= findDate && start <= findDate){
-                                pushData.push(e)
+                        .catch(err=>{
+                            res.status(400).send('검색하려는 device_id로 저장된 히스토리가 없습니다.',err)
+                        })
+                }else{
+                    History.find({upKey:data.upKey})
+                        .then(findData=>{
+                            let pushData = []
+                            findData.map(e=>{
+                                let start = data.startDate.split("-").join("")
+                                let end = data.endDate.split("-").join("")
+                                let findDate = e.date.split(".")[0].replace(/:/g,'')
+                                if(end >= findDate && start <= findDate){
+                                    pushData.push(e)
+                                }
+                            })
+                            if(pushData.length === 0){
+                                res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
+                            }else{
+                                res.status(200).send(pushData)
                             }
                         })
-                        if(pushData.length === 0){
-                            res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
-                        }else{
-                            res.status(200).send(pushData)
-                        }
-                    })
-                    .catch(err=>{
-                        res.status(400).send('검색하려는 uuid로 저장된 히스토리가 없습니다.',err)
-                    })
-            }
+                        .catch(err=>{
+                            res.status(400).send('검색하려는 uuid로 저장된 히스토리가 없습니다.',err)
+                        })
+                }
+
+
+
 
         },
 
