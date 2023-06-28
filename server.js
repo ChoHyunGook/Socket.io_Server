@@ -6,7 +6,7 @@ const ResponseService = require('./lambdas/response')
 const applyDotenv = require('./lambdas/applyDotenv')
 const db = require('./app/DataBase/index')
 const Date = require('./app/service/Data/date')
-const WebRtc = require('./app/service/socketService/webRtc/index')
+const WebRtc = require('./app/service/webRtc/index')
 
 const Socket = require('./app/router/socket/socket')
 
@@ -19,12 +19,12 @@ async function startServer(){
     dotenv.config()
     const { MONGO_URI, DB_NAME, PORT, ADMIN_DB_NAME } = applyDotenv(dotenv)
 
-//post 방식 일경우 begin
-//post 의 방식은 url 에 추가하는 방식이 아니고 body 라는 곳에 추가하여 전송하는 방식
+    //post 방식 일경우 begin
+    //post 의 방식은 url 에 추가하는 방식이 아니고 body 라는 곳에 추가하여 전송하는 방식
+
     app.use(express.static('public'));
     app.use(express.urlencoded({extended: true})); // post 방식 세팅
     app.use(express.json()); // json 사용 하는 경우의 세팅
-
 
     db.mongoose.set('strictQuery', false);
     db
@@ -38,9 +38,7 @@ async function startServer(){
             process.exit();
         });
 
-
     app.use(morgan('dev'))
-
 
     WebRtc()
 
