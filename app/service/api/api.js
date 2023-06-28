@@ -149,6 +149,13 @@ const api = function (){
                 .catch(err => console.log('Log Save Error',err))
         },
 
+        //디바이스 fileName용 Date
+        deviceVideoDate(req,res){
+            const opens = moment().tz('Asia/Seoul')
+            const date = opens.format('YYYY_MM_DD_HH_mm_ss')
+            res.status(200).send(date)
+        },
+
         //device_id로 유저키 찾는 API
         //data = { device_id: device_id값 }
         async dynamoUserKey(req, res) {

@@ -18,6 +18,10 @@ app.get('/', (req,res)=>{
     Api().getService(req,res)
 })
 
+app.get('/date',(req,res)=>{
+    Api().deviceVideoDate(req,res)
+})
+
 app.post('/dynamoUserKey',(req,res)=>{
     Api().dynamoUserKey(req,res)
 })
