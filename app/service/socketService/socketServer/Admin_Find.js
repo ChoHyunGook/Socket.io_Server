@@ -1,4 +1,4 @@
-const applyDotenv = require("../../lambdas/applyDotenv");
+const applyDotenv = require("../../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const CreateSocketServer = require("./createWsSocketServer")
 var Client = require('mongodb').MongoClient;

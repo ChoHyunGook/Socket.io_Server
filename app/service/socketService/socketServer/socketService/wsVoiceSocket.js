@@ -1,13 +1,15 @@
-const express = require("express");
-const db = require("../../DataBase");
-const Date = require("../../Data/date");
-const wsModule = require("ws");
-const WsService = require("../service/wsVideoService");
-const WsVideoSocket = function (infoData, Restart){
+const express =require('express')
+const wsModule = require('ws')
+const Date = require("../../../Data/date");
+const WsService = require("../wsVoiceService");
+const db = require("../../../../DataBase");
+
+
+const WsVoiceSocket = function (infoData, Restart){
 
     const app = express()
 
-    const PORT = infoData.VIDEO_PORT;
+    const PORT = infoData.VOICE_PORT;
 
     const socketLogs = db.logs
 
@@ -82,4 +84,4 @@ const WsVideoSocket = function (infoData, Restart){
 }
 
 
-module.exports = WsVideoSocket
+module.exports = WsVoiceSocket

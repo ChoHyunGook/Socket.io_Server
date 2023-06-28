@@ -1,18 +1,14 @@
-const semiDate = require("../../Data/date");
+const semiDate = require("../Data/date");
 const db = require('../../DataBase');
-const applyDotenv = require("../../lambdas/applyDotenv");
+const applyDotenv = require("../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
-const WsVoiceSocket = require("../router/wsVoiceSocket");
-const WsVideoSocket = require("../router/wsVideoSocket");
+const WsVoiceSocket = require("./socketServer/socketService/wsVoiceSocket");
+const WsVideoSocket = require("./socketServer/socketService/wsVideoSocket");
 
-const Admin_Find = require('../service/Admin_Find')
-const moment = require("moment-timezone");
-var Client = require('mongodb').MongoClient;
-
+const Admin_Find = require('./socketServer/Admin_Find')
 
 const apiLogs = db.logs
 const Info = db.Info
-const History = db.history
 
 
 let Voice_Port = []
@@ -20,126 +16,14 @@ let Video_Port = []
 let count;
 
 
-const openDay = semiDate.today()
 const logOpenDay = semiDate.logOpenDay()
 
 
-const { WS_URL,MONGO_URI,ADMIN_DB_NAME } = applyDotenv(dotenv)
+const { WS_URL } = applyDotenv(dotenv)
 
 
-
-const api = function (){
+const router = function (){
     return{
-        //{id:xx, tel:xx}
-        start_up(req,res){
-            const data =req.body
-            Client.connect(MONGO_URI)
-                .then(dbs=>{
-                    let database = dbs.db(ADMIN_DB_NAME)
-                    database.collection('tables').find({id:data.id,tel:data.tel}).toArray().then(data=>{
-                        if(data.length === 0){
-                            res.status(400).send('해당하는 가입정보가 없습니다. 개통 완료 후 이용해주세요.')
-                        }else{
-                            res.status(200).send(data)
-                        }
-                    })
-                })
-        },
-
-        saveHistory(req,res){
-            const data = req.body
-
-            console.log(data)
-
-            const opens = moment().tz('Asia/Seoul')
-
-            let saveData
-            data.map(item=>{
-                if(typeof item.fileName === 'undefined'){
-                    saveData = {
-                        title:item.title,
-                        body:item.message,
-                        upKey:item.upKey,
-                        device_id:"",
-                        fileName:"",
-                        date:opens.format('YYYY:MM:DD.HH:mm:ss')
-                    }
-                }else{
-                    saveData = {
-                        title:item.title,
-                        body:item.message,
-                        upKey:"",
-                        device_id:item.MacAddr,
-                        fileName:item.fileName,
-                        date:opens.format('YYYY:MM:DD.HH:mm:ss')
-                    }
-                }
-            })
-
-            new History(saveData).save()
-                .then(r=>console.log('History Save Success'))
-                .catch(err=>console.log('History Save Fail',err))
-
-        },
-
-        // startDate와 endDate는 년도-월-일자 필수
-        // 이벤트 data = { startDate: 2023-06-12, endDate: 2023-06-16, event:true }
-        // 디바이스 기준 data = { device_id: x, startDate: 2023-06-12, endDate: 2023-06-16, event:false }
-        // 폰 기준 data = { upKey: x, startDate: 2023-06-12, endDate: 2023-06-16, event:false }
-
-        getHistory(req,res){
-            const data = req.body
-
-                if(typeof data.upKey === 'undefined'){
-                    History.find({device_id:data.device_id})
-                        .then(findData=>{
-                            let pushData = []
-                            findData.map(e=>{
-                                let start = data.startDate.split("-").join("")
-                                let end = data.endDate.split("-").join("")
-                                let findDate = e.date.split(".")[0].replace(/:/g,'')
-                                if(end >= findDate && start <= findDate){
-                                    pushData.push(e)
-                                }
-                            })
-                            if(pushData.length === 0){
-                                res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
-                            }else{
-                                res.status(200).send(pushData)
-                            }
-                        })
-                        .catch(err=>{
-                            res.status(400).send('검색하려는 device_id로 저장된 히스토리가 없습니다.',err)
-                        })
-                }else{
-                    History.find({upKey:data.upKey})
-                        .then(findData=>{
-                            let pushData = []
-                            findData.map(e=>{
-                                let start = data.startDate.split("-").join("")
-                                let end = data.endDate.split("-").join("")
-                                let findDate = e.date.split(".")[0].replace(/:/g,'')
-                                if(end >= findDate && start <= findDate){
-                                    pushData.push(e)
-                                }
-                            })
-                            if(pushData.length === 0){
-                                res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
-                            }else{
-                                res.status(200).send(pushData)
-                            }
-                        })
-                        .catch(err=>{
-                            res.status(400).send('검색하려는 uuid로 저장된 히스토리가 없습니다.',err)
-                        })
-                }
-
-
-
-
-        },
-
-
         checkPortService(req,res){
             Info.find({})
                 .then(data=>{
@@ -175,7 +59,7 @@ const api = function (){
                         .catch(err => console.log('Log Save Error',err))
 
                     res.status(200).send(InfoData)
-                    })
+                })
                 .catch(e=>{
                     res.status(400).send(e)
                 })
@@ -234,8 +118,6 @@ const api = function (){
             }
         },
 
-
-
         deletePort(req,res){
             const data = req.body.PORT
             const wsModule = require('ws')
@@ -262,22 +144,7 @@ const api = function (){
 
         },
 
-
-        getService(req,res){
-            console.log('get...')
-            const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
-            const today = semiDate.today()
-            const connectDate = semiDate.connectDate()
-
-            res.send(`@@@@@ ${today} 서버 ON 접속 IP: ${ip} @@@@@ 서버오픈 ${openDay} @@@@@`)
-            const logDb = { log: `API::GET::${connectDate}::${ip}::${logOpenDay}::/getSign` }
-
-            new apiLogs(logDb).save()
-                .then(r => console.log('Log data Save...'))
-                .catch(err => console.log('Log Save Error',err))
-        },
-
-
+        //소켓서버
         postService(req, res) {
             // api = '/socket', Data={ userId:xxxx, tel:xxxx }
             const data = req.body
@@ -383,8 +250,7 @@ const api = function (){
             // }
         },
 
-
     }
 }
 
-module.exports = api
+module.exports = router

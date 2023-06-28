@@ -1,5 +1,5 @@
-const db = require("../../DataBase");
-const applyDotenv = require("../../lambdas/applyDotenv");
+const db = require("../../../DataBase");
+const applyDotenv = require("../../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 
 

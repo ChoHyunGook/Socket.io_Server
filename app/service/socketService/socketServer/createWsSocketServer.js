@@ -1,6 +1,6 @@
 const Date = require("../../Data/date");
-const WsVoiceSocket = require("../router/wsVoiceSocket");
-const WsVideoSocket = require("../router/wsVideoSocket");
+const WsVoiceSocket = require("./socketService/wsVoiceSocket");
+const WsVideoSocket = require("./socketService/wsVideoSocket");
 
 
 const CreateWsSocketServer = function (Info,data,WS_URL,apiLogs,req,res,logOpenDay,userData){
