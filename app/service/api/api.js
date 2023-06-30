@@ -51,7 +51,7 @@ const api = function (){
 
             const dbDate = new Date()
             dbDate.setUTCHours(0,0,0,0)
-            const dtVar = new Date(Date.now()*24*3600*1000*7)
+            const dtVar = new Date(Date.now()+7*24*3600*1000)
             dtVar.setUTCHours(0,0,0,0)
 
             let saveData
