@@ -3,6 +3,7 @@ const db = require('../../DataBase');
 const applyDotenv = require("../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const {DynamoDB} = require("@aws-sdk/client-dynamodb")
+const aws = require('aws-sdk')
 
 
 const moment = require("moment-timezone");
@@ -19,7 +20,7 @@ const openDay = semiDate.today()
 const logOpenDay = semiDate.logOpenDay()
 
 
-const { WS_URL,MONGO_URI,ADMIN_DB_NAME } = applyDotenv(dotenv)
+const { AWS_SECRET, AWS_ACCESS, AWS_REGION, MONGO_URI,ADMIN_DB_NAME } = applyDotenv(dotenv)
 
 
 
@@ -48,6 +49,11 @@ const api = function (){
 
             const opens = moment().tz('Asia/Seoul')
 
+            const dbDate = new Date()
+            dbDate.setUTCHours(0,0,0,0)
+            const dtVar = new Date(Date.now()*24*3600*1000*7)
+            dtVar.setUTCHours(0,0,0,0)
+
             let saveData
             data.map(item=>{
                 if(typeof item.fileName === 'undefined'){
@@ -57,7 +63,9 @@ const api = function (){
                         upKey:item.upKey,
                         device_id:"",
                         fileName:"",
-                        date:opens.format('YYYY:MM:DD.HH:mm:ss')
+                        date:opens.format('YYYY:MM:DD.HH:mm:ss'),
+                        createAt:dbDate,
+                        expiredAt:dtVar
                     }
                 }else{
                     saveData = {
@@ -66,7 +74,9 @@ const api = function (){
                         upKey:"",
                         device_id:item.MacAddr,
                         fileName:item.fileName,
-                        date:opens.format('YYYY:MM:DD.HH:mm:ss')
+                        date:opens.format('YYYY:MM:DD.HH:mm:ss'),
+                        createAt:dbDate,
+                        expiredAt:dtVar
                     }
                 }
             })
@@ -160,8 +170,7 @@ const api = function (){
         //data = { device_id: device_id값 }
         async dynamoUserKey(req, res) {
             const data = req.body
-            const region = 'ap-northeast-2'
-            const client = new DynamoDB({region})
+            const client = new DynamoDB({AWS_REGION})
             const tableData = await client.scan({
                 TableName: 'DEVICE_TABLE',
                 Key: {'device_id': data.device_id}
@@ -181,6 +190,17 @@ const api = function (){
             }else{
                 res.status(200).send(db)
             }
+
+        },
+
+        //{device_id: , }
+        s3fileDelete(req,res){
+            const data = req.body
+            const s3 = new aws.S3({
+                secretAccessKey: AWS_SECRET,
+                accessKeyId: AWS_ACCESS,
+                region: AWS_REGION,
+            })
 
         },
 
