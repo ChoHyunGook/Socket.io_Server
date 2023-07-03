@@ -3,7 +3,6 @@ const db = require('../../DataBase');
 const applyDotenv = require("../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const {DynamoDB} = require("@aws-sdk/client-dynamodb")
-const aws = require('aws-sdk')
 
 
 const moment = require("moment-timezone");
@@ -170,7 +169,7 @@ const api = function (){
         //data = { device_id: device_id값 }
         async dynamoUserKey(req, res) {
             const data = req.body
-            const client = new DynamoDB('ap-northeast-2')
+            const client = new DynamoDB({ AWS_REGION })
             const tableData = await client.scan({
                 TableName: 'DEVICE_TABLE',
                 Key: {'device_id': data.device_id}
@@ -228,7 +227,9 @@ const api = function (){
                     filterData = `퇴근시간: 19:00:00 \n 현재시간: ${h1}:${m1}:${s1} \n 남은시간: ${h-h1}:${m}:${qs}`
                 }
             }
-
+            console.log(AWS_REGION)
+            console.log(AWS_SECRET)
+            console.log(AWS_ACCESS)
             res.status(200).send(filterData)
         },
 
