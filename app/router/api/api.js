@@ -1,6 +1,8 @@
 const express = require('express')
 const app = express();
 const Api = require('../../service/api/api')
+const ejs = require('ejs')
+
 
 app.post('/getHistory',(req,res)=>{
     Api().getHistory(req,res)
@@ -27,6 +29,15 @@ app.post('/dynamoUserKey',(req,res)=>{
 })
 app.post('/s3del',(req,res)=>{
     Api().s3fileDelete(req,res)
+})
+
+app.get('/quit',(req,res)=>{
+    Api().quitTime(req,res)
+})
+
+app.get('/:quit',(req,res)=>{
+
+    Api().freeQuit(req,res)
 })
 
 

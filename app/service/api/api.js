@@ -205,6 +205,98 @@ const api = function (){
         },
 
 
+        quitTime(req,res){
+            const time = moment().tz('Asia/Seoul')
+            let h1 = Number(time.format('HH'))
+            let m1 = Number(time.format('mm'))
+            let s1 = Number(time.format('ss'))
+
+            let quitTime = '19:0:0'
+            let ft = '18:59:60'
+
+            let h = Number(ft.split(':')[0])
+            let m = Number(ft.split(':')[1])
+            let s = Number(ft.split(':')[2])
+            let qs = Number(quitTime.split(':')[2])
+
+            let filterData
+
+            if(s-s1 !== 0){
+                if(m-m1 !== 0){
+                    //0분 False, 0초 False
+                    filterData = `퇴근시간: 19:00:00 \n 현재시간: ${h1}:${m1}:${s1} \n 남은시간: ${h-h1}:${m-m1}:${s-s1}`
+                }else{
+                    //0분 True, 0초 False
+                    filterData = `퇴근시간: 19:00:00 \n 현재시간: ${h1}:${m1}:${s1} \n 남은시간: ${h-h1}:${m}:${s-s1}`
+                }
+            }else {
+                if(m-m1 !== 0){
+                    //0분 False, 0초 True
+                    filterData = `퇴근시간: 19:00:00 \n 현재시간: ${h1}:${m1}:${s1} \n 남은시간: ${h-h1}:${m-m1}:${qs}`
+                }else{
+                    //0분 True, 0초 True
+                    filterData = `퇴근시간: 19:00:00 \n 현재시간: ${h1}:${m1}:${s1} \n 남은시간: ${h-h1}:${m}:${qs}`
+                }
+            }
+
+            res.status(200).send(filterData)
+        },
+
+        freeQuit(req,res){
+            //+9시간
+            const param = req.params.quit
+            let qt = param.split(':')
+            let h = Number(qt[0])+9
+            let m = Number(qt[1])
+            let s
+
+            if(qt[2] === undefined){
+                s=0
+            }else{
+                s=Number(qt[2])
+            }
+
+            const time = moment().tz('Asia/Seoul')
+            let h1 = Number(time.format('HH'))
+            let m1 = Number(time.format('mm'))
+            let s1 = Number(time.format('ss'))
+
+            let nh = h - 1 - h1
+            let nm = m - 1 +60 - m1
+            let ns = s + 60 -s1
+
+            if(ns >= 60){
+                ns = ns-60
+                nm = nm+1
+                if(nm>=60){
+                    nm = nm-60
+                    nh = nh +1
+                }
+            }
+            if(nm>=60){
+                nm = nm-60+1
+                nh = nh +1
+            }else{
+                nm = nm+1
+            }
+
+            const startTime = `출근 시간: ${param}:${s}\n`
+            const quitTime = `퇴근 시간: ${h}:${m}:${s}`
+            const nowTime = `현재 시간: ${h1}:${m1}:${s1}`
+            const filterTime = `퇴근 남은 시간: ${nh}:${nm}:${ns}`
+
+
+            res.render('quit',{
+                startTime:startTime,
+                quitTime:quitTime,
+                nowTime:nowTime,
+                filterTime:filterTime
+            })
+
+
+        },
+
+
 
     }
 }

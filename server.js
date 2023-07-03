@@ -26,6 +26,9 @@ async function startServer(){
     app.use(express.urlencoded({extended: true})); // post 방식 세팅
     app.use(express.json()); // json 사용 하는 경우의 세팅
 
+    app.set('view engine', 'ejs')
+    app.set('views','./views')
+
     db.mongoose.set('strictQuery', false);
     db
         .mongoose
