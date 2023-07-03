@@ -274,7 +274,7 @@ const api = function (){
             const startTime = `출근 시간: ${param}:${s}\n`
             const quitTime = `퇴근 시간: ${h}:${m}:${s}`
             const nowTime = `현재 시간: ${h1}:${m1}:${s1}`
-            const filterTime = `!!!! ★☆★☆ 퇴근 남은 시간: ${nh}:${nm}:${ns}★☆★☆ !!!!`
+            const filterTime = `!!!! ★☆★☆ 퇴근 남은 시간: ${nh}시간${nm}분${ns}초 ★☆★☆ !!!!`
 
 
             res.render('quit',{
