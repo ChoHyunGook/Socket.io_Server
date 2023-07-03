@@ -236,6 +236,14 @@ const api = function (){
         freeQuit(req,res){
             //+9시간
             const param = req.params.quit
+
+            const time = moment().tz('Asia/Seoul')
+            let h1 = Number(time.format('HH'))
+            let m1 = Number(time.format('mm'))
+            let s1 = Number(time.format('ss'))
+
+            const nowTime = `현재 시간: ${h1}:${m1}:${s1}`
+
             let qt = param.split(':')
             let h = Number(qt[0])+9
             let m = Number(qt[1])
@@ -247,42 +255,50 @@ const api = function (){
                 s=Number(qt[2])
             }
 
-            const time = moment().tz('Asia/Seoul')
-            let h1 = Number(time.format('HH'))
-            let m1 = Number(time.format('mm'))
-            let s1 = Number(time.format('ss'))
-
-            let nh = h - 1 - h1
-            let nm = m - 1 +60 - m1
-            let ns = s + 60 -s1
-
-            if(ns >= 60){
-                ns = ns-60
-                nm = nm+1
-                if(nm>=60){
-                    nm = nm-60
-                    nh = nh +1
-                }
-            }
-            if(nm>=60){
-                nm = nm-60+1
-                nh = nh +1
+            if(m>=60){
+                res.render('minutes',{
+                    nowTime:nowTime,
+                })
+            }else if(s>=60){
+                res.render('second',{
+                    nowTime:nowTime,
+                })
             }else{
-                nm = nm+1
+
+
+                let nh = h - 1 - h1
+                let nm = m - 1 +60 - m1
+                let ns = s + 60 -s1
+
+                if(ns >= 60){
+                    ns = ns-60
+                    nm = nm+1
+                    if(nm>=60){
+                        nm = nm-60
+                        nh = nh +1
+                    }
+                }
+                if(nm>=60){
+                    nm = nm-60+1
+                    nh = nh +1
+                }else{
+                    nm = nm+1
+                }
+
+                const startTime = `출근 시간: ${param}:${s}\n`
+                const quitTime = `퇴근 시간: ${h}:${m}:${s}`
+
+                const filterTime = `!!!! ★☆★☆ 퇴근 남은 시간: ${nh}시간${nm}분${ns}초 ★☆★☆ !!!!`
+
+
+                res.render('quit',{
+                    startTime:startTime,
+                    quitTime:quitTime,
+                    nowTime:nowTime,
+                    filterTime:filterTime
+                })
             }
 
-            const startTime = `출근 시간: ${param}:${s}\n`
-            const quitTime = `퇴근 시간: ${h}:${m}:${s}`
-            const nowTime = `현재 시간: ${h1}:${m1}:${s1}`
-            const filterTime = `!!!! ★☆★☆ 퇴근 남은 시간: ${nh}시간${nm}분${ns}초 ★☆★☆ !!!!`
-
-
-            res.render('quit',{
-                startTime:startTime,
-                quitTime:quitTime,
-                nowTime:nowTime,
-                filterTime:filterTime
-            })
 
 
         },
