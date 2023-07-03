@@ -27,9 +27,6 @@ app.get('/date',(req,res)=>{
 app.post('/dynamoUserKey',(req,res)=>{
     Api().dynamoUserKey(req,res)
 })
-app.post('/s3del',(req,res)=>{
-    Api().s3fileDelete(req,res)
-})
 
 app.get('/quit',(req,res)=>{
     Api().quitTime(req,res)

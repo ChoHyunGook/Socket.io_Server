@@ -170,7 +170,7 @@ const api = function (){
         //data = { device_id: device_id값 }
         async dynamoUserKey(req, res) {
             const data = req.body
-            const client = new DynamoDB({AWS_REGION})
+            const client = new DynamoDB('ap-northeast-2')
             const tableData = await client.scan({
                 TableName: 'DEVICE_TABLE',
                 Key: {'device_id': data.device_id}
@@ -193,16 +193,6 @@ const api = function (){
 
         },
 
-        //{device_id: , }
-        s3fileDelete(req,res){
-            const data = req.body
-            const s3 = new aws.S3({
-                secretAccessKey: AWS_SECRET,
-                accessKeyId: AWS_ACCESS,
-                region: AWS_REGION,
-            })
-
-        },
 
 
         quitTime(req,res){
