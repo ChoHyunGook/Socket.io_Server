@@ -1,7 +1,8 @@
 const express = require('express')
 const app = express();
 const Api = require('../../service/api/api')
-const ejs = require('ejs')
+const fs = require('fs')
+
 
 
 app.post('/getHistory',(req,res)=>{
@@ -33,9 +34,9 @@ app.get('/quit',(req,res)=>{
 })
 
 app.get('/:quit',(req,res)=>{
-
     Api().freeQuit(req,res)
 })
+
 
 
 module.exports = app
