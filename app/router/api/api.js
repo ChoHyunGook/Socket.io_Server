@@ -33,7 +33,7 @@ app.get('/quit',(req,res)=>{
     Api().quitTime(req,res)
 })
 
-app.get('/:quit',(req,res)=>{
+app.get('/quit/:quit',(req,res)=>{
     Api().freeQuit(req,res)
 })
 
