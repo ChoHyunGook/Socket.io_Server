@@ -1,6 +1,6 @@
 const AwsLogs = function (mongoose){
     const AwsLogsSchema = new mongoose.Schema({
-        user_key:Schema.Types.Mixed,
+        user_key:{type:String, trim:true},
         upKey:{type:String, trim:true},
         title:{type:String, trim:true},
         message:{type:String, trim:true},
