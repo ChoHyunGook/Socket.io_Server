@@ -98,12 +98,38 @@ const api = function (){
             const dtVar = new Date(Date.now()+24*3600*1000)
             dtVar.setUTCHours(0,0,0,0)
 
-            let sd = {
-                logs:data,
-                date:opens.format('YYYY:MM:DD.HH:mm:ss'),
-                createAt:dbDate,
-                expiredAt:dtVar
-            }
+            let sd =[]
+
+            data.map(item=>{
+                if(typeof item.fileName === 'undefined'){
+                    const dd = {
+                        upKey:item.upKey,
+                        user_key:item.user_key,
+                        title:item.title,
+                        message:item.message,
+                        fileName:'',
+                        MacAddr:'',
+                        date:opens.format('YYYY:MM:DD.HH:mm:ss'),
+                        createAt:dbDate,
+                        expiredAt:dtVar
+                    }
+                    sd.push(dd)
+                }else{
+                    const dd = {
+                        upKey:'',
+                        user_key:item.user_key,
+                        title:item.title,
+                        message:item.message,
+                        fileName:item.fileName,
+                        MacAddr:item.MacAddr,
+                        date:opens.format('YYYY:MM:DD.HH:mm:ss'),
+                        createAt:dbDate,
+                        expiredAt:dtVar
+                    }
+                    sd.push(dd)
+                }
+            })
+
 
             new AWSLogs(sd).save()
                 .then(res=>{

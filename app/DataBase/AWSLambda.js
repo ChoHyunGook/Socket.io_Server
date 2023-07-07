@@ -1,6 +1,11 @@
 const AwsLogs = function (mongoose){
     const AwsLogsSchema = new mongoose.Schema({
-        logs:{type:[String]},
+        user_key:Schema.Types.Mixed,
+        upKey:{type:String, trim:true},
+        title:{type:String, trim:true},
+        message:{type:String, trim:true},
+        fileName:{type:String, trim:true},
+        MacAddr:{type:String, trim:true},
         date:{type:String, trim:true},
         regDate:{type:Date,default:Date.now},
         createAt:{type:Date},
