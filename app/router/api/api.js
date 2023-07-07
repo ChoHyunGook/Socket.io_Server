@@ -34,16 +34,6 @@ app.post('/dynamoUserKey',(req,res)=>{
     Api().dynamoUserKey(req,res)
 })
 
-// app.get('/quit',(req,res)=>{
-//     Api().quitTime(req,res)
-// })
-//
-// app.get('/quit/:quit',(req,res)=>{
-//     Api().freeQuit(req,res)
-// })
-app.post('/quit',(req,res)=>{
-    Api().quitTime(req,res)
-})
 
 
 

@@ -12,6 +12,7 @@ var Client = require('mongodb').MongoClient;
 const apiLogs = db.logs
 const Info = db.Info
 const History = db.history
+const AWSLogs = db.awsLogs
 
 
 
@@ -50,7 +51,7 @@ const api = function (){
 
             const dbDate = new Date()
             dbDate.setUTCHours(0,0,0,0)
-            const dtVar = new Date(Date.now()+7*24*3600*1000)
+            const dtVar = new Date(Date.now()+1*24*3600*1000)
             dtVar.setUTCHours(0,0,0,0)
 
             let saveData
@@ -88,6 +89,52 @@ const api = function (){
 
         getAWSLogs(req,res){
             console.log(req.body)
+            const data = req.body
+            let dd=[]
+
+            const opens = moment().tz('Asia/Seoul')
+
+            const dbDate = new Date()
+            dbDate.setUTCHours(0,0,0,0)
+            const dtVar = new Date(Date.now()+24*3600*1000)
+            dtVar.setUTCHours(0,0,0,0)
+
+            data.map(e=>{
+                if(typeof e.fileName === 'undefined'){
+                    let saved={
+                        user_key: e.user_key,
+                        title:e.title,
+                        message:e.message,
+                        upKey:e.upKey,
+                        fileName:'',
+                        MacAddr:'',
+                        createAt:dbDate,
+                        expiredAt:dtVar
+                    }
+                    dd.push(saved)
+                }else{
+                    let saved={
+                        user_key: `${e.user_key}`,
+                        title:e.title,
+                        message:e.message,
+                        fileName:e.fileName,
+                        MacAddr:e.MacAddr,
+                        upKey:'',
+                        createAt:dbDate,
+                        expiredAt:dtVar
+                    }
+                    dd.push(saved)
+                }
+            })
+
+            new AWSLogs(dd).save()
+                .then(res=>{
+                    console.log('Aws Log Save')
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+
         },
 
 
@@ -205,255 +252,6 @@ const api = function (){
                 res.status(200).send(db)
             }
 
-        },
-
-
-
-        quitTime(req,res){
-            const time = moment().tz('Asia/Seoul')
-            let h1 = Number(time.format('HH'))
-            let m1 = Number(time.format('mm'))
-            let s1 = Number(time.format('ss'))
-
-            let quitTime = '19:0:0'
-            let ft = '18:59:60'
-
-            let h = Number(ft.split(':')[0])
-            let m = Number(ft.split(':')[1])
-            let s = Number(ft.split(':')[2])
-            let qs = Number(quitTime.split(':')[2])
-
-            let filterData
-
-            if(s-s1 !== 0){
-                if(m-m1 !== 0){
-                    //0분 False, 0초 False
-                    filterData = `퇴근시간: 19:00:00 \n 현재시간: ${h1}:${m1}:${s1} \n 남은시간: ${h-h1}:${m-m1}:${s-s1}`
-                }else{
-                    //0분 True, 0초 False
-                    filterData = `퇴근시간: 19:00:00 \n 현재시간: ${h1}:${m1}:${s1} \n 남은시간: ${h-h1}:${m}:${s-s1}`
-                }
-            }else {
-                if(m-m1 !== 0){
-                    //0분 False, 0초 True
-                    filterData = `퇴근시간: 19:00:00 \n 현재시간: ${h1}:${m1}:${s1} \n 남은시간: ${h-h1}:${m-m1}:${qs}`
-                }else{
-                    //0분 True, 0초 True
-                    filterData = `퇴근시간: 19:00:00 \n 현재시간: ${h1}:${m1}:${s1} \n 남은시간: ${h-h1}:${m}:${qs}`
-                }
-            }
-            console.log(AWS_REGION)
-            console.log(AWS_SECRET)
-            console.log(AWS_ACCESS)
-            res.status(200).send(filterData)
-        },
-
-        freeQuit(req,res){
-            //+9시간
-            const param = req.params.quit
-
-            const time = moment().tz('Asia/Seoul')
-            let h1 = Number(time.format('HH'))
-            let m1 = Number(time.format('mm'))
-            let s1 = Number(time.format('ss'))
-
-            const nowTime = `현재 시간: ${h1}:${m1}:${s1}`
-
-            let qt = param.split(':')
-            let h = Number(qt[0])
-            let m = Number(qt[1])
-            let s
-
-            if (qt[2] === undefined) {
-                s = 0
-            } else {
-                s = Number(qt[2])
-            }
-
-            if (h === 24) {
-                h = 0
-            }
-            const startTime = `출근 시간: ${h}:${m}:${s}\n`
-
-
-            if (h >= 25) {
-                let sign = `기입한 시간: ${h}`
-                res.render('hour', {
-                    nowTime: nowTime,
-                    h: sign
-                })
-            } else if (m >= 60) {
-                let sign = `기입한 분: ${m}`
-                res.render('minutes', {
-                    nowTime: nowTime,
-                    m: sign
-                })
-            } else if (s >= 60) {
-                let sign = `기입한 초: ${s}`
-                res.render('second', {
-                    nowTime: nowTime,
-                    s: sign
-                })
-            } else if (h <= 7) {
-                h = h + 9
-
-                let nh = h - 1 - h1
-                let nm = m - 1 + 60 - m1
-                let ns = s + 60 - s1
-
-                if (ns >= 60) {
-                    ns = ns - 60
-                    nm = nm + 1
-                    if (nm >= 60) {
-                        nm = nm - 60
-                        nh = nh + 1
-                    }
-                }
-                if (nm >= 60) {
-                    nm = nm - 60 + 1
-                    nh = nh + 1
-                } else {
-                    nm = nm + 1
-                }
-
-                if (h === 24) {
-                    h = 24
-                } else if (h >= 25) {
-                    h = h - 24
-                }
-
-
-                const quitTime = `퇴근 시간: ${h}:${m}:${s}`
-                let calacQuit = (h * 60 * 60) + (m * 60) + s
-                let calcH = (h1 * 60 * 60) + (m1 * 60) + s
-
-
-                let filterTime
-
-                if (calacQuit < calcH) {
-                    let th = h1 - 1 - h
-                    let tm = m1 - 1 + 60 - m
-                    let ts = s1 + 60 - s
-
-                    if (ts >= 60) {
-                        ts = ts - 60
-                        tm = tm + 1
-                        if (tm >= 60) {
-                            tm = tm - 60
-                            th = th + 1
-                        }
-                    }
-                    if (tm >= 60) {
-                        tm = tm - 60 + 1
-                        th = th + 1
-                    } else {
-                        tm = tm + 1
-                    }
-
-                    if (h === 24) {
-                        h = 24
-                    } else if (h >= 25) {
-                        h = h - 24
-                    }
-
-
-                    filterTime = `!!!! ★☆★☆ 초과 시간: ${th}시간${tm}분${ts}초 ★☆★☆ !!!!`
-                } else {
-                    filterTime = `!!!! ★☆★☆ 퇴근 남은 시간: ${nh}시간${nm}분${ns}초 ★☆★☆ !!!!`
-                }
-
-
-                res.render('earlyQuit', {
-                    startTime: startTime,
-                    quitTime: quitTime,
-                    nowTime: nowTime,
-                    filterTime: filterTime
-                })
-            } else if (h <= 24 && m <= 59 && s <= 59) {
-                h = h + 9
-
-                let nh = h - 1 - h1
-                let nm = m - 1 + 60 - m1
-                let ns = s + 60 - s1
-
-                if (ns >= 60) {
-                    ns = ns - 60
-                    nm = nm + 1
-                    if (nm >= 60) {
-                        nm = nm - 60
-                        nh = nh + 1
-                    }
-                }
-                if (nm >= 60) {
-                    nm = nm - 60 + 1
-                    nh = nh + 1
-                } else {
-                    nm = nm + 1
-                }
-
-                if (h === 24) {
-                    h = 24
-                } else if (h >= 25) {
-                    h = h - 24
-                }
-
-                const quitTime = `퇴근 시간: ${h}:${m}:${s}`
-                let calacQuit = (h * 60 * 60) + (m * 60) + s
-                let calcH = (h1 * 60 * 60) + (m1 * 60) + s
-
-                let filterTime
-
-                if (calacQuit < calcH) {
-                    let th = h1 - 1 - h
-                    let tm = m1 - 1 + 60 - m
-                    let ts = s1 + 60 - s
-
-                    if (ts >= 60) {
-                        ts = ts - 60
-                        tm = tm + 1
-                        if (tm >= 60) {
-                            tm = tm - 60
-                            th = th + 1
-                        }
-                    }
-                    if (tm >= 60) {
-                        tm = tm - 60
-                        th = th + 1
-                    } else {
-                        tm = tm + 1
-                    }
-
-                    if (h === 24) {
-                        h = 24
-                    } else if (h >= 25) {
-                        h = h - 24
-                    }
-
-                    filterTime = `!!!! ★☆★☆ 초과 시간: ${th}시간${tm}분${ts}초 ★☆★☆ !!!!`
-                } else {
-                    filterTime = `!!!! ★☆★☆ 퇴근 남은 시간: ${nh}시간${nm}분${ns}초 ★☆★☆ !!!!`
-                }
-
-
-                res.render('quit', {
-                    startTime: startTime,
-                    quitTime: quitTime,
-                    nowTime: nowTime,
-                    filterTime: filterTime
-                })
-            } else {
-                let data = `기입한 내용: ${param}`
-                res.render('error', {
-                    nowTime: nowTime,
-                    data: data
-                })
-            }
-
-
-        },
-
-        quitTime(req,res){
-            console.log(req.body)
         },
 
 
