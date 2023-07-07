@@ -4,7 +4,12 @@ const Api = require('../../service/api/api')
 const fs = require('fs')
 
 
-
+app.get('/allHistory',(req,res)=>{
+    Api().getAllHistory(req,res)
+})
+app.post('/AWSlogs',(req,res)=>{
+    Api().getAWSLogs(req,res)
+})
 app.post('/getHistory',(req,res)=>{
     Api().getHistory(req,res)
 })
@@ -29,12 +34,15 @@ app.post('/dynamoUserKey',(req,res)=>{
     Api().dynamoUserKey(req,res)
 })
 
-app.get('/quit',(req,res)=>{
+// app.get('/quit',(req,res)=>{
+//     Api().quitTime(req,res)
+// })
+//
+// app.get('/quit/:quit',(req,res)=>{
+//     Api().freeQuit(req,res)
+// })
+app.post('/quit',(req,res)=>{
     Api().quitTime(req,res)
-})
-
-app.get('/quit/:quit',(req,res)=>{
-    Api().freeQuit(req,res)
 })
 
 

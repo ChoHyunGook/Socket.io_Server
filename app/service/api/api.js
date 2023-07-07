@@ -86,6 +86,21 @@ const api = function (){
 
         },
 
+        getAWSLogs(req,res){
+            console.log(req.body)
+        },
+
+
+        getAllHistory(req,res){
+            History.find()
+                .then(data=>{
+                    res.status(200).send(data)
+                })
+                .catch(err=>{
+                    res.status(400).send(err)
+                })
+        },
+
         // startDate와 endDate는 년도-월-일자 필수
         // 이벤트 data = { startDate: 2023-06-12, endDate: 2023-06-16, event:true }
         // 디바이스 기준 data = { device_id: x, startDate: 2023-06-12, endDate: 2023-06-16, event:false }
@@ -249,129 +264,196 @@ const api = function (){
             let m = Number(qt[1])
             let s
 
-            if(qt[2] === undefined){
-                s=0
-            }else{
-                s=Number(qt[2])
+            if (qt[2] === undefined) {
+                s = 0
+            } else {
+                s = Number(qt[2])
             }
 
-            if(h === 24){
-                h=0
+            if (h === 24) {
+                h = 0
             }
             const startTime = `출근 시간: ${h}:${m}:${s}\n`
 
 
-                if(h>=25){
-                    let sign = `기입한 시간: ${h}`
-                    res.render('hour',{
-                        nowTime:nowTime,
-                        h:sign
-                    })
-                }
-                else if(m>=60){
-                    let sign = `기입한 분: ${m}`
-                    res.render('minutes',{
-                        nowTime:nowTime,
-                        m:sign
-                    })
-                }
-                else if(s>=60){
-                    let sign = `기입한 초: ${s}`
-                    res.render('second',{
-                        nowTime:nowTime,
-                        s:sign
-                    })
-                }
-            else if(h1 < h){
-                console.log('출근전')
-                let nh = h -1 - h1
-                let nm = m -1 + 60 -m1
-                let ns = s + 60 -s1
+            if (h >= 25) {
+                let sign = `기입한 시간: ${h}`
+                res.render('hour', {
+                    nowTime: nowTime,
+                    h: sign
+                })
+            } else if (m >= 60) {
+                let sign = `기입한 분: ${m}`
+                res.render('minutes', {
+                    nowTime: nowTime,
+                    m: sign
+                })
+            } else if (s >= 60) {
+                let sign = `기입한 초: ${s}`
+                res.render('second', {
+                    nowTime: nowTime,
+                    s: sign
+                })
+            } else if (h <= 7) {
+                h = h + 9
 
-                    if(ns >= 60){
-                        ns = ns-60
-                        nm = nm+1
-                        if(nm>=60){
-                            nm = nm-60
-                            nh = nh +1
+                let nh = h - 1 - h1
+                let nm = m - 1 + 60 - m1
+                let ns = s + 60 - s1
+
+                if (ns >= 60) {
+                    ns = ns - 60
+                    nm = nm + 1
+                    if (nm >= 60) {
+                        nm = nm - 60
+                        nh = nh + 1
+                    }
+                }
+                if (nm >= 60) {
+                    nm = nm - 60 + 1
+                    nh = nh + 1
+                } else {
+                    nm = nm + 1
+                }
+
+                if (h === 24) {
+                    h = 24
+                } else if (h >= 25) {
+                    h = h - 24
+                }
+
+
+                const quitTime = `퇴근 시간: ${h}:${m}:${s}`
+                let calacQuit = (h * 60 * 60) + (m * 60) + s
+                let calcH = (h1 * 60 * 60) + (m1 * 60) + s
+
+
+                let filterTime
+
+                if (calacQuit < calcH) {
+                    let th = h1 - 1 - h
+                    let tm = m1 - 1 + 60 - m
+                    let ts = s1 + 60 - s
+
+                    if (ts >= 60) {
+                        ts = ts - 60
+                        tm = tm + 1
+                        if (tm >= 60) {
+                            tm = tm - 60
+                            th = th + 1
                         }
                     }
-                    if(nm>=60){
-                        nm = nm-60+1
-                        nh = nh +1
-                    }else{
-                        nm = nm+1
+                    if (tm >= 60) {
+                        tm = tm - 60 + 1
+                        th = th + 1
+                    } else {
+                        tm = tm + 1
                     }
 
-                    if(h === 24){
-                        h=24
-                    }else if(h >= 25){
-                        h = h-24
+                    if (h === 24) {
+                        h = 24
+                    } else if (h >= 25) {
+                        h = h - 24
                     }
 
-                    const quitTime = `!!!! ★☆★☆ 출근 남은 시간: ${nh}시간${nm}분${ns}초 ㅠㅠ ★☆★☆ !!!!`
 
-                    res.render('start',{
-                        startTime:startTime,
-                        quitTime:quitTime,
-                        nowTime:nowTime
-                    })
+                    filterTime = `!!!! ★☆★☆ 초과 시간: ${th}시간${tm}분${ts}초 ★☆★☆ !!!!`
+                } else {
+                    filterTime = `!!!! ★☆★☆ 퇴근 남은 시간: ${nh}시간${nm}분${ns}초 ★☆★☆ !!!!`
+                }
 
 
+                res.render('earlyQuit', {
+                    startTime: startTime,
+                    quitTime: quitTime,
+                    nowTime: nowTime,
+                    filterTime: filterTime
+                })
+            } else if (h <= 24 && m <= 59 && s <= 59) {
+                h = h + 9
+
+                let nh = h - 1 - h1
+                let nm = m - 1 + 60 - m1
+                let ns = s + 60 - s1
+
+                if (ns >= 60) {
+                    ns = ns - 60
+                    nm = nm + 1
+                    if (nm >= 60) {
+                        nm = nm - 60
+                        nh = nh + 1
+                    }
+                }
+                if (nm >= 60) {
+                    nm = nm - 60 + 1
+                    nh = nh + 1
+                } else {
+                    nm = nm + 1
+                }
+
+                if (h === 24) {
+                    h = 24
+                } else if (h >= 25) {
+                    h = h - 24
+                }
+
+                const quitTime = `퇴근 시간: ${h}:${m}:${s}`
+                let calacQuit = (h * 60 * 60) + (m * 60) + s
+                let calcH = (h1 * 60 * 60) + (m1 * 60) + s
+
+                let filterTime
+
+                if (calacQuit < calcH) {
+                    let th = h1 - 1 - h
+                    let tm = m1 - 1 + 60 - m
+                    let ts = s1 + 60 - s
+
+                    if (ts >= 60) {
+                        ts = ts - 60
+                        tm = tm + 1
+                        if (tm >= 60) {
+                            tm = tm - 60
+                            th = th + 1
+                        }
+                    }
+                    if (tm >= 60) {
+                        tm = tm - 60
+                        th = th + 1
+                    } else {
+                        tm = tm + 1
+                    }
+
+                    if (h === 24) {
+                        h = 24
+                    } else if (h >= 25) {
+                        h = h - 24
+                    }
+
+                    filterTime = `!!!! ★☆★☆ 초과 시간: ${th}시간${tm}분${ts}초 ★☆★☆ !!!!`
+                } else {
+                    filterTime = `!!!! ★☆★☆ 퇴근 남은 시간: ${nh}시간${nm}분${ns}초 ★☆★☆ !!!!`
+                }
+
+
+                res.render('quit', {
+                    startTime: startTime,
+                    quitTime: quitTime,
+                    nowTime: nowTime,
+                    filterTime: filterTime
+                })
+            } else {
+                let data = `기입한 내용: ${param}`
+                res.render('error', {
+                    nowTime: nowTime,
+                    data: data
+                })
             }
-                else if(h<=24 && m<=59 && s<=59){
-                    h = h+9
-
-                    let nh = h - 1 - h1
-                    let nm = m - 1 +60 - m1
-                    let ns = s + 60 -s1
-
-                    if(ns >= 60){
-                        ns = ns-60
-                        nm = nm+1
-                        if(nm>=60){
-                            nm = nm-60
-                            nh = nh +1
-                        }
-                    }
-                    if(nm>=60){
-                        nm = nm-60+1
-                        nh = nh +1
-                    }else{
-                        nm = nm+1
-                    }
-
-                    if(h === 24){
-                        h=24
-                    }else if(h >= 25){
-                        h = h-24
-                    }
 
 
-                    const quitTime = `퇴근 시간: ${h}:${m}:${s}`
+        },
 
-
-                    const filterTime = `!!!! ★☆★☆ 퇴근 남은 시간: ${nh}시간${nm}분${ns}초 ★☆★☆ !!!!`
-
-
-                    res.render('quit',{
-                        startTime:startTime,
-                        quitTime:quitTime,
-                        nowTime:nowTime,
-                        filterTime:filterTime
-                    })
-                }
-                else{
-                    let data = `기입한 내용: ${param}`
-                    res.render('error',{
-                        nowTime:nowTime,
-                        data:data
-                    })
-                }
-
-
-
-
+        quitTime(req,res){
+            console.log(req.body)
         },
 
 
