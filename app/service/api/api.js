@@ -89,8 +89,6 @@ const api = function (){
 
         getAWSLogs(req,res){
             console.log(req.body)
-            console.log(req.body.user_key)
-            console.log(typeof req.body.user_key)
             const data = req.body
 
             const opens = moment().tz('Asia/Seoul')
@@ -104,6 +102,8 @@ const api = function (){
             let dd
 
             data.map(item=>{
+                console.log(item.user_key)
+                console.log(typeof item.user_key)
                 if(typeof item.fileName === 'undefined'){
                     dd = {
                         upKey:item.upKey,
