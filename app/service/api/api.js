@@ -91,6 +91,13 @@ const api = function (){
 
         getAWSLogs(req,res){
             console.log(req.body)
+
+            const data = req.body
+            data.map(e=>{
+                console.log(e.user_key)
+            })
+
+
             if(count < 10){
                 awsLogsData.unshift(req.body)
                 count++
@@ -99,7 +106,6 @@ const api = function (){
                 awsLogsData.pop()
                 awsLogsData.unshift(req.body)
             }
-            console.log(awsLogsData)
         },
 
         getAwsLogHistory(req,res){
