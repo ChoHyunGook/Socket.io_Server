@@ -114,7 +114,7 @@ const api = function (){
                     dd.push(saved)
                 }else{
                     let saved={
-                        user_key: `${e.user_key}`,
+                        user_key: String(e.user_key),
                         title:e.title,
                         message:e.message,
                         fileName:e.fileName,
@@ -135,6 +135,16 @@ const api = function (){
                     console.log(err)
                 })
 
+        },
+
+        getAwsLogHistory(req,res){
+          AWSLogs.find().sort({"regDate":-1})
+              .then(data=>{
+                  res.status(200).send(data)
+              })
+              .catch(err=>{
+                  res.status(400).send(err)
+              })
         },
 
 
