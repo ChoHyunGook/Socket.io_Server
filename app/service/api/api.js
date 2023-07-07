@@ -12,7 +12,9 @@ var Client = require('mongodb').MongoClient;
 const apiLogs = db.logs
 const Info = db.Info
 const History = db.history
-const AWSLogs = db.awsLogs
+
+let count = 0;
+let awsLogsData = [];
 
 
 
@@ -89,69 +91,19 @@ const api = function (){
 
         getAWSLogs(req,res){
             console.log(req.body)
-            const data = req.body
-
-            const opens = moment().tz('Asia/Seoul')
-
-            const dbDate = new Date()
-            dbDate.setUTCHours(0,0,0,0)
-            const dtVar = new Date(Date.now()+24*3600*1000)
-            dtVar.setUTCHours(0,0,0,0)
-
-
-            let dd
-
-            data.map(item=>{
-                console.log(item.user_key)
-                console.log(typeof item.user_key)
-                if(typeof item.fileName === 'undefined'){
-                    dd = {
-                        upKey:item.upKey,
-                        user_key:item.user_key,
-                        title:item.title,
-                        message:item.message,
-                        fileName:'',
-                        MacAddr:'',
-                        date:opens.format('YYYY:MM:DD.HH:mm:ss'),
-                        createAt:dbDate,
-                        expiredAt:dtVar
-                    }
-                }else{
-                    dd = {
-                        upKey:'',
-                        user_key:item.user_key,
-                        title:item.title,
-                        message:item.message,
-                        fileName:item.fileName,
-                        MacAddr:item.MacAddr,
-                        date:opens.format('YYYY:MM:DD.HH:mm:ss'),
-                        createAt:dbDate,
-                        expiredAt:dtVar
-                    }
-                }
-            })
-
-
-            new AWSLogs(dd).save()
-                .then(res=>{
-                    console.log('Aws Log Save')
-                })
-                .catch(err=>{
-                    console.log(err)
-                })
-
-            res.status(200).send(dd)
-
+            if(count < 10){
+                awsLogsData.unshift(req.body)
+                count++
+            }else{
+                count--
+                awsLogsData.pop()
+                awsLogsData.unshift(req.body)
+            }
+            console.log(awsLogsData)
         },
 
         getAwsLogHistory(req,res){
-          AWSLogs.find().sort({"date":-1})
-              .then(data=>{
-                  res.status(200).send(data)
-              })
-              .catch(err=>{
-                  res.status(400).send(err)
-              })
+            res.status(200).send(awsLogsData)
         },
 
 
