@@ -91,7 +91,7 @@ const api = function (){
             console.log(req.body)
             console.log(req.body.user_key)
             console.log(typeof req.body.user_key)
-            const data = JSON.parse(req.body)
+            const data = req.body
 
             const opens = moment().tz('Asia/Seoul')
 
