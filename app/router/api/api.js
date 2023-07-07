@@ -7,6 +7,9 @@ const fs = require('fs')
 app.get('/allHistory',(req,res)=>{
     Api().getAllHistory(req,res)
 })
+app.get('/awslog',(req,res)=>{
+    Api().getAwsLogHistory(req,res)
+})
 app.post('/AWSlogs',(req,res)=>{
     Api().getAWSLogs(req,res)
 })

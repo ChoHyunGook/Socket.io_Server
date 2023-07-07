@@ -90,7 +90,6 @@ const api = function (){
         getAWSLogs(req,res){
             console.log(req.body)
             const data = req.body
-            let dd=[]
 
             const opens = moment().tz('Asia/Seoul')
 
@@ -99,35 +98,14 @@ const api = function (){
             const dtVar = new Date(Date.now()+24*3600*1000)
             dtVar.setUTCHours(0,0,0,0)
 
-            data.map(e=>{
-                if(typeof e.fileName === 'undefined'){
-                    let saved={
-                        user_key: e.user_key,
-                        title:e.title,
-                        message:e.message,
-                        upKey:e.upKey,
-                        fileName:'',
-                        MacAddr:'',
-                        createAt:dbDate,
-                        expiredAt:dtVar
-                    }
-                    dd.push(saved)
-                }else{
-                    let saved={
-                        user_key: String(e.user_key),
-                        title:e.title,
-                        message:e.message,
-                        fileName:e.fileName,
-                        MacAddr:e.MacAddr,
-                        upKey:'',
-                        createAt:dbDate,
-                        expiredAt:dtVar
-                    }
-                    dd.push(saved)
-                }
-            })
+            let sd = {
+                logs:data,
+                date:opens.format('YYYY:MM:DD.HH:mm:ss'),
+                createAt:dbDate,
+                expiredAt:dtVar
+            }
 
-            new AWSLogs(dd).save()
+            new AWSLogs(sd).save()
                 .then(res=>{
                     console.log('Aws Log Save')
                 })
@@ -138,7 +116,7 @@ const api = function (){
         },
 
         getAwsLogHistory(req,res){
-          AWSLogs.find().sort({"regDate":-1})
+          AWSLogs.find().sort({"date":-1})
               .then(data=>{
                   res.status(200).send(data)
               })
