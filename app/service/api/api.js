@@ -1,7 +1,7 @@
 const semiDate = require("../Data/date");
 const db = require('../../DataBase');
 const applyDotenv = require("../../../lambdas/applyDotenv");
-const history = require('./getHistory')
+const history = require('./history')
 const dotenv = require("dotenv");
 const {DynamoDB} = require("@aws-sdk/client-dynamodb")
 
