@@ -44,48 +44,48 @@ const api = function (){
                 })
         },
 
-        saveHistory(req,res){
-            const data = req.body
-
-            const opens = moment().tz('Asia/Seoul')
-
-            const dbDate = new Date()
-            dbDate.setUTCHours(0,0,0,0)
-            const dtVar = new Date(Date.now()+7*24*3600*1000)
-            dtVar.setUTCHours(0,0,0,0)
-
-            let saveData
-            data.map(item=>{
-                if(typeof item.fileName === 'undefined'){
-                    saveData = {
-                        title:item.title,
-                        body:item.message,
-                        upKey:item.upKey,
-                        device_id:"",
-                        fileName:"",
-                        date:opens.format('YYYY:MM:DD.HH:mm:ss'),
-                        createAt:dbDate,
-                        expiredAt:dtVar
-                    }
-                }else{
-                    saveData = {
-                        title:item.title,
-                        body:item.message,
-                        upKey:"",
-                        device_id:item.MacAddr,
-                        fileName:item.fileName,
-                        date:opens.format('YYYY:MM:DD.HH:mm:ss'),
-                        createAt:dbDate,
-                        expiredAt:dtVar
-                    }
-                }
-            })
-
-            new History(saveData).save()
-                .then(r=>console.log('History Save Success'))
-                .catch(err=>console.log('History Save Fail',err))
-
-        },
+        // saveHistory(req,res){
+        //     const data = req.body
+        //
+        //     const opens = moment().tz('Asia/Seoul')
+        //
+        //     const dbDate = new Date()
+        //     dbDate.setUTCHours(0,0,0,0)
+        //     const dtVar = new Date(Date.now()+7*24*3600*1000)
+        //     dtVar.setUTCHours(0,0,0,0)
+        //
+        //     let saveData
+        //     data.map(item=>{
+        //         if(typeof item.fileName === 'undefined'){
+        //             saveData = {
+        //                 title:item.title,
+        //                 body:item.message,
+        //                 upKey:item.upKey,
+        //                 device_id:"",
+        //                 fileName:"",
+        //                 date:opens.format('YYYY:MM:DD.HH:mm:ss'),
+        //                 createAt:dbDate,
+        //                 expiredAt:dtVar
+        //             }
+        //         }else{
+        //             saveData = {
+        //                 title:item.title,
+        //                 body:item.message,
+        //                 upKey:"",
+        //                 device_id:item.MacAddr,
+        //                 fileName:item.fileName,
+        //                 date:opens.format('YYYY:MM:DD.HH:mm:ss'),
+        //                 createAt:dbDate,
+        //                 expiredAt:dtVar
+        //             }
+        //         }
+        //     })
+        //
+        //     new History(saveData).save()
+        //         .then(r=>console.log('History Save Success'))
+        //         .catch(err=>console.log('History Save Fail',err))
+        //
+        // },
 
         getAWSLogs(req,res){
             console.log(req.body)
@@ -102,38 +102,7 @@ const api = function (){
         },
 
 
-        getAllHistory(req,res){
-            History.find().sort({"date":-1})
-                .then(data=>{
-                    res.status(200).send(data)
-                })
-                .catch(err=>{
-                    res.status(400).send(err)
-                })
-        },
 
-
-        postAllHistory(req,res){
-            const data = req.body
-            if(typeof data.upKey === 'undefined'){
-                History.find({device_id:data.device_id}).sort({"date":-1})
-                    .then(data=>{
-                        res.status(200).send(data)
-                    })
-                    .catch(err=>{
-                        res.status(400).send(err)
-                    })
-            }else{
-                History.find({upKey:data.upKey}).sort({"date":-1})
-                    .then(data=>{
-                        res.status(200).send(data)
-                    })
-                    .catch(err=>{
-                        res.status(400).send(err)
-                    })
-            }
-
-        },
 
         // startDate와 endDate는 년도-월-일자 필수
         // 이벤트 data = { startDate: 2023-06-12, endDate: 2023-06-16, event:true }
@@ -142,53 +111,124 @@ const api = function (){
 
         getHistory(req,res){
             const data = req.body
-
+            if(Object.keys(data).length === 0){
+                History.find({}).sort({"date":-1})
+                    .then(findData=>{
+                        res.status(200).send(findData)
+                    })
+            }else{
                 if(typeof data.upKey === 'undefined'){
-                    History.find({device_id:data.device_id})
+                    History.find({device_id:data.device_id}).sort({"date":-1})
                         .then(findData=>{
                             let pushData = []
-                            findData.map(e=>{
-                                let start = data.startDate.split("-").join("")
-                                let end = data.endDate.split("-").join("")
-                                let findDate = e.date.split(".")[0].replace(/:/g,'')
-                                if(end >= findDate && start <= findDate){
-                                    pushData.push(e)
-                                }
-                            })
-                            if(pushData.length === 0){
-                                res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
+                            if(typeof data.startDate === 'undefined' && typeof data.endDate === 'undefined'){
+                                console.log('둘다 없음')
+                                res.status(200).send(findData)
                             }else{
-                                res.status(200).send(pushData)
+                                if(typeof data.startDate === 'undefined' ){
+                                    console.log('스타트날짜 없음')
+                                    const filter = data.endDate.split('-')
+                                    if(Number(filter[2]) <= 9){
+                                        filter[2] = '0'+filter[2]
+                                    }
+                                    findData.map(e => {
+                                        let end = filter.join("")
+                                        let findDate = e.date.split(".")[0].replace(/:/g, '')
+                                        if (end >= findDate) {
+                                            pushData.push(e)
+                                        }
+                                    })
+                                    res.status(200).send(pushData)
+                                }else{
+                                    if(typeof data.endDate === 'undefined') {
+                                        console.log('엔드날짜 없음')
+                                        const filter = data.startDate.split('-')
+                                        if(Number(filter[2]) <= 9){
+                                            filter[2] = '0'+filter[2]
+                                        }
+                                        findData.map(e => {
+                                            let start = filter.join("")
+                                            let findDate = e.date.split(".")[0].replace(/:/g, '')
+                                            if (start <= findDate) {
+                                                pushData.push(e)
+                                            }
+                                        })
+                                        res.status(200).send(pushData)
+                                    }else {
+                                        const startFilter = data.startDate.split('-')
+                                        const endFilter = data.endDate.split('-')
+                                        if(Number(startFilter[2]) <= 9){
+                                            startFilter[2] = '0'+startFilter[2]
+                                        }
+                                        if(Number(endFilter[2]) <= 9){
+                                            endFilter[2] = '0' + endFilter[2]
+                                        }
+
+                                        findData.map(e => {
+                                            let start = startFilter.join("")
+                                            let end = endFilter.join("")
+                                            let findDate = e.date.split(".")[0].replace(/:/g, '')
+                                            if (end >= findDate && start <= findDate) {
+                                                pushData.push(e)
+                                            }
+                                        })
+                                        res.status(200).send(pushData)
+                                    }
+                                }
                             }
+
                         })
                         .catch(err=>{
                             res.status(400).send('검색하려는 device_id로 저장된 히스토리가 없습니다.',err)
                         })
                 }else{
-                    History.find({upKey:data.upKey})
+                    History.find({upKey:data.upKey}).sort({"date":-1})
                         .then(findData=>{
                             let pushData = []
-                            findData.map(e=>{
-                                let start = data.startDate.split("-").join("")
-                                let end = data.endDate.split("-").join("")
-                                let findDate = e.date.split(".")[0].replace(/:/g,'')
-                                if(end >= findDate && start <= findDate){
-                                    pushData.push(e)
+
+                            if(typeof data.startDate === 'undefined'){
+                                console.log('스타트날짜만 없을떄')
+                                findData.map(e=>{
+                                    let end = data.endDate.split("-").join("")
+                                    let findDate = e.date.split(".")[0].replace(/:/g,'')
+                                    if(end>=findDate){
+                                        pushData.push(e)
+                                    }
+                                })
+                                if(typeof data.endDate === 'undefined'){
+                                    console.log('스타트,엔드 둘다없을때')
+                                    pushData = findData
                                 }
-                            })
-                            if(pushData.length === 0){
-                                res.status(400).send('해당하는 날짜 구간에 저장되어있는 히스토리가 없습니다. 다시 한번 확인해주세요.')
                             }else{
-                                res.status(200).send(pushData)
+                                if(typeof data.endDate=== 'undefined'){
+                                    console.log('스타트날짜는 있고 엔드날짜는 없을때')
+                                    findData.map(e=>{
+                                        let start = data.startDate.split("-").join("")
+                                        let findDate = e.date.split(".")[0].replace(/:/g,'')
+                                        if(start <= findDate){
+                                            pushData.push(e)
+                                        }
+                                    })
+                                }else{
+                                    console.log('둘다 있을때')
+                                    findData.map(e=>{
+                                        let start = data.startDate.split("-").join("")
+                                        let end = data.endDate.split("-").join("")
+                                        let findDate = e.date.split(".")[0].replace(/:/g,'')
+                                        if(end >= findDate && start <= findDate){
+                                            pushData.push(e)
+                                        }
+                                    })
+                                }
                             }
+
+                            console.log(pushData)
                         })
                         .catch(err=>{
                             res.status(400).send('검색하려는 uuid로 저장된 히스토리가 없습니다.',err)
                         })
                 }
-
-
-
+            }
 
         },
 
