@@ -47,13 +47,11 @@ const api = function (){
         saveHistory(req,res){
             const data = req.body
 
-            console.log(data)
-
             const opens = moment().tz('Asia/Seoul')
 
             const dbDate = new Date()
             dbDate.setUTCHours(0,0,0,0)
-            const dtVar = new Date(Date.now()+1*24*3600*1000)
+            const dtVar = new Date(Date.now()+7*24*3600*1000)
             dtVar.setUTCHours(0,0,0,0)
 
             let saveData
@@ -91,7 +89,6 @@ const api = function (){
 
         getAWSLogs(req,res){
             console.log(req.body)
-            console.log(awsLogsData.length)
             if(awsLogsData.length === 10){
                 awsLogsData.pop()
                 awsLogsData.unshift(req.body)
@@ -107,6 +104,18 @@ const api = function (){
 
         getAllHistory(req,res){
             History.find().sort({"date":-1})
+                .then(data=>{
+                    res.status(200).send(data)
+                })
+                .catch(err=>{
+                    res.status(400).send(err)
+                })
+        },
+
+
+        postAllHistory(req,res){
+            const data = req.body
+            History.find({device_id:data.device_id}).sort({"date":-1})
                 .then(data=>{
                     res.status(200).send(data)
                 })
