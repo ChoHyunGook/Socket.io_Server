@@ -120,59 +120,61 @@ const api = function (){
                 if(typeof data.upKey === 'undefined'){
                     History.find({device_id:data.device_id}).sort({"date":-1})
                         .then(findData=>{
-                            let pushData = []
-                            if(typeof data.startDate === 'undefined' && typeof data.endDate === 'undefined'){
-                                console.log('둘다 없음')
-                                res.status(200).send(findData)
+                            if(findData.length === 0){
+                                res.status(200).send(`검색하신 데이터가 없습니다. 키와 밸류값을 다시 확인해주세요.
+                                     \n 검색한데이터: ${JSON.stringify(data)}`)
                             }else{
-                                if(typeof data.startDate === 'undefined' ){
-                                    console.log('스타트날짜 없음')
-                                    const filter = data.endDate.split('-')
-                                    if(Number(filter[2]) <= 9){
-                                        filter[2] = '0'+filter[2]
-                                    }
-                                    findData.map(e => {
-                                        let end = filter.join("")
-                                        let findDate = e.date.split(".")[0].replace(/:/g, '')
-                                        if (end >= findDate) {
-                                            pushData.push(e)
-                                        }
-                                    })
-                                    res.status(200).send(pushData)
+                                let pushData = []
+                                if(typeof data.startDate === 'undefined' && typeof data.endDate === 'undefined'){
+                                    res.status(200).send(findData)
                                 }else{
-                                    if(typeof data.endDate === 'undefined') {
-                                        console.log('엔드날짜 없음')
-                                        const filter = data.startDate.split('-')
+                                    if(typeof data.startDate === 'undefined' ){
+                                        const filter = data.endDate.split('-')
                                         if(Number(filter[2]) <= 9){
                                             filter[2] = '0'+filter[2]
                                         }
                                         findData.map(e => {
-                                            let start = filter.join("")
+                                            let end = filter.join("")
                                             let findDate = e.date.split(".")[0].replace(/:/g, '')
-                                            if (start <= findDate) {
+                                            if (end >= findDate) {
                                                 pushData.push(e)
                                             }
                                         })
                                         res.status(200).send(pushData)
-                                    }else {
-                                        const startFilter = data.startDate.split('-')
-                                        const endFilter = data.endDate.split('-')
-                                        if(Number(startFilter[2]) <= 9){
-                                            startFilter[2] = '0'+startFilter[2]
-                                        }
-                                        if(Number(endFilter[2]) <= 9){
-                                            endFilter[2] = '0' + endFilter[2]
-                                        }
+                                    }else{
+                                        if(typeof data.endDate === 'undefined') {
+                                            const filter = data.startDate.split('-')
+                                            if(Number(filter[2]) <= 9){
+                                                filter[2] = '0'+filter[2]
+                                            }
+                                            findData.map(e => {
+                                                let start = filter.join("")
+                                                let findDate = e.date.split(".")[0].replace(/:/g, '')
+                                                if (start <= findDate) {
+                                                    pushData.push(e)
+                                                }
+                                            })
+                                            res.status(200).send(pushData)
+                                        }else {
+                                            const startFilter = data.startDate.split('-')
+                                            const endFilter = data.endDate.split('-')
+                                            if(Number(startFilter[2]) <= 9){
+                                                startFilter[2] = '0'+startFilter[2]
+                                            }
+                                            if(Number(endFilter[2]) <= 9){
+                                                endFilter[2] = '0' + endFilter[2]
+                                            }
 
-                                        findData.map(e => {
-                                            let start = startFilter.join("")
-                                            let end = endFilter.join("")
-                                            let findDate = e.date.split(".")[0].replace(/:/g, '')
-                                            if (end >= findDate && start <= findDate) {
-                                                pushData.push(e)
-                                            }
-                                        })
-                                        res.status(200).send(pushData)
+                                            findData.map(e => {
+                                                let start = startFilter.join("")
+                                                let end = endFilter.join("")
+                                                let findDate = e.date.split(".")[0].replace(/:/g, '')
+                                                if (end >= findDate && start <= findDate) {
+                                                    pushData.push(e)
+                                                }
+                                            })
+                                            res.status(200).send(pushData)
+                                        }
                                     }
                                 }
                             }
@@ -184,45 +186,66 @@ const api = function (){
                 }else{
                     History.find({upKey:data.upKey}).sort({"date":-1})
                         .then(findData=>{
-                            let pushData = []
-
-                            if(typeof data.startDate === 'undefined'){
-                                console.log('스타트날짜만 없을떄')
-                                findData.map(e=>{
-                                    let end = data.endDate.split("-").join("")
-                                    let findDate = e.date.split(".")[0].replace(/:/g,'')
-                                    if(end>=findDate){
-                                        pushData.push(e)
-                                    }
-                                })
-                                if(typeof data.endDate === 'undefined'){
-                                    console.log('스타트,엔드 둘다없을때')
-                                    pushData = findData
-                                }
+                            if(findData.length === 0){
+                                res.status(200).send(`검색하신 데이터가 없습니다. 키와 밸류값을 다시 확인해주세요.
+                                     \n 검색한데이터: ${JSON.stringify(data)}`)
                             }else{
-                                if(typeof data.endDate=== 'undefined'){
-                                    console.log('스타트날짜는 있고 엔드날짜는 없을때')
-                                    findData.map(e=>{
-                                        let start = data.startDate.split("-").join("")
-                                        let findDate = e.date.split(".")[0].replace(/:/g,'')
-                                        if(start <= findDate){
-                                            pushData.push(e)
-                                        }
-                                    })
+                                let pushData = []
+                                if(typeof data.startDate === 'undefined' && typeof data.endDate === 'undefined'){
+                                    res.status(200).send(findData)
                                 }else{
-                                    console.log('둘다 있을때')
-                                    findData.map(e=>{
-                                        let start = data.startDate.split("-").join("")
-                                        let end = data.endDate.split("-").join("")
-                                        let findDate = e.date.split(".")[0].replace(/:/g,'')
-                                        if(end >= findDate && start <= findDate){
-                                            pushData.push(e)
+                                    if(typeof data.startDate === 'undefined' ){
+
+                                        const filter = data.endDate.split('-')
+                                        if(Number(filter[2]) <= 9){
+                                            filter[2] = '0'+filter[2]
                                         }
-                                    })
+                                        findData.map(e => {
+                                            let end = filter.join("")
+                                            let findDate = e.date.split(".")[0].replace(/:/g, '')
+                                            if (end >= findDate) {
+                                                pushData.push(e)
+                                            }
+                                        })
+                                        res.status(200).send(pushData)
+                                    }else{
+                                        if(typeof data.endDate === 'undefined') {
+
+                                            const filter = data.startDate.split('-')
+                                            if(Number(filter[2]) <= 9){
+                                                filter[2] = '0'+filter[2]
+                                            }
+                                            findData.map(e => {
+                                                let start = filter.join("")
+                                                let findDate = e.date.split(".")[0].replace(/:/g, '')
+                                                if (start <= findDate) {
+                                                    pushData.push(e)
+                                                }
+                                            })
+                                            res.status(200).send(pushData)
+                                        }else {
+                                            const startFilter = data.startDate.split('-')
+                                            const endFilter = data.endDate.split('-')
+                                            if(Number(startFilter[2]) <= 9){
+                                                startFilter[2] = '0'+startFilter[2]
+                                            }
+                                            if(Number(endFilter[2]) <= 9){
+                                                endFilter[2] = '0' + endFilter[2]
+                                            }
+
+                                            findData.map(e => {
+                                                let start = startFilter.join("")
+                                                let end = endFilter.join("")
+                                                let findDate = e.date.split(".")[0].replace(/:/g, '')
+                                                if (end >= findDate && start <= findDate) {
+                                                    pushData.push(e)
+                                                }
+                                            })
+                                            res.status(200).send(pushData)
+                                        }
+                                    }
                                 }
                             }
-
-                            console.log(pushData)
                         })
                         .catch(err=>{
                             res.status(400).send('검색하려는 uuid로 저장된 히스토리가 없습니다.',err)
