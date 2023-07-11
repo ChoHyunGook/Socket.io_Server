@@ -115,13 +115,24 @@ const api = function (){
 
         postAllHistory(req,res){
             const data = req.body
-            History.find({device_id:data.device_id}).sort({"date":-1})
-                .then(data=>{
-                    res.status(200).send(data)
-                })
-                .catch(err=>{
-                    res.status(400).send(err)
-                })
+            if(typeof data.upKey === 'undefined'){
+                History.find({device_id:data.device_id}).sort({"date":-1})
+                    .then(data=>{
+                        res.status(200).send(data)
+                    })
+                    .catch(err=>{
+                        res.status(400).send(err)
+                    })
+            }else{
+                History.find({upKey:data.upKey}).sort({"date":-1})
+                    .then(data=>{
+                        res.status(200).send(data)
+                    })
+                    .catch(err=>{
+                        res.status(400).send(err)
+                    })
+            }
+
         },
 
         // startDate와 endDate는 년도-월-일자 필수
