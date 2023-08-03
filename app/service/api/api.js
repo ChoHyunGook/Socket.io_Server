@@ -62,7 +62,7 @@ const api = function (){
         },
 
         getHistory(req, res) {
-            history().getHistory(req,res)
+            history().historiesData(req,res)
         },
 
         saveHistory(req,res){
