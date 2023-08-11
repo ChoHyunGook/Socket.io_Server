@@ -7,6 +7,8 @@ const {DynamoDB} = require("@aws-sdk/client-dynamodb")
 
 
 const moment = require("moment-timezone");
+const axios = require("axios");
+const CryptoJS = require('crypto-js')
 var Client = require('mongodb').MongoClient;
 
 
@@ -23,7 +25,7 @@ const openDay = semiDate.today()
 const logOpenDay = semiDate.logOpenDay()
 
 
-const { AWS_SECRET, AWS_ACCESS, AWS_REGION, MONGO_URI,ADMIN_DB_NAME } = applyDotenv(dotenv)
+const { AWS_SECRET, AWS_ACCESS, AWS_REGION, MONGO_URI,ADMIN_DB_NAME,SMS_service_id,SMS_secret_key,SMS_access_key,SMS_PHONE } = applyDotenv(dotenv)
 
 
 
@@ -116,6 +118,62 @@ const api = function (){
                 res.status(200).send(db)
             }
 
+        },
+
+        sendSms(req,res){
+            const phoneNumber = req.body.phone
+            const phoneSubject = req.body.subject
+            const date = Date.now().toString()
+
+            //환경변수들
+            const serviceId = SMS_service_id;
+            const secretKey = SMS_secret_key;
+            const accessKey = SMS_access_key;
+            const smsPhone = SMS_PHONE;
+
+            //그외
+            const method = "POST";
+            const space = " ";
+            const newLine = "\n";
+            const url = `https://sens.apigw.ntruss.com/sms/v2/services/${serviceId}/messages`;
+            const url2 = `/sms/v2/services/${serviceId}/messages`;
+
+            //signature 작성 : crypto-js 모듈을 이용하여 암호화
+            const hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, secretKey);
+            hmac.update(method);
+            hmac.update(space);
+            hmac.update(url2);
+            hmac.update(newLine);
+            hmac.update(date);
+            hmac.update(newLine);
+            hmac.update(accessKey);
+            const hash = hmac.finalize();
+            const signature = hash.toString(CryptoJS.enc.Base64);
+
+            //인증번호 생성 및 토큰생성
+            let authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+
+
+            axios({
+                method:method,
+                json:true,
+                url:url,
+                headers: {
+                    "Contenc-type": "application/json; charset=utf-8",
+                    "x-ncp-iam-access-key": accessKey,
+                    "x-ncp-apigw-timestamp": date
+                    ,
+                    "x-ncp-apigw-signature-v2": signature,
+                },
+                data:{
+                    type:"SMS",
+                    countryCode: "82",
+                    from: smsPhone,
+                    content: `[DoorbellSquare]\n [${phoneSubject} 서비스]\n 인증번호는 [${authNum}] 입니다.`,
+                    messages: [{ to: `${phoneNumber}` }],
+                },
+            });
+            return res.status(200).json({msg:'인증번호가 전송되었습니다. 인증번호 유효시간은 3분입니다.',data: authNum})
         },
 
 

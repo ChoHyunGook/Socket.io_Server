@@ -12,7 +12,11 @@ const applyDotenv = dotenv => {
         ADMIN_MONGO_URI:process.env.ADMIN_MONGO_URI,
         AWS_SECRET:process.env.AWS_SECRET,
         AWS_ACCESS:process.env.AWS_ACCESS,
-        AWS_REGION:process.env.AWS_REGION
+        AWS_REGION:process.env.AWS_REGION,
+        SMS_service_id:process.env.SMS_SERVICE_API_ID,
+        SMS_secret_key:process.env.SMS_API_SECRET_KEY,
+        SMS_access_key:process.env.SMS_API_ACCESS_KEY,
+        SMS_PHONE:process.env.SMS_PHONE_NUM,
     }
 }
 

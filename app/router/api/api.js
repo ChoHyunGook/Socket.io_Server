@@ -4,6 +4,9 @@ const Api = require('../../service/api/api')
 const fs = require('fs')
 
 
+app.post('/sendSms',(req,res)=>{
+    Api().sendSms(req,res)
+})
 
 app.get('/awslog',(req,res)=>{
     Api().getAwsLogHistory(req,res)
