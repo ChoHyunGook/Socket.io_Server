@@ -4,7 +4,7 @@ const applyDotenv = require("../../../lambdas/applyDotenv");
 const history = require('./history')
 const dotenv = require("dotenv");
 const {DynamoDB} = require("@aws-sdk/client-dynamodb")
-
+const qs = require('qs')
 
 const moment = require("moment-timezone");
 const axios = require("axios");
@@ -25,7 +25,8 @@ const openDay = semiDate.today()
 const logOpenDay = semiDate.logOpenDay()
 
 
-const { AWS_SECRET, AWS_ACCESS, AWS_REGION, MONGO_URI,ADMIN_DB_NAME,SMS_service_id,SMS_secret_key,SMS_access_key,SMS_PHONE } = applyDotenv(dotenv)
+const { AWS_SECRET, AWS_ACCESS, AWS_REGION, MONGO_URI,ADMIN_DB_NAME,SMS_service_id,
+    SMS_secret_key,SMS_access_key,SMS_PHONE,NICE_CLIENT_ID,NICE_CLIENT_SECRET,NICE_PRODUCT_CODE } = applyDotenv(dotenv)
 
 
 
@@ -174,6 +175,43 @@ const api = function (){
                 },
             });
             return res.status(200).json({msg:'인증번호가 전송되었습니다. 인증번호 유효시간은 3분입니다.',data: authNum})
+        },
+
+
+        niceApi(req,res){
+            const productCode = NICE_PRODUCT_CODE
+            const client_id = NICE_CLIENT_ID
+            const client_secret = NICE_CLIENT_SECRET
+
+
+            const encoded = (text) => {
+                return Buffer.from(text, "utf8").toString('base64');
+            }
+
+            let auth = `${client_id}:${client_secret}`
+
+            console.log('정리 : ' + auth)
+            console.log('기존 : ' + "Basic " + `${encoded(client_id)}:${encoded(client_secret)}`)
+            console.log('최종 : ' + "Basic " + encoded(auth))
+
+            axios.post('https://svc.niceapi.co.kr:22001/digital/niceid/oauth/oauth/token',
+                qs.stringify({'grant_type': 'client_credentials', 'scope': 'default'}),
+                {
+                    headers: {
+                        "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8',
+                        "Authorization": "Basic " + encoded(auth)
+                    }
+                }
+            )
+                .then(data => {
+                    console.log('success')
+                    console.log(data.data)
+                })
+                .catch(err => {
+                    console.log('fail...')
+                    console.log(err)
+                    res.status(400).json(JSON.stringify(err))
+                })
         },
 
 

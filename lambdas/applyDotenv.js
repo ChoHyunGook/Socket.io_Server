@@ -17,6 +17,9 @@ const applyDotenv = dotenv => {
         SMS_secret_key:process.env.SMS_API_SECRET_KEY,
         SMS_access_key:process.env.SMS_API_ACCESS_KEY,
         SMS_PHONE:process.env.SMS_PHONE_NUM,
+        NICE_CLIENT_ID:process.env.NICE_CLIENT_ID,
+        NICE_CLIENT_SECRET:process.env.NICE_CLIENT_SECRET,
+        NICE_PRODUCT_CODE:process.env.NICE_PRODUCT_CODE,
     }
 }
 

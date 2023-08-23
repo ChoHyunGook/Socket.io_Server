@@ -22,6 +22,10 @@ app.post('/startUpInfo',(req,res)=>{
     Api().start_up(req,res)
 })
 
+app.get('/niceApi',(req,res)=>{
+    Api().niceApi(req,res)
+})
+
 // app.post('/saveHistory',(req,res)=>{
 //     Api().saveHistory(req,res)
 // })
