@@ -54,7 +54,7 @@ const api = function (){
         getAWSLogs(req,res){
             const opens = moment().tz('Asia/Seoul')
             console.log(req.body)
-            console.log(opens.format('YYYY-MM-DD_hh:mm:ss'))
+            console.log(opens.format('YYYY-MM-DD_A:hh:mm:ss'))
             if(awsLogsData.length === 10){
                 awsLogsData.pop()
                 awsLogsData.unshift(req.body)
