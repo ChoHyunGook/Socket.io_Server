@@ -22,7 +22,7 @@ app.post('/startUpInfo',(req,res)=>{
     Api().start_up(req,res)
 })
 
-app.get('/niceApi',(req,res)=>{
+app.post('/niceApi',(req,res)=>{
     Api().niceApi(req,res)
 })
 

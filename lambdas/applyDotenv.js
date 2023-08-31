@@ -20,6 +20,7 @@ const applyDotenv = dotenv => {
         NICE_CLIENT_ID:process.env.NICE_CLIENT_ID,
         NICE_CLIENT_SECRET:process.env.NICE_CLIENT_SECRET,
         NICE_PRODUCT_CODE:process.env.NICE_PRODUCT_CODE,
+        NICE_ACCESS_TOKEN:process.env.NICE_ACCESS_TOKEN
     }
 }
 

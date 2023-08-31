@@ -26,7 +26,8 @@ const logOpenDay = semiDate.logOpenDay()
 
 
 const { AWS_SECRET, AWS_ACCESS, AWS_REGION, MONGO_URI,ADMIN_DB_NAME,SMS_service_id,
-    SMS_secret_key,SMS_access_key,SMS_PHONE,NICE_CLIENT_ID,NICE_CLIENT_SECRET,NICE_PRODUCT_CODE } = applyDotenv(dotenv)
+    SMS_secret_key,SMS_access_key,SMS_PHONE,NICE_CLIENT_ID,NICE_CLIENT_SECRET,NICE_PRODUCT_CODE,
+    NICE_ACCESS_TOKEN } = applyDotenv(dotenv)
 
 
 
@@ -51,7 +52,9 @@ const api = function (){
 
 
         getAWSLogs(req,res){
+            const opens = moment().tz('Asia/Seoul')
             console.log(req.body)
+            console.log(opens.format('YYYY-MM-DD_hh:mm:ss'))
             if(awsLogsData.length === 10){
                 awsLogsData.pop()
                 awsLogsData.unshift(req.body)
@@ -179,39 +182,84 @@ const api = function (){
 
 
         niceApi(req,res){
+
+            const data = req.body
+
             const productCode = NICE_PRODUCT_CODE
+            const client_token = NICE_ACCESS_TOKEN
             const client_id = NICE_CLIENT_ID
             const client_secret = NICE_CLIENT_SECRET
+            const nowTime = new Date().getTime()/1000
 
 
             const encoded = (text) => {
                 return Buffer.from(text, "utf8").toString('base64');
             }
 
-            let auth = `${client_id}:${client_secret}`
 
-            console.log('정리 : ' + auth)
-            console.log('기존 : ' + "Basic " + `${encoded(client_id)}:${encoded(client_secret)}`)
-            console.log('최종 : ' + "Basic " + encoded(auth))
 
-            axios.post('https://svc.niceapi.co.kr:22001/digital/niceid/oauth/oauth/token',
-                qs.stringify({'grant_type': 'client_credentials', 'scope': 'default'}),
-                {
+            //토큰이 0일때 => api사용
+            if(data.token === 0){
+                const auth = `${client_token}:${nowTime}:${client_id}`
+                axios({
+                    url: 'https://svc.niceapi.co.kr:22001/digital/niceid/api/v1.0/common/crypto/token',
+                    data: data,
+                    headers: {
+                        "Content-Type": 'application/json',
+                        "Authorization": "Basic " + encoded(auth),
+                        "client_id": client_id,
+                        "ProductID": productCode
+                    }
+
+                })
+
+            }
+            //토큰이 1일때 => 토큰 새로생성
+            if(data.token === 1){
+                const auth = `${client_id}:${client_secret}`
+
+                axios.post('https://svc.niceapi.co.kr:22001/digital/niceid/oauth/oauth/token',
+                    qs.stringify({'grant_type': 'client_credentials', 'scope': 'default'}),
+                    {
+                        headers: {
+                            "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8',
+                            "Authorization": "Basic " + encoded(auth)
+                        }
+                    }
+                )
+                    .then(resData => {
+                        console.log('success')
+                        res.status(200).send(resData.data)
+                    })
+                    .catch(err => {
+                        console.log('fail...')
+                        console.log(err)
+                        res.status(400).send(err)
+                    })
+            }
+
+            //토큰이 2일때 => 토큰 삭제
+            if(data.token === 2){
+                const auth = `${client_token}:${nowTime}:${client_id}`
+
+                axios({
+                    method:'post',
+                    url:'https://svc.niceapi.co.kr:22001/digital/niceid/oauth/oauth/token/revokeById',
                     headers: {
                         "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8',
                         "Authorization": "Basic " + encoded(auth)
                     }
-                }
-            )
-                .then(data => {
-                    console.log('success')
-                    console.log(data.data)
                 })
-                .catch(err => {
-                    console.log('fail...')
-                    console.log(err)
-                    res.status(400).json(JSON.stringify(err))
-                })
+                    .then(resData=>{
+                        res.status(200).send(resData.data)
+                    })
+                    .catch(err=>{
+                        res.status(400).send(err)
+                    })
+
+            }
+
+
         },
 
 
