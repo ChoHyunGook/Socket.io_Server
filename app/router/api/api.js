@@ -42,6 +42,10 @@ app.get('/', (req,res)=>{
 //     Api().dynamoUserKey(req,res)
 // })
 
+app.get('/deviceVersion/download',(req,res)=>{
+    Api().deviceVersion(req,res)
+})
+
 
 
 

@@ -5,6 +5,9 @@ const history = require('./history')
 const dotenv = require("dotenv");
 const {DynamoDB} = require("@aws-sdk/client-dynamodb")
 const qs = require('qs')
+const fs = require("fs")
+const AWS = require("aws-sdk")
+
 
 const moment = require("moment-timezone");
 const axios = require("axios");
@@ -25,7 +28,7 @@ const openDay = semiDate.today()
 const logOpenDay = semiDate.logOpenDay()
 
 
-const { AWS_SECRET, AWS_ACCESS, AWS_REGION, MONGO_URI,ADMIN_DB_NAME,SMS_service_id,
+const { AWS_SECRET, AWS_ACCESS, AWS_REGION,AWS_BUCKET_NAME, MONGO_URI,ADMIN_DB_NAME,SMS_service_id,
     SMS_secret_key,SMS_access_key,SMS_PHONE,NICE_CLIENT_ID,NICE_CLIENT_SECRET,NICE_PRODUCT_CODE,
     NICE_ACCESS_TOKEN } = applyDotenv(dotenv)
 
@@ -259,6 +262,62 @@ const api = function (){
 
             }
 
+
+        },
+
+        async deviceVersion(req, res) {
+            const versionCheck = req.body.version
+            const ClientId = AWS_SECRET
+            const ClientSecret = AWS_ACCESS
+            const Bucket_name = AWS_BUCKET_NAME
+
+            const s3 = new AWS.S3({
+                accessKeyId: ClientId,
+                secretAccessKey: ClientSecret,
+                region: 'ap-northeast-2'
+            });
+            //V50_2023_09_06.bin
+            await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
+                const contents = list.Contents
+                let doorbell=[]
+                contents.map(e=>{
+                    if(e.Key.includes('doorbell') === true){
+                        const date = e.Key.split('/')[1].split('.')[1]
+                        if(date !== undefined){
+                            if(doorbell.length > 0) {
+                                if(doorbell[0].date.split('_').join('') < date.split('_').join('')){
+                                    let data = {
+                                        key:e.Key,
+                                        date:date
+                                    }
+                                    doorbell[0] = data
+                                }
+                            }else{
+                                let data = {
+                                    key:e.Key,
+                                    date:date
+                                }
+                                doorbell.push(data)
+                            }
+                        }
+                    }
+                })
+                const params = {
+                    Bucket:Bucket_name,
+                    Key:doorbell[0].key
+                }
+                s3.getObject(params,function (err,data){
+                    if(err){
+                        console.log(err)
+                    }else{
+                        console.log(doorbell[0].key)
+                        res.writeHead(200,[
+                            ['Content-Type',`application/zip`],
+                        ])
+                        res.end(Buffer.from(data.Body,'base64'))
+                    }
+                })
+            })
 
         },
 
