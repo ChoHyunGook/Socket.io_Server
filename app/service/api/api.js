@@ -317,7 +317,8 @@ const api = function (){
                             console.log(sendData[0].key)
                             res.writeHead(200,
                                 {'Content-Type':`application/zip`,
-                                    'Content-Length':data.ContentLength},
+                                    'Content-Length':data.ContentLength,
+                                    'Content-Disposition': `filename="${sendData[0].key.split('/')[1]}";`},
                             )
                             res.end(Buffer.from(data.Body,'base64'))
 
