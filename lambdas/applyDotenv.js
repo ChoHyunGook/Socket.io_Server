@@ -21,7 +21,11 @@ const applyDotenv = dotenv => {
         NICE_CLIENT_SECRET:process.env.NICE_CLIENT_SECRET,
         NICE_PRODUCT_CODE:process.env.NICE_PRODUCT_CODE,
         NICE_ACCESS_TOKEN:process.env.NICE_ACCESS_TOKEN,
-        AWS_BUCKET_NAME:process.env.AWS_BUCKET_NAME
+        AWS_BUCKET_NAME:process.env.AWS_BUCKET_NAME,
+        DEV_DEVICE_ADMIN:process.env.DEV_DEVICE_ADMIN,
+        DEV_APP_ADMIN:process.env.DEV_APP_ADMIN,
+        DEV_SEVER_ADMIN:process.env.DEV_SEVER_ADMIN,
+        DEV_CEO_ADMIN:process.env.DEV_CEO_ADMIN,
     }
 }
 

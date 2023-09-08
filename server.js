@@ -1,6 +1,7 @@
 const express =require('express')
 const dotenv = require('dotenv')
 const morgan = require('morgan')
+const ejs = require('ejs')
 
 const ResponseService = require('./lambdas/response')
 const applyDotenv = require('./lambdas/applyDotenv')

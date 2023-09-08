@@ -18,6 +18,7 @@ var Client = require('mongodb').MongoClient;
 const apiLogs = db.logs
 const Info = db.Info
 const History = db.history
+const Version = db.version
 
 let count = 0;
 let awsLogsData = [];
@@ -30,7 +31,7 @@ const logOpenDay = semiDate.logOpenDay()
 
 const { AWS_SECRET, AWS_ACCESS, AWS_REGION,AWS_BUCKET_NAME, MONGO_URI,ADMIN_DB_NAME,SMS_service_id,
     SMS_secret_key,SMS_access_key,SMS_PHONE,NICE_CLIENT_ID,NICE_CLIENT_SECRET,NICE_PRODUCT_CODE,
-    NICE_ACCESS_TOKEN } = applyDotenv(dotenv)
+    NICE_ACCESS_TOKEN,DEV_DEVICE_ADMIN,DEV_APP_ADMIN,DEV_SEVER_ADMIN,DEV_CEO_ADMIN } = applyDotenv(dotenv)
 
 
 
@@ -265,7 +266,7 @@ const api = function (){
 
         },
 
-        async deviceVersion(req, res) {
+        async deviceVersionDownload(req, res) {
             const models = req.query.version
             const ClientId = AWS_SECRET
             const ClientSecret = AWS_ACCESS
@@ -316,7 +317,7 @@ const api = function (){
                         }else{
                             console.log(sendData[0].key)
                             res.writeHead(200,
-                                {'Content-Type':`application/zip`,
+                                {'Content-Type':`application/octet-stream`,
                                     'Content-Length':data.ContentLength,
                                     'Content-Disposition': `filename="${sendData[0].key.split('/')[1]}";`},
                             )
@@ -330,6 +331,28 @@ const api = function (){
 
         },
 
+        deviceUpload(req,res){
+          const devAdmin = req.query.dev
+
+            if(devAdmin !== DEV_CEO_ADMIN && devAdmin !== DEV_SEVER_ADMIN && devAdmin !== DEV_APP_ADMIN &&
+                devAdmin !== DEV_DEVICE_ADMIN){
+                res.status(200).send('접근 불가 관리자 전용 페이지입니다.')
+            }else{
+                const date = moment().tz('Asia/Seoul')
+                let data = {
+                    access_id:devAdmin.split('.')[4]+'.'+devAdmin.split('.')[5]+'.'+devAdmin.split('.')[6],
+                    access_name:devAdmin.split('.')[3] === 'ChoHG' ? '조현국': devAdmin.split('.')[3] === 'NamDH' ? '남대현': devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선',
+                    department:devAdmin.split('.')[1],
+                    contents:'devLogin',
+                    date:date.format('YYYY-MM-DD kk:mm:ss')
+                }
+                new Version(data).save()
+                    .then(r=>console.log('Version Login History Save Success'))
+                    .catch(err=>console.log('Version Login History Save Fail',err))
+
+                res.status(200).send(`접근 성공 접근자: ${data.access_name}`)
+            }
+        },
 
 
     }

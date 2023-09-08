@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express();
 const Api = require('../../service/api/api')
-const fs = require('fs')
+
 
 
 app.post('/sendSms',(req,res)=>{
@@ -43,8 +43,12 @@ app.get('/', (req,res)=>{
 // })
 
 app.get('/deviceVersion/download',(req,res,next)=>{
-    Api().deviceVersion(req,res)
+    Api().deviceVersionDownload(req,res)
 })
+app.get('/deviceVersion/update/dev',(req,res)=>{
+    Api().deviceUpload(req,res)
+})
+
 
 
 
