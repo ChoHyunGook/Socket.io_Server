@@ -266,7 +266,7 @@ const api = function (){
         },
 
         async deviceVersion(req, res) {
-            const versionCheck = req.body.version
+            const models = req.query.version
             const ClientId = AWS_SECRET
             const ClientSecret = AWS_ACCESS
             const Bucket_name = AWS_BUCKET_NAME
@@ -274,53 +274,60 @@ const api = function (){
             const s3 = new AWS.S3({
                 accessKeyId: ClientId,
                 secretAccessKey: ClientSecret,
-                region: 'ap-northeast-2'
+                region: AWS_REGION
             });
-            //V50_2023_09_06.bin
+
             await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
                 const contents = list.Contents
-                let doorbell=[]
+                let sendData = []
                 contents.map(e=>{
-                    if(e.Key.includes('doorbell') === true){
+                    if(e.Key.split('/')[0] === models.split('.')[0]){
                         const date = e.Key.split('/')[1].split('.')[1]
                         if(date !== undefined){
-                            if(doorbell.length > 0) {
-                                if(doorbell[0].date.split('_').join('') < date.split('_').join('')){
+                            if(sendData.length > 0){
+                                console.log(sendData)
+                                if(sendData[0].date.split('_').join('') < date.split('_').join('')){
                                     let data = {
                                         key:e.Key,
                                         date:date
                                     }
-                                    doorbell[0] = data
+                                    sendData[0] = data
                                 }
                             }else{
                                 let data = {
                                     key:e.Key,
                                     date:date
                                 }
-                                doorbell.push(data)
+                                sendData.push(data)
                             }
                         }
                     }
                 })
-                const params = {
-                    Bucket:Bucket_name,
-                    Key:doorbell[0].key
-                }
-                s3.getObject(params,function (err,data){
-                    if(err){
-                        console.log(err)
-                    }else{
-                        console.log(doorbell[0].key)
-                        console.log(data)
-                        res.writeHead(200,
-                            {'Content-Type':`application/octet-stream`,
-                                'Content-Length':data.ContentLength},
-                        )
-                        res.end(Buffer.from(data.Body,'base64'))
 
+                if(sendData[0].date.split('_').join('') <= models.split('.')[1].split('_').join('')){
+                    res.status(200).send('This is the latest version of the device')
+                }else{
+                    const params = {
+                        Bucket:Bucket_name,
+                        Key:sendData[0].key
                     }
-                })
-            })
+                    s3.getObject(params,function (err,data){
+                        if(err){
+                            console.log(err)
+                        }else{
+                            console.log(sendData[0].key)
+                            console.log(data)
+                            res.writeHead(200,
+                                {'Content-Type':`application/zip`,
+                                    'Content-Length':data.ContentLength},
+                            )
+                            res.end(Buffer.from(data.Body,'base64'))
+
+                        }
+                    })
+                }
+
+             })
 
         },
 

@@ -42,7 +42,7 @@ app.get('/', (req,res)=>{
 //     Api().dynamoUserKey(req,res)
 // })
 
-app.get('/deviceVersion/download',(req,res)=>{
+app.get('/deviceVersion/download',(req,res,next)=>{
     Api().deviceVersion(req,res)
 })
 
