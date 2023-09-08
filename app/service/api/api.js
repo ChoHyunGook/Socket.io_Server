@@ -311,10 +311,13 @@ const api = function (){
                         console.log(err)
                     }else{
                         console.log(doorbell[0].key)
-                        res.writeHead(200,[
-                            ['Content-Type',`application/zip`],
-                        ])
+                        console.log(data)
+                        res.writeHead(200,
+                            {'Content-Type':`application/octet-stream`,
+                                'Content-Length':data.ContentLength},
+                        )
                         res.end(Buffer.from(data.Body,'base64'))
+
                     }
                 })
             })
