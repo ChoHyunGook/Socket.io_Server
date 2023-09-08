@@ -285,7 +285,6 @@ const api = function (){
                         const date = e.Key.split('/')[1].split('.')[1]
                         if(date !== undefined){
                             if(sendData.length > 0){
-                                console.log(sendData)
                                 if(sendData[0].date.split('_').join('') < date.split('_').join('')){
                                     let data = {
                                         key:e.Key,
@@ -316,7 +315,6 @@ const api = function (){
                             console.log(err)
                         }else{
                             console.log(sendData[0].key)
-                            console.log(data)
                             res.writeHead(200,
                                 {'Content-Type':`application/zip`,
                                     'Content-Length':data.ContentLength},
