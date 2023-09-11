@@ -1,7 +1,10 @@
 const express = require('express')
 const app = express();
 const Api = require('../../service/api/api')
-
+const multer = require('multer');
+const {router} = require("express/lib/application");
+var storage = multer.memoryStorage()
+var upload = multer({storage: storage});
 
 
 app.post('/sendSms',(req,res)=>{
@@ -48,6 +51,11 @@ app.get('/deviceVersion/download',(req,res,next)=>{
 app.get('/deviceVersion/update/dev',(req,res)=>{
     Api().deviceUpload(req,res)
 })
+
+app.post('/uploadS3File', upload.single('file'), function (req,res){
+    Api().deviceS3Upload(req,res)
+});
+
 
 
 

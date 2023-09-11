@@ -24,29 +24,29 @@ let count = 0;
 let awsLogsData = [];
 
 
-
 const openDay = semiDate.today()
 const logOpenDay = semiDate.logOpenDay()
 
 
-const { AWS_SECRET, AWS_ACCESS, AWS_REGION,AWS_BUCKET_NAME, MONGO_URI,ADMIN_DB_NAME,SMS_service_id,
-    SMS_secret_key,SMS_access_key,SMS_PHONE,NICE_CLIENT_ID,NICE_CLIENT_SECRET,NICE_PRODUCT_CODE,
-    NICE_ACCESS_TOKEN,DEV_DEVICE_ADMIN,DEV_APP_ADMIN,DEV_SEVER_ADMIN,DEV_CEO_ADMIN } = applyDotenv(dotenv)
+const {
+    AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, MONGO_URI, ADMIN_DB_NAME, SMS_service_id,
+    SMS_secret_key, SMS_access_key, SMS_PHONE, NICE_CLIENT_ID, NICE_CLIENT_SECRET, NICE_PRODUCT_CODE,
+    NICE_ACCESS_TOKEN, DEV_DEVICE_ADMIN, DEV_APP_ADMIN, DEV_SEVER_ADMIN, DEV_CEO_ADMIN
+} = applyDotenv(dotenv)
 
 
-
-const api = function (){
-    return{
+const api = function () {
+    return {
         //{id:xx, tel:xx}
-        start_up(req,res){
-            const data =req.body
+        start_up(req, res) {
+            const data = req.body
             Client.connect(MONGO_URI)
-                .then(dbs=>{
+                .then(dbs => {
                     let database = dbs.db(ADMIN_DB_NAME)
-                    database.collection('tables').find({id:data.id,tel:data.tel}).toArray().then(data=>{
-                        if(data.length === 0){
+                    database.collection('tables').find({id: data.id, tel: data.tel}).toArray().then(data => {
+                        if (data.length === 0) {
                             res.status(400).send('해당하는 가입정보가 없습니다. 개통 완료 후 이용해주세요.')
-                        }else{
+                        } else {
                             res.status(200).send(data)
                         }
                     })
@@ -54,48 +54,47 @@ const api = function (){
         },
 
 
-
-        getAWSLogs(req,res){
+        getAWSLogs(req, res) {
             const opens = moment().tz('Asia/Seoul')
             console.log(req.body)
             console.log(opens.format('YYYY-MM-DD_A:hh:mm:ss'))
-            if(awsLogsData.length === 10){
+            if (awsLogsData.length === 10) {
                 awsLogsData.pop()
                 awsLogsData.unshift(req.body)
-            }else{
+            } else {
                 awsLogsData.unshift(req.body)
             }
         },
 
-        getAwsLogHistory(req,res){
+        getAwsLogHistory(req, res) {
             res.status(200).send(awsLogsData)
         },
 
         getHistory(req, res) {
-            history().historiesData(req,res)
+            history().historiesData(req, res)
         },
 
-        saveHistory(req,res){
-            history().saveHistory(req,res)
+        saveHistory(req, res) {
+            history().saveHistory(req, res)
         },
 
 
-        getService(req,res){
+        getService(req, res) {
             console.log('get...')
-            const ip = req.headers['x-forwarded-for'] ||  req.connection.remoteAddress;
+            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const today = semiDate.today()
             const connectDate = semiDate.connectDate()
 
             res.send(`@@@@@ ${today} 서버 ON 접속 IP: ${ip} @@@@@ 서버오픈 ${openDay} @@@@@`)
-            const logDb = { log: `API::GET::${connectDate}::${ip}::${logOpenDay}::/getSign` }
+            const logDb = {log: `API::GET::${connectDate}::${ip}::${logOpenDay}::/getSign`}
 
             new apiLogs(logDb).save()
                 .then(r => console.log('Log data Save...'))
-                .catch(err => console.log('Log Save Error',err))
+                .catch(err => console.log('Log Save Error', err))
         },
 
         //디바이스 fileName용 Date
-        deviceVideoDate(req,res){
+        deviceVideoDate(req, res) {
             const opens = moment().tz('Asia/Seoul')
             const date = opens.format('YYYY_MM_DD_HH_mm_ss')
             res.status(200).send(date)
@@ -105,30 +104,30 @@ const api = function (){
         //data = { device_id: device_id값 }
         async dynamoUserKey(req, res) {
             const data = req.body
-            const client = new DynamoDB({ AWS_REGION })
+            const client = new DynamoDB({AWS_REGION})
             const tableData = await client.scan({
                 TableName: 'DEVICE_TABLE',
                 Key: {'device_id': data.device_id}
             })
             const items = tableData.Items
 
-            let db=[];
+            let db = [];
 
-            items.map(e=>{
-                if(e.device_id.S === data.device_id){
+            items.map(e => {
+                if (e.device_id.S === data.device_id) {
                     db.push(e.user_key.S)
                 }
             })
 
-            if(db.length === 0){
+            if (db.length === 0) {
                 res.status(400).send('해당 device_id로 일치하는 값이 없습니다.')
-            }else{
+            } else {
                 res.status(200).send(db)
             }
 
         },
 
-        sendSms(req,res){
+        sendSms(req, res) {
             const phoneNumber = req.body.phone
             const phoneSubject = req.body.subject
             const date = Date.now().toString()
@@ -163,9 +162,9 @@ const api = function (){
 
 
             axios({
-                method:method,
-                json:true,
-                url:url,
+                method: method,
+                json: true,
+                url: url,
                 headers: {
                     "Contenc-type": "application/json; charset=utf-8",
                     "x-ncp-iam-access-key": accessKey,
@@ -173,19 +172,19 @@ const api = function (){
                     ,
                     "x-ncp-apigw-signature-v2": signature,
                 },
-                data:{
-                    type:"SMS",
+                data: {
+                    type: "SMS",
                     countryCode: "82",
                     from: smsPhone,
                     content: `[DoorbellSquare]\n [${phoneSubject} 서비스]\n 인증번호는 [${authNum}] 입니다.`,
-                    messages: [{ to: `${phoneNumber}` }],
+                    messages: [{to: `${phoneNumber}`}],
                 },
             });
-            return res.status(200).json({msg:'인증번호가 전송되었습니다. 인증번호 유효시간은 3분입니다.',data: authNum})
+            return res.status(200).json({msg: '인증번호가 전송되었습니다. 인증번호 유효시간은 3분입니다.', data: authNum})
         },
 
 
-        niceApi(req,res){
+        niceApi(req, res) {
 
             const data = req.body
 
@@ -193,7 +192,7 @@ const api = function (){
             const client_token = NICE_ACCESS_TOKEN
             const client_id = NICE_CLIENT_ID
             const client_secret = NICE_CLIENT_SECRET
-            const nowTime = new Date().getTime()/1000
+            const nowTime = new Date().getTime() / 1000
 
 
             const encoded = (text) => {
@@ -201,9 +200,8 @@ const api = function (){
             }
 
 
-
             //토큰이 0일때 => api사용
-            if(data.token === 0){
+            if (data.token === 0) {
                 const auth = `${client_token}:${nowTime}:${client_id}`
                 axios({
                     url: 'https://svc.niceapi.co.kr:22001/digital/niceid/api/v1.0/common/crypto/token',
@@ -219,7 +217,7 @@ const api = function (){
 
             }
             //토큰이 1일때 => 토큰 새로생성
-            if(data.token === 1){
+            if (data.token === 1) {
                 const auth = `${client_id}:${client_secret}`
 
                 axios.post('https://svc.niceapi.co.kr:22001/digital/niceid/oauth/oauth/token',
@@ -243,21 +241,21 @@ const api = function (){
             }
 
             //토큰이 2일때 => 토큰 삭제
-            if(data.token === 2){
+            if (data.token === 2) {
                 const auth = `${client_token}:${nowTime}:${client_id}`
 
                 axios({
-                    method:'post',
-                    url:'https://svc.niceapi.co.kr:22001/digital/niceid/oauth/oauth/token/revokeById',
+                    method: 'post',
+                    url: 'https://svc.niceapi.co.kr:22001/digital/niceid/oauth/oauth/token/revokeById',
                     headers: {
                         "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8',
                         "Authorization": "Basic " + encoded(auth)
                     }
                 })
-                    .then(resData=>{
+                    .then(resData => {
                         res.status(200).send(resData.data)
                     })
-                    .catch(err=>{
+                    .catch(err => {
                         res.status(400).send(err)
                     })
 
@@ -281,77 +279,118 @@ const api = function (){
             await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
                 const contents = list.Contents
                 let sendData = []
-                contents.map(e=>{
-                    if(e.Key.split('/')[0] === models.split('.')[0]){
-                        const date = e.Key.split('/')[1].split('.')[1]
-                        if(date !== undefined){
-                            if(sendData.length > 0){
-                                if(sendData[0].date.split('_').join('') < date.split('_').join('')){
-                                    let data = {
-                                        key:e.Key,
-                                        date:date
+                contents.map(e => {
+                    if (e.Key.split('/')[0] === 'device') {
+                        if (e.Key.split('/')[1] === models.split('.')[0]) {
+                            const date = e.Key.split('/')[2].split('.')[1]
+                            if (date !== undefined) {
+                                if (sendData.length > 0) {
+                                    if (sendData[0].date.split('_').join('') < date.split('_').join('')) {
+                                        let data = {
+                                            key: e.Key,
+                                            date: date
+                                        }
+                                        sendData[0] = data
                                     }
-                                    sendData[0] = data
+                                } else {
+                                    let data = {
+                                        key: e.Key,
+                                        date: date
+                                    }
+                                    sendData.push(data)
                                 }
-                            }else{
-                                let data = {
-                                    key:e.Key,
-                                    date:date
-                                }
-                                sendData.push(data)
                             }
                         }
                     }
                 })
 
-                if(sendData[0].date.split('_').join('') <= models.split('.')[1].split('_').join('')){
+                if (sendData[0].date.split('_').join('') <= models.split('.')[1].split('_').join('')) {
                     res.status(200).send('This is the latest version of the device')
-                }else{
+                } else {
                     const params = {
-                        Bucket:Bucket_name,
-                        Key:sendData[0].key
+                        Bucket: Bucket_name,
+                        Key: sendData[0].key
                     }
-                    s3.getObject(params,function (err,data){
-                        if(err){
+                    s3.getObject(params, function (err, data) {
+                        if (err) {
                             console.log(err)
-                        }else{
+                        } else {
                             console.log(sendData[0].key)
                             res.writeHead(200,
-                                {'Content-Type':`application/octet-stream`,
-                                    'Content-Length':data.ContentLength,
-                                    'Content-Disposition': `filename="${sendData[0].key.split('/')[1]}";`},
+                                {
+                                    'Content-Type': `application/octet-stream`,
+                                    'Content-Length': data.ContentLength,
+                                    'Content-Disposition': `filename="${sendData[0].key.split('/')[2]}";`
+                                },
                             )
-                            res.end(Buffer.from(data.Body,'base64'))
+                            res.end(Buffer.from(data.Body, 'base64'))
 
                         }
                     })
                 }
 
-             })
+            })
 
         },
 
-        deviceUpload(req,res){
-          const devAdmin = req.query.dev
+        async deviceUpload(req, res) {
+            const devAdmin = req.query.dev
+            const ClientId = AWS_SECRET
+            const ClientSecret = AWS_ACCESS
+            const Bucket_name = AWS_BUCKET_NAME
 
-            if(devAdmin !== DEV_CEO_ADMIN && devAdmin !== DEV_SEVER_ADMIN && devAdmin !== DEV_APP_ADMIN &&
-                devAdmin !== DEV_DEVICE_ADMIN){
+            const s3 = new AWS.S3({
+                accessKeyId: ClientId,
+                secretAccessKey: ClientSecret,
+                region: AWS_REGION
+            });
+
+            if (devAdmin !== DEV_CEO_ADMIN && devAdmin !== DEV_SEVER_ADMIN && devAdmin !== DEV_APP_ADMIN &&
+                devAdmin !== DEV_DEVICE_ADMIN) {
                 res.status(200).send('접근 불가 관리자 전용 페이지입니다.')
-            }else{
+            } else {
                 const date = moment().tz('Asia/Seoul')
+
                 let data = {
-                    access_id:devAdmin.split('.')[4]+'.'+devAdmin.split('.')[5]+'.'+devAdmin.split('.')[6],
-                    access_name:devAdmin.split('.')[3] === 'ChoHG' ? '조현국': devAdmin.split('.')[3] === 'NamDH' ? '남대현': devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선',
-                    department:devAdmin.split('.')[1],
-                    contents:'devLogin',
-                    date:date.format('YYYY-MM-DD kk:mm:ss')
+                    access_id: devAdmin.split('.')[4] + '.' + devAdmin.split('.')[5] + '.' + devAdmin.split('.')[6],
+                    access_name: devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' : devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선',
+                    department: devAdmin.split('.')[1],
+                    contents: 'devLogin',
+                    date: date.format('YYYY-MM-DD kk:mm:ss')
                 }
                 new Version(data).save()
-                    .then(r=>console.log('Version Login History Save Success'))
-                    .catch(err=>console.log('Version Login History Save Fail',err))
+                    .then(r => console.log('Version Login History Save Success'))
+                    .catch(err => console.log('Version Login History Save Fail', err))
+                if (data.department === 'CEO' || data.department === 'Server') {
+                    // 전체 데이터 디바이스,앱,서버
 
-                res.status(200).send(`접근 성공 접근자: ${data.access_name}`)
+                    await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
+                        const contents = list.Contents
+                        let sendData = []
+                        contents.map(e => {
+                            console.log(e)
+                        })
+                        res.render('index', {data: data})
+                    })
+                }
+                if (data.department === 'Device' || data.department === 'App') {
+                    //디바이스, 앱
+
+                    await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
+                        const contents = list.Contents
+                        let sendData = []
+                        contents.map(e => {
+
+                        })
+                    })
+
+                }
+
             }
+        },
+
+        deviceS3Upload(req, res) {
+            console.log(req.file)
         },
 
 
