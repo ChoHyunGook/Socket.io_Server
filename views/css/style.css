@@ -272,3 +272,18 @@ td.text-right {
     text-align: right;
 }
 
+select {
+    box-sizing: border-box;
+    width: 100px;
+    padding: 4px;
+    font-size: 14px;
+    border-radius: 6px;
+}
+
+option {
+    padding: 4px;
+    font-size: 14px;
+    color: #fff;
+    background: #272822;
+}
+

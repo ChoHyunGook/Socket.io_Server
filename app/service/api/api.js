@@ -18,7 +18,7 @@ var Client = require('mongodb').MongoClient;
 const apiLogs = db.logs
 const Info = db.Info
 const History = db.history
-const Version = db.version
+
 
 let count = 0;
 let awsLogsData = [];
@@ -264,134 +264,7 @@ const api = function () {
 
         },
 
-        async deviceVersionDownload(req, res) {
-            const models = req.query.version
-            const ClientId = AWS_SECRET
-            const ClientSecret = AWS_ACCESS
-            const Bucket_name = AWS_BUCKET_NAME
 
-            const s3 = new AWS.S3({
-                accessKeyId: ClientId,
-                secretAccessKey: ClientSecret,
-                region: AWS_REGION
-            });
-
-            await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
-                const contents = list.Contents
-                let sendData = []
-                contents.map(e => {
-                    if (e.Key.split('/')[0] === 'device') {
-                        if (e.Key.split('/')[1] === models.split('.')[0]) {
-                            const date = e.Key.split('/')[2].split('.')[1]
-                            if (date !== undefined) {
-                                if (sendData.length > 0) {
-                                    if (sendData[0].date.split('_').join('') < date.split('_').join('')) {
-                                        let data = {
-                                            key: e.Key,
-                                            date: date
-                                        }
-                                        sendData[0] = data
-                                    }
-                                } else {
-                                    let data = {
-                                        key: e.Key,
-                                        date: date
-                                    }
-                                    sendData.push(data)
-                                }
-                            }
-                        }
-                    }
-                })
-
-                if (sendData[0].date.split('_').join('') <= models.split('.')[1].split('_').join('')) {
-                    res.status(200).send('This is the latest version of the device')
-                } else {
-                    const params = {
-                        Bucket: Bucket_name,
-                        Key: sendData[0].key
-                    }
-                    s3.getObject(params, function (err, data) {
-                        if (err) {
-                            console.log(err)
-                        } else {
-                            console.log(sendData[0].key)
-                            res.writeHead(200,
-                                {
-                                    'Content-Type': `application/octet-stream`,
-                                    'Content-Length': data.ContentLength,
-                                    'Content-Disposition': `filename="${sendData[0].key.split('/')[2]}";`
-                                },
-                            )
-                            res.end(Buffer.from(data.Body, 'base64'))
-
-                        }
-                    })
-                }
-
-            })
-
-        },
-
-        async deviceUpload(req, res) {
-            const devAdmin = req.query.dev
-            const ClientId = AWS_SECRET
-            const ClientSecret = AWS_ACCESS
-            const Bucket_name = AWS_BUCKET_NAME
-
-            const s3 = new AWS.S3({
-                accessKeyId: ClientId,
-                secretAccessKey: ClientSecret,
-                region: AWS_REGION
-            });
-
-            if (devAdmin !== DEV_CEO_ADMIN && devAdmin !== DEV_SEVER_ADMIN && devAdmin !== DEV_APP_ADMIN &&
-                devAdmin !== DEV_DEVICE_ADMIN) {
-                res.status(200).send('접근 불가 관리자 전용 페이지입니다.')
-            } else {
-                const date = moment().tz('Asia/Seoul')
-
-                let data = {
-                    access_id: devAdmin.split('.')[4] + '.' + devAdmin.split('.')[5] + '.' + devAdmin.split('.')[6],
-                    access_name: devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' : devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선',
-                    department: devAdmin.split('.')[1],
-                    contents: 'devLogin',
-                    date: date.format('YYYY-MM-DD kk:mm:ss')
-                }
-                new Version(data).save()
-                    .then(r => console.log('Version Login History Save Success'))
-                    .catch(err => console.log('Version Login History Save Fail', err))
-                if (data.department === 'CEO' || data.department === 'Server') {
-                    // 전체 데이터 디바이스,앱,서버
-
-                    await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
-                        const contents = list.Contents
-                        let sendData = []
-                        contents.map(e => {
-                            console.log(e)
-                        })
-                        res.render('index', {data: data})
-                    })
-                }
-                if (data.department === 'Device' || data.department === 'App') {
-                    //디바이스, 앱
-
-                    await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
-                        const contents = list.Contents
-                        let sendData = []
-                        contents.map(e => {
-
-                        })
-                    })
-
-                }
-
-            }
-        },
-
-        deviceS3Upload(req, res) {
-            console.log(req.file)
-        },
 
 
     }

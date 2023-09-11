@@ -1,6 +1,7 @@
 const express = require('express')
 const app = express();
 const Api = require('../../service/api/api')
+const Management = require('../../service/api/management')
 const multer = require('multer');
 const {router} = require("express/lib/application");
 var storage = multer.memoryStorage()
@@ -46,15 +47,19 @@ app.get('/', (req,res)=>{
 // })
 
 app.get('/deviceVersion/download',(req,res,next)=>{
-    Api().deviceVersionDownload(req,res)
+    Management().deviceVersionDownload(req,res)
 })
-app.get('/deviceVersion/update/dev',(req,res)=>{
-    Api().deviceUpload(req,res)
+app.get('/deviceVersion/dev/file/Management',(req,res)=>{
+    Management().fileManagement(req,res)
 })
 
 app.post('/uploadS3File', upload.single('file'), function (req,res){
-    Api().deviceS3Upload(req,res)
+    Management().deviceS3Upload(req,res)
 });
+app.post('/department/version/download',(req,res)=>{
+    Management().departVersionDownload(req,res)
+})
+
 
 
 
