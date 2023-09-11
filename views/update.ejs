@@ -21,6 +21,17 @@
     <div class="outset">
             <h1> 버전 파일 업로드 성공</h1>
         <h2> 업로드 파일명 : <%= data.contents.split('.')[2]+'.'+data.contents.split('.')[3]+'.'+data.contents.split('.')[4] %></h2>
+        <form
+                action="http://socket.doorbellsquare.com:8080/deviceVersion/dev/file/Management"
+                method="get"
+                enctype="application/x-www-form-urlencoded"
+        >
+            <input type="hidden" name="dev" value="<%= param.param%>">
+            <button type="submit" class="custom-btn btn-12">
+                <span> Move !</span>
+                <span> Management로 이동 </span>
+            </button>
+        </form>
     </div>
     <br/>
 

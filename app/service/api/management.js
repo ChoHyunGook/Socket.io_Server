@@ -198,6 +198,10 @@ const management = function () {
             const file = req.file
             const loginData = JSON.parse(req.body.data)
             const filter = file.originalname.split('.')
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            let param = {
+                param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
+            }
             if(filter[1].length !== 13){
                 res.status(200).send(`올바른 파일명(날짜_시간)을 작성 후 첨부해주세요. 올바른 예시 : 20230901_1301, 작성하신 파일명(날짜시간) : ${filter[filter.length -2]} `)
             }else if(filter[2] !== 'bin' && filter[2] !== 'zip'){
@@ -222,7 +226,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             } else if(file.originalname.split('.')[0] === 'bldc'){
                 const params={
@@ -241,10 +245,11 @@ const management = function () {
                         contents: `DeviceUploadData.bldc.${file.originalname}`,
                         date: date.format('YYYY-MM-DD HH:mm:ss')
                     }
+                    
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             } else if(file.originalname.split('.')[0] === 'blwc'){
                 const params={
@@ -266,7 +271,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             } else if(file.originalname.split('.')[0] === 'blvc'){
                 const params={
@@ -288,7 +293,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             } else if(file.originalname.split('.')[0] === 'blsi'){
                 const params={
@@ -310,7 +315,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }else if(file.originalname.split('.')[0]==='apiServer'){
                 const params={
@@ -332,7 +337,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }else if(file.originalname.split('.')[0]==='doorbellAdmin'){
                 const params={
@@ -354,7 +359,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }
             else if(file.originalname.split('.')[0]==='doorbellGo'){
@@ -377,7 +382,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }
             else if(file.originalname.split('.')[0]==='lambda'){
@@ -400,7 +405,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }
             else if(file.originalname.split('.')[0]==='sleepcore'){
@@ -423,7 +428,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }
             else if(file.originalname.split('.')[0]==='fastStroke'){
@@ -446,7 +451,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }
             else if(file.originalname.split('.')[0]==='doorbellApp'){
@@ -469,7 +474,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }
             else if(file.originalname.split('.')[0]==='sleepcoreApp'){
@@ -492,7 +497,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }
             else if(file.originalname.split('.')[0]==='fastStrokeApp'){
@@ -515,7 +520,7 @@ const management = function () {
                     new Version(versionData).save()
                         .then(r => console.log('Version Update History Save Success'))
                         .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData})
+                    res.render('update',{data:versionData,param:param})
                 })
             }else{
                 res.status(200).send(`약속된 파일명을 기입해주세요. (파일명 확인 요망) 첨부된파일명 : ${file.originalname}`)
