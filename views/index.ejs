@@ -191,33 +191,33 @@
     </div>
 
     <br/>
-    <div class="outset">
-        <form
-                action="http://socket.doorbellsquare.com:8080/management/history/log"
-                method="post"
-                enctype="application/x-www-form-urlencoded"
-        >
-            <h3>로그 조회</h3>
-            <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
-            <% if (data.department === 'Server' || data.department === 'CEO') { %>
+    <% if (data.department === 'Server' || data.department === 'CEO') { %>
+        <div class="outset">
+            <form
+                    action="http://socket.doorbellsquare.com:8080/management/history/log"
+                    method="post"
+                    enctype="application/x-www-form-urlencoded"
+            >
+                <h3>로그 조회</h3>
+                <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
 
-                <select name='checkManager' id="select_department">
-                    <option value="none" selected>담당자 선택</option>
-                    <option name="all" value="All">All</option>
-                    <option name="ceo" value="CEO">CEO</option>
-                    <option name="server" value="Server">Server</option>
-                    <option name="device" value="Device">Device</option>
-                    <option name="app" value="App">App</option>
-                </select>
+                    <select name='checkManager' id="select_department">
+                        <option value="none" selected>담당자 선택</option>
+                        <option name="all" value="All">All</option>
+                        <option name="ceo" value="CEO">CEO</option>
+                        <option name="server" value="Server">Server</option>
+                        <option name="device" value="Device">Device</option>
+                        <option name="app" value="App">App</option>
+                    </select>
 
-                <button type="submit" class="custom-btn btn-12">
-                    <span> Find it !</span>
-                    <span> 조회하기 </span>
-                </button>
+                    <button type="submit" class="custom-btn btn-12">
+                        <span> Find it !</span>
+                        <span> 조회하기 </span>
+                    </button>
 
-            <% } %>
-        </form>
-    </div>
+            </form>
+        </div>
+    <% } %>
 
 
 </div>
