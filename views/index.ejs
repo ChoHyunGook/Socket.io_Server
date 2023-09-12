@@ -115,6 +115,34 @@
         </form>
     </div>
     <br/>
+
+    <% if (data.department === 'Server' || data.department === 'CEO') { %>
+        <div class="outset">
+            <form
+                    action="http://socket.doorbellsquare.com:8080/management/documents/file/download"
+                    method="post"
+                    enctype="application/x-www-form-urlencoded"
+            >
+                <h3> Server 문서 다운로드 </h3>
+                <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
+                <select name='docCheck' id="select_department" onchange="changeDocuments(this)">
+                    <option value="none" selected>선택</option>
+                    <option name="Server" value="Server">Server</option>
+                </select>
+                <select name='documents' id="documents">
+                    <option> 문서 선택 </option>
+                </select>
+
+                <button type="submit" class="custom-btn btn-12">
+                    <span> Download !</span>
+                    <span> 다운로드 </span>
+                </button>
+
+            </form>
+        </div>
+    <% } %>
+
+
     <div class="outset">
         <form
                 action="http://socket.doorbellsquare.com:8080/department/version/delete/file"
@@ -191,32 +219,6 @@
         </form>
     </div>
     <br />
-    <% if (data.department === 'Server' || data.department === 'CEO') { %>
-    <div class="outset">
-        <form
-                action="http://socket.doorbellsquare.com:8080/management/documents/file/download"
-                method="post"
-                enctype="application/x-www-form-urlencoded"
-        >
-            <h3> Server 문서 다운로드 </h3>
-            <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
-            <select name='docCheck' id="select_department" onchange="changeDocuments(this)">
-                <option value="none" selected>선택</option>
-                <option name="Server" value="Server">Server</option>
-            </select>
-                <select name='documents' id="documents">
-                    <option> 문서 선택 </option>
-                </select>
-
-                <button type="submit" class="custom-btn btn-12">
-                    <span> Download !</span>
-                    <span> 다운로드 </span>
-                </button>
-
-        </form>
-    </div>
-    <% } %>
-
 
     <br/>
     <% if (data.department === 'Server' || data.department === 'CEO') { %>
