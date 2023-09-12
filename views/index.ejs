@@ -19,6 +19,7 @@
     <h4>|| 접속한 아이디 : <%= data.access_id %> || 접속한 담당자 : <%= data.access_name %> || </h4>
 
     <div id="serverData" style="display: none"><%= JSON.stringify(serverData) %></div>
+    <div id="documentData" style="display: none"><%= JSON.stringify(documentData) %></div>
     <div id="appData" style="display: none"><%= JSON.stringify(appData) %></div>
     <div id="deviceData" style="display: none"><%= JSON.stringify(deviceData) %></div>
     <div id="loginData" style="display: none"><%= JSON.stringify(data) %></div>
@@ -189,6 +190,33 @@
             <% } %>
         </form>
     </div>
+    <br />
+    <% if (data.department === 'Server' || data.department === 'CEO') { %>
+    <div class="outset">
+        <form
+                action="http://socket.doorbellsquare.com:8080/management/documents/file/download"
+                method="post"
+                enctype="application/x-www-form-urlencoded"
+        >
+            <h3> Server 문서 다운로드 </h3>
+            <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
+            <select name='docCheck' id="select_department" onchange="changeDocuments(this)">
+                <option value="none" selected>선택</option>
+                <option name="Server" value="Server">Server</option>
+            </select>
+                <select name='documents' id="documents">
+                    <option> 문서 선택 </option>
+                </select>
+
+                <button type="submit" class="custom-btn btn-12">
+                    <span> Download !</span>
+                    <span> 다운로드 </span>
+                </button>
+
+        </form>
+    </div>
+    <% } %>
+
 
     <br/>
     <% if (data.department === 'Server' || data.department === 'CEO') { %>
@@ -226,6 +254,39 @@
 
     let devSelect
     let allCheck
+    let docCheck
+
+    function changeDocuments(e){
+        const select = e.value
+        let serverData = JSON.parse(document.getElementById('documentData').innerHTML)
+        let contents =[]
+
+        var target =document.getElementById('documents')
+
+        docCheck = select
+
+        if(docCheck === 'Server'){
+            serverData.map(e=>{
+                if(e.key.split('/')[1] === 'documents'){
+                    if(e.key.split('/')[2].length === 0){
+                        contents.push('=== 선택 ===')
+                    }else{
+                        contents.push(e.key.split('/')[2])
+                    }
+                }
+            })
+        }
+
+        target.options.length = 0;
+        for(x in contents){
+            var opt = document.createElement("option");
+            opt.value = contents[x];
+            opt.name = contents[x]
+            opt.innerHTML = contents[x];
+            target.appendChild(opt);
+        }
+
+    }
 
     function changeCheckBox(e){
         const select = e.value

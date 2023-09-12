@@ -23,6 +23,66 @@ const s3 = new AWS.S3({
 
 const management = function () {
     return{
+        documentsDownload(req,res){
+            const bodyData =req.body
+            console.log(bodyData)
+            const loginData = JSON.parse(bodyData.data)
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            let param = {
+                param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
+            }
+            if(bodyData.documents === '문서 선택' || bodyData.documents === 'none' || bodyData.docCheck === 'none'){
+                let error = {
+                    message:`선택사항을 선택 후 클릭 해주세요. 선택 : ${bodyData.documents}`
+                }
+                res.render('error',{error:error,param:param,data:loginData})
+            }else{
+                const params = {
+                    Bucket: Bucket_name,
+                    Key: 'server/documents/'+bodyData.documents
+                }
+                s3.getObject(params, function (err, data) {
+                    if(err){
+                        console.log(err)
+                    }else{
+                        const date = moment().tz('Asia/Seoul')
+                        let versionData = {
+                            access_id: loginData.access_id,
+                            access_name: loginData.access_name,
+                            department: loginData.department,
+                            contents: `DownloadDocumentsData.${bodyData.documents}`,
+                            date: date.format('YYYY-MM-DD HH:mm:ss')
+                        }
+                        new Version(versionData).save()
+                            .then(r => console.log('Version Download History Save Success'))
+                            .catch(err => console.log('Version Download History Save Fail', err))
+
+                        if(bodyData.documents.split('.')[2] === 'pdf'){
+                            res.writeHead(200,
+                                {
+                                    'Content-Type': `application/pdf`,
+                                    'Content-Length': data.ContentLength,
+                                    'Content-Disposition': `filename="${bodyData.documents}";`
+                                },
+                            )
+                            res.end(Buffer.from(data.Body, 'base64'))
+                        }else{
+                            res.writeHead(200,
+                                {
+                                    'Content-Type': `application/vnd.ms-powerpoint`,
+                                    'Content-Length': data.ContentLength,
+                                    'Content-Disposition': `filename="${bodyData.documents}";`
+                                },
+                            )
+                            res.end(Buffer.from(data.Body, 'base64'))
+                        }
+
+                    }
+                })
+            }
+        },
+
+
         versionLogFind(req,res){
             const bodyData = req.body
             const check = bodyData.checkManager
@@ -298,11 +358,18 @@ const management = function () {
                                 appData.push(keyData)
                             }
                         })
+                        let documentData = []
+                        serverData.map(e=>{
+                            if(e.key.split('/')[1] === 'documents'){
+                                documentData.push(e)
+                            }
+                        })
                         res.render('index', {
                             data: data,
                             deviceData:deviceData.reverse(),
                             appData:appData.reverse(),
-                            serverData:serverData.reverse()
+                            serverData:serverData.reverse(),
+                            documentData:documentData
                         })
 
 
@@ -343,15 +410,38 @@ const management = function () {
                         res.render('error',{param:param,error:error,data:loginData})
                     }
                     else if(filter[1].length !== 13){
+                        //doc.doorbellAdmin.pptx, doc.sleepcore_dev.pptx, doc.verManagement.pptx,doc.distribute_Go.pdf
                         let error = {
                             message:`올바른 파일명(날짜_시간)을 작성 후 첨부해주세요. 올바른 예시 : 20230901_1301, 작성하신 파일명(날짜시간) : ${filter[filter.length -2]} `
                         }
                         res.render('error',{error:error,param:param,data:loginData})
-                    }else if(filter[2] !== 'bin' && filter[2] !== 'zip'){
+                    }else if(filter[2] !== 'bin' && filter[2] !== 'zip' && filter[2] !== 'pptx' && filter[2] !== 'pdf'){
                         let error = {
                             message:`올바른 파일확장자(device : bin, server,app : zip)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
                         }
                         res.render('error',{error:error,param:param,data:loginData})
+                    }
+                    else if(file.originalname.split('.')[0] === 'doc'){
+                        const params = {
+                            Bucket:Bucket_name+'/server/documents',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `DocumentsUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
                     }
                     else if(file.originalname.split('.')[0] === 'bldb'){
                         const params={

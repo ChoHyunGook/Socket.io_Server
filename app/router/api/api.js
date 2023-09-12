@@ -65,7 +65,9 @@ app.post('/department/version/delete/file',(req,res)=>{
 app.post('/management/history/log',(req,res)=>{
     Management().versionLogFind(req,res)
 })
-
+app.post('/management/documents/file/download',(req,res)=>{
+    Management().documentsDownload(req,res)
+})
 
 
 
