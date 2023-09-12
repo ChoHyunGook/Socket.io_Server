@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko" style="align-items: center">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Blaubit Version Management(Update Success)</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div style="text-align: center">
+    <br />
+    <br />
+    <img src="https://github.com/ChoHyunGook/pubpic/blob/main/new_blaubit.png?raw=true"
+         width="350" height="120">
+    <br />
+    <h1>Delete Completed</h1>
+    <h3>|| 삭제 부서 : <%= data.department %> || 삭제 시간 : <%= data.date %> ||</h3>
+    <h3>|| 삭제 아이디 : <%= data.access_id %> || 삭제 담당자 : <%= data.access_name %> || </h3>
+    <br />
+    <div class="outset">
+        <h1> 버전 파일 삭제성공</h1>
+        <h2> 삭제 파일명 : <%= fileName %></h2>
+        <form
+                action="http://socket.doorbellsquare.com:8080/version/dev/file/Management"
+                method="get"
+                enctype="application/x-www-form-urlencoded"
+        >
+            <input type="hidden" name="dev" value="<%= param.param%>">
+            <button type="submit" class="custom-btn btn-12">
+                <span> Move !</span>
+                <span> Management로 이동 </span>
+            </button>
+        </form>
+    </div>
+    <br/>
+
+</div>
+</body>
+</html>

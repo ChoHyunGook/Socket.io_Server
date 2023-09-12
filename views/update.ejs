@@ -20,9 +20,9 @@
     <br />
     <div class="outset">
             <h1> 버전 파일 업로드 성공</h1>
-        <h2> 업로드 파일명 : <%= data.contents.split('.')[2]+'.'+data.contents.split('.')[3]+'.'+data.contents.split('.')[4] %></h2>
+        <h2> 업로드 파일명 : <%= data.contents.split('.')[1]+'.'+data.contents.split('.')[2]+'.'+data.contents.split('.')[3] %></h2>
         <form
-                action="http://socket.doorbellsquare.com:8080/deviceVersion/dev/file/Management"
+                action="http://socket.doorbellsquare.com:8080/version/dev/file/Management"
                 method="get"
                 enctype="application/x-www-form-urlencoded"
         >

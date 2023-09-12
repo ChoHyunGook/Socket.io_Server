@@ -49,7 +49,7 @@ app.get('/', (req,res)=>{
 app.get('/deviceVersion/download',(req,res,next)=>{
     Management().deviceVersionDownload(req,res)
 })
-app.get('/deviceVersion/dev/file/Management',(req,res)=>{
+app.get('/version/dev/file/Management',(req,res)=>{
     Management().fileManagement(req,res)
 })
 
@@ -59,7 +59,12 @@ app.post('/uploadS3File', upload.single('file'), function (req,res){
 app.post('/department/version/download',(req,res)=>{
     Management().departVersionDownload(req,res)
 })
-
+app.post('/department/version/delete/file',(req,res)=>{
+    Management().departmentVersionDelete(req,res)
+})
+app.post('/management/history/log',(req,res)=>{
+    Management().versionLogFind(req,res)
+})
 
 
 

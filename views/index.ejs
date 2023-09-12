@@ -12,12 +12,12 @@
     <br />
     <br />
 <img src="https://github.com/ChoHyunGook/pubpic/blob/main/new_blaubit.png?raw=true"
-     width="350" height="120">
+     width="300" height="100">
     <br />
-<h1>Version Management</h1>
-<h3>|| 접속부서 : <%= data.department %> || 접속한 시간 : <%= data.date %> ||</h3>
-    <h3>|| 접속한 아이디 : <%= data.access_id %> || 접속한 담당자 : <%= data.access_name %> || </h3>
-    <br />
+<h2>Version Management</h2>
+<h4>|| 접속부서 : <%= data.department %> || 접속한 시간 : <%= data.date %> ||</h4>
+    <h4>|| 접속한 아이디 : <%= data.access_id %> || 접속한 담당자 : <%= data.access_name %> || </h4>
+
     <div id="serverData" style="display: none"><%= JSON.stringify(serverData) %></div>
     <div id="appData" style="display: none"><%= JSON.stringify(appData) %></div>
     <div id="deviceData" style="display: none"><%= JSON.stringify(deviceData) %></div>
@@ -45,8 +45,9 @@
                 enctype="application/x-www-form-urlencoded"
         >
             <h3> 버전 별 다운로드</h3>
-
+            <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
             <% if (data.department === 'Server' || data.department === 'CEO') { %>
+
                 <select name='allCheck' id="select_department" onchange="changeCheckBox(this)">
                     <option value="none" selected>선택</option>
                     <option name="Server" value="Server">Server</option>
@@ -112,6 +113,112 @@
             <% } %>
         </form>
     </div>
+    <br/>
+    <div class="outset">
+        <form
+                action="http://socket.doorbellsquare.com:8080/department/version/delete/file"
+                method="post"
+                enctype="application/x-www-form-urlencoded"
+        >
+            <h3>버전 별 파일 삭제 </h3>
+            <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
+            <% if (data.department === 'Server' || data.department === 'CEO') { %>
+
+                <select name='allCheck' id="select_department" onchange="delChangeCheckBox(this)">
+                    <option value="none" selected>선택</option>
+                    <option name="Server" value="Server">Server</option>
+                    <option name="Device" value="Device">Device</option>
+                    <option name="App" value="App">App</option>
+                </select>
+
+                <select name="devSelect" id="delDevSelect" onchange="delDevCheck(this)">
+                    <option> 개발 선택 </option>
+                </select>
+
+                <select name="versionSelect" id="delVersionSelect">
+                    <option> 버전 선택 </option>
+                </select>
+
+
+                <button type="submit" class="custom-btn btn-12">
+                    <span> Delete !</span>
+                    <span> 삭제하기 </span>
+                </button>
+
+            <% } %>
+
+            <% if (data.department === 'App') { %>
+                <select name='allCheck' id="select_department" onchange="delChangeCheckBox(this)">
+                    <option value="none" selected>선택</option>
+                    <option name="App" value="App">App</option>
+                </select>
+
+                <select name="devSelect" id="delDevSelect" onchange="delDevCheck(this)">
+                    <option> 개발 선택 </option>
+                </select>
+
+                <select name="versionSelect" id="delVersionSelect">
+                    <option> 버전 선택 </option>
+                </select>
+
+                <button type="submit" class="custom-btn btn-12">
+                    <span> Delete !</span>
+                    <span> 삭제하기 </span>
+                </button>
+
+            <% } %>
+
+            <% if (data.department === 'Device') { %>
+                <select name='allCheck' id="select_department" onchange="delChangeCheckBox(this)">
+                    <option value="none" selected>선택</option>
+                    <option name="Device" value="Device">Device</option>
+                </select>
+
+                <select name="devSelect" id="delDevSelect" onchange="delDevCheck(this)">
+                    <option> 개발 선택 </option>
+                </select>
+
+                <select name="versionSelect" id="delVersionSelect">
+                    <option> 버전 선택 </option>
+                </select>
+
+                <button type="submit" class="custom-btn btn-12">
+                    <span> Delete !</span>
+                    <span> 삭제하기 </span>
+                </button>
+            <% } %>
+        </form>
+    </div>
+
+    <br/>
+    <div class="outset">
+        <form
+                action="http://socket.doorbellsquare.com:8080/management/history/log"
+                method="post"
+                enctype="application/x-www-form-urlencoded"
+        >
+            <h3>로그 조회</h3>
+            <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
+            <% if (data.department === 'Server' || data.department === 'CEO') { %>
+
+                <select name='checkManager' id="select_department">
+                    <option value="none" selected>담당자 선택</option>
+                    <option name="all" value="All">All</option>
+                    <option name="ceo" value="CEO">CEO</option>
+                    <option name="server" value="Server">Server</option>
+                    <option name="device" value="Device">Device</option>
+                    <option name="app" value="App">App</option>
+                </select>
+
+                <button type="submit" class="custom-btn btn-12">
+                    <span> Find it !</span>
+                    <span> 조회하기 </span>
+                </button>
+
+            <% } %>
+        </form>
+    </div>
+
 
 </div>
 </body>
@@ -152,6 +259,85 @@
         let contents =[]
 
         var target =document.getElementById('versionSelect')
+        if(allCheck === 'Server'){
+            serverData.map(e=>{
+                if(e.key.split('/')[1] === select){
+                    if(e.key.split('/')[2].length === 0){
+                        contents.push('=== 선택 ===')
+                    }else{
+                        contents.push(e.key.split('/')[2])
+                    }
+                }
+            })
+        }else if(allCheck === 'Device'){
+            deviceData.map(e=>{
+                if(e.key.split('/')[1] === select){
+                    if(e.key.split('/')[2].length === 0){
+                        contents.push('=== 선택 ===')
+                    }else{
+                        contents.push(e.key.split('/')[2])
+                    }
+                }
+            })
+        } else if(allCheck === 'App'){
+            appData.map(e=>{
+                if(e.key.split('/')[1] === select){
+                    if(e.key.split('/')[2].length === 0){
+                        contents.push('=== 선택 ===')
+                    }else{
+                        contents.push(e.key.split('/')[2])
+                    }
+                }
+            })
+
+        }
+
+        target.options.length = 0;
+        contents = [contents[contents.length -1],...contents]
+        contents.pop()
+
+        for(x in contents){
+            var opt = document.createElement("option");
+            opt.value = contents[x];
+            opt.name = contents[x]
+            opt.innerHTML = contents[x];
+            target.appendChild(opt);
+        }
+
+    }
+
+    function delChangeCheckBox(e){
+        const select = e.value
+        let serverSelect = ['=== 선택 ===','apiServer','doorbellAdmin','doorbellGo','lambda','sleepcore','fastStroke']
+        let deviceSelect = ['=== 선택 ===','bldb','bldc','blwc','blvc','blsi']
+        let appSelect = ['=== 선택 ===','doorbellApp','sleepcoreApp','fastStrokeApp']
+
+        var target =document.getElementById('delDevSelect')
+        if(select === 'Server') var contents = serverSelect
+        else if(select === 'Device') var contents = deviceSelect
+        else if(select === 'App') var contents = appSelect
+        target.options.length = 0;
+        for(x in contents){
+            var opt = document.createElement("option");
+            opt.value = contents[x];
+            opt.name = contents[x]
+            opt.innerHTML = contents[x];
+            target.appendChild(opt);
+        }
+
+        allCheck = select
+
+    }
+
+    function delDevCheck(e){
+        const select = e.value
+        const serverData = JSON.parse(document.getElementById('serverData').innerHTML)
+        const appData = JSON.parse(document.getElementById('appData').innerHTML)
+        const deviceData = JSON.parse(document.getElementById('deviceData').innerHTML);
+
+        let contents =[]
+
+        var target =document.getElementById('delVersionSelect')
         if(allCheck === 'Server'){
             serverData.map(e=>{
                 if(e.key.split('/')[1] === select){

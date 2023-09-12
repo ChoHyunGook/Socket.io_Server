@@ -23,10 +23,105 @@ const s3 = new AWS.S3({
 
 const management = function () {
     return{
+        versionLogFind(req,res){
+            const bodyData = req.body
+            const check = bodyData.checkManager
+            const loginData = JSON.parse(bodyData.data)
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            let param = {
+                param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
+            }
+
+            if(check === '담당자 선택' || check === 'none'){
+                let error = {
+                    message:'담당자를 선택 후 클릭해주세요.'
+                }
+                res.render('error',{data:loginData,error:error,param:param})
+            } else if(check === 'All'){
+                Version.find({}).sort({"date": -1})
+                    .then(all=>{
+                        res.render('table',{data:loginData,param:param,check:check,findData:all})
+                    })
+            } else if(check === 'CEO'){
+                Version.find({department:'CEO'}).sort({"date":-1})
+                    .then(findCeo=>{
+                        res.render('table',{data:loginData,param:param,check:check,findData:findCeo})
+                    })
+            }
+            else if(check === 'Server'){
+                Version.find({department:'Server'}).sort({"date":-1})
+                    .then(findServer=>{
+                        res.render('table',{data:loginData,param:param,check:check,findData:findServer})
+                    })
+            }
+            else if(check === 'Device') {
+                Version.find({department: 'Device'}).sort({"date": -1})
+                    .then(findDevice => {
+                        res.render('table',{data:loginData,param:param,check:check,findData:findDevice})
+                    })
+            }
+            else if(check === 'App'){
+                Version.find({department:'App'}).sort({"date":-1})
+                    .then(findApp=>{
+                        res.render('table',{data:loginData,param:param,check:check,findData:findApp})
+                    })
+            }
+
+        },
+
+        departmentVersionDelete(req,res){
+            const bodyData = req.body
+            const loginData = JSON.parse(bodyData.data)
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            let param = {
+                param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
+            }
+            if(bodyData.allCheck === '=== 선택 ===' || bodyData.devSelect === '=== 선택 ===' || bodyData.versionSelect === '=== 선택 ===' ||
+                bodyData.allCheck === 'none' || bodyData.devSelect === '개발 선택' || bodyData.versionSelect === '버전 선택'){
+                let error = {
+                    message:`선택사항을 모두 선택해 주세요. 선택 : ${bodyData.allCheck}, 개발 선택 : ${bodyData.devSelect}, 버전 선택 : ${bodyData.versionSelect} `
+                }
+                res.render('error',{error:error,param:param,data:loginData})
+            }else{
+                const devVersion = bodyData.allCheck === 'Server' ? 'server' : bodyData.allCheck === 'App' ? 'app' : 'device'
+                const params = {
+                    Bucket: Bucket_name,
+                    Key: devVersion+'/'+bodyData.devSelect+'/'+bodyData.versionSelect
+                }
+                s3.deleteObject(params,function (err,data){
+                    if(err){
+                        console.log(err)
+                    }else{
+                        const date = moment().tz('Asia/Seoul')
+                        let versionData = {
+                            access_id: loginData.access_id,
+                            access_name: loginData.access_name,
+                            department: loginData.department,
+                            contents: `DeleteData.${bodyData.versionSelect}`,
+                            date: date.format('YYYY-MM-DD HH:mm:ss')
+                        }
+                        new Version(versionData).save()
+                            .then(r => console.log('Version Delete History Save Success'))
+                            .catch(err => console.log('Version Delete History Save Fail', err))
+                        res.render('delete',{data:loginData,param:param,fileName:bodyData.versionSelect})
+                    }
+                })
+            }
+        },
+
         async departVersionDownload(req, res) {
             const bodyData = req.body
-            if(bodyData.allCheck === '=== 선택 ===' || bodyData.devSelect === '=== 선택 ===' || bodyData.versionSelect === '=== 선택 ==='){
-                res.status(200).send(`선택사항을 모두 선택해 주세요. 선택 : ${bodyData.allCheck}, 개발 선택 : ${bodyData.devSelect}, 버전 선택 : ${bodyData.versionSelect} `)
+            const loginData = JSON.parse(bodyData.data)
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            let param = {
+                param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
+            }
+            if(bodyData.allCheck === '=== 선택 ===' || bodyData.devSelect === '=== 선택 ===' || bodyData.versionSelect === '=== 선택 ===' ||
+                bodyData.allCheck === 'none' || bodyData.devSelect === '개발 선택' || bodyData.versionSelect === '버전 선택'){
+                let error = {
+                    message:`선택사항을 모두 선택해 주세요. 선택 : ${bodyData.allCheck}, 개발 선택 : ${bodyData.devSelect}, 버전 선택 : ${bodyData.versionSelect} `
+                }
+                res.render('error',{error:error,param:param,data:loginData})
             }else{
                 const devVersion = bodyData.allCheck === 'Server' ? 'server' : bodyData.allCheck === 'App' ? 'app' : 'device'
                 const params = {
@@ -38,6 +133,18 @@ const management = function () {
                         console.log(err)
                     } else {
                         if(devVersion === 'device'){
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `DownloadData.${bodyData.versionSelect}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Download History Save Success'))
+                                .catch(err => console.log('Version Download History Save Fail', err))
+
                             res.writeHead(200,
                                 {
                                     'Content-Type': `application/octet-stream`,
@@ -47,6 +154,18 @@ const management = function () {
                             )
                             res.end(Buffer.from(data.Body, 'base64'))
                         }else{
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `DownloadData.${bodyData.versionSelect}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Download History Save Success'))
+                                .catch(err => console.log('Version Download History Save Fail', err))
+
                             res.writeHead(200,
                                 {
                                     'Content-Type': `application/zip`,
@@ -138,7 +257,7 @@ const management = function () {
 
             if (devAdmin !== DEV_CEO_ADMIN && devAdmin !== DEV_SEVER_ADMIN && devAdmin !== DEV_APP_ADMIN &&
                 devAdmin !== DEV_DEVICE_ADMIN) {
-                res.status(200).send('접근 불가 관리자 전용 페이지입니다.')
+                res.render('dangerous')
             } else {
                 const date = moment().tz('Asia/Seoul')
 
@@ -197,334 +316,368 @@ const management = function () {
         deviceS3Upload(req, res) {
             const file = req.file
             const loginData = JSON.parse(req.body.data)
-            const filter = file.originalname.split('.')
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
-            if(filter[1].length !== 13){
-                res.status(200).send(`올바른 파일명(날짜_시간)을 작성 후 첨부해주세요. 올바른 예시 : 20230901_1301, 작성하신 파일명(날짜시간) : ${filter[filter.length -2]} `)
-            }else if(filter[2] !== 'bin' && filter[2] !== 'zip'){
-                res.status(200).send(`올바른 파일확장자(device : bin, server,app : zip)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`)
-            }
-            else if(file.originalname.split('.')[0] === 'bldb'){
-                const params={
-                    Bucket:Bucket_name+'/device/bldb',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
+            if(typeof file === 'undefined'){
+                let error = {
+                    message:`파일 첨부 후 이용해주세요.`
                 }
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `DeviceUploadData.bldb.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            } else if(file.originalname.split('.')[0] === 'bldc'){
-                const params={
-                    Bucket:Bucket_name+'/device/bldc',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `DeviceUploadData.bldc.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            } else if(file.originalname.split('.')[0] === 'blwc'){
-                const params={
-                    Bucket:Bucket_name+'/device/blwc',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `DeviceUploadData.blwc.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            } else if(file.originalname.split('.')[0] === 'blvc'){
-                const params={
-                    Bucket:Bucket_name+'/device/blvc',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `DeviceUploadData.blvc.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            } else if(file.originalname.split('.')[0] === 'blsi'){
-                const params={
-                    Bucket:Bucket_name+'/device/blsi',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `DeviceUploadData.blsi.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            }else if(file.originalname.split('.')[0]==='apiServer'){
-                const params={
-                    Bucket:Bucket_name+'/server/apiServer',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `ServerUploadData.apiServer.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            }else if(file.originalname.split('.')[0]==='doorbellAdmin'){
-                const params={
-                    Bucket:Bucket_name+'/server/doorbellAdmin',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `ServerUploadData.doorbellAdmin.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            }
-            else if(file.originalname.split('.')[0]==='doorbellGo'){
-                const params={
-                    Bucket:Bucket_name+'/server/doorbellGo',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `ServerUploadData.doorbellGo.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            }
-            else if(file.originalname.split('.')[0]==='lambda'){
-                const params={
-                    Bucket:Bucket_name+'/server/lambda',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `ServerUploadData.lambda.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            }
-            else if(file.originalname.split('.')[0]==='sleepcore'){
-                const params={
-                    Bucket:Bucket_name+'/server/sleepcore',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `ServerUploadData.sleepcore.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            }
-            else if(file.originalname.split('.')[0]==='fastStroke'){
-                const params={
-                    Bucket:Bucket_name+'/server/fastStroke',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `ServerUploadData.fastStroke.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            }
-            else if(file.originalname.split('.')[0]==='doorbellApp'){
-                const params={
-                    Bucket:Bucket_name+'/app/doorbellApp',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `AppUploadData.doorbellApp.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            }
-            else if(file.originalname.split('.')[0]==='sleepcoreApp'){
-                const params={
-                    Bucket:Bucket_name+'/app/sleepcoreApp',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `AppUploadData.sleepcoreApp.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
-            }
-            else if(file.originalname.split('.')[0]==='fastStrokeApp'){
-                const params={
-                    Bucket:Bucket_name+'/app/fastStrokeApp',
-                    Key:file.originalname.trim(),
-                    Body:file.buffer
-                }
-
-                s3.upload(params,function (err,data){
-                    if(err) throw err;
-                    const date = moment().tz('Asia/Seoul')
-                    let versionData = {
-                        access_id: loginData.access_id,
-                        access_name: loginData.access_name,
-                        department: loginData.department,
-                        contents: `AppUploadData.fastStrokeApp.${file.originalname}`,
-                        date: date.format('YYYY-MM-DD HH:mm:ss')
-                    }
-                    new Version(versionData).save()
-                        .then(r => console.log('Version Update History Save Success'))
-                        .catch(err => console.log('Version Update History Save Fail', err))
-                    res.render('update',{data:versionData,param:param})
-                })
+                res.render('error',{param:param,error:error,data:loginData})
             }else{
-                res.status(200).send(`약속된 파일명을 기입해주세요. (파일명 확인 요망) 첨부된파일명 : ${file.originalname}`)
+                const filter = file.originalname.split('.')
+                s3.listObjects({Bucket: Bucket_name}).promise().then((list)=>{
+                    const checkList = list.Contents
+                    const overlap = file.originalname
+                    let overlapCheck = false
+                    checkList.map(cl=>{
+                        if(cl.Key.split('/')[2] === overlap){
+                            overlapCheck = true
+                        }
+                    })
+                    if(overlapCheck === true){
+                        let error = {
+                            message:`중복된 파일이 있습니다. fileName : ${overlap}`
+                        }
+                        res.render('error',{param:param,error:error,data:loginData})
+                    }
+                    else if(filter[1].length !== 13){
+                        let error = {
+                            message:`올바른 파일명(날짜_시간)을 작성 후 첨부해주세요. 올바른 예시 : 20230901_1301, 작성하신 파일명(날짜시간) : ${filter[filter.length -2]} `
+                        }
+                        res.render('error',{error:error,param:param,data:loginData})
+                    }else if(filter[2] !== 'bin' && filter[2] !== 'zip'){
+                        let error = {
+                            message:`올바른 파일확장자(device : bin, server,app : zip)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
+                        }
+                        res.render('error',{error:error,param:param,data:loginData})
+                    }
+                    else if(file.originalname.split('.')[0] === 'bldb'){
+                        const params={
+                            Bucket:Bucket_name+'/device/bldb',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `DeviceUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    } else if(file.originalname.split('.')[0] === 'bldc'){
+                        const params={
+                            Bucket:Bucket_name+'/device/bldc',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `DeviceUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    } else if(file.originalname.split('.')[0] === 'blwc'){
+                        const params={
+                            Bucket:Bucket_name+'/device/blwc',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `DeviceUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    } else if(file.originalname.split('.')[0] === 'blvc'){
+                        const params={
+                            Bucket:Bucket_name+'/device/blvc',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `DeviceUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    } else if(file.originalname.split('.')[0] === 'blsi'){
+                        const params={
+                            Bucket:Bucket_name+'/device/blsi',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `DeviceUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }else if(file.originalname.split('.')[0]==='apiServer'){
+                        const params={
+                            Bucket:Bucket_name+'/server/apiServer',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `ServerUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }else if(file.originalname.split('.')[0]==='doorbellAdmin'){
+                        const params={
+                            Bucket:Bucket_name+'/server/doorbellAdmin',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `ServerUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
+                    else if(file.originalname.split('.')[0]==='doorbellGo'){
+                        const params={
+                            Bucket:Bucket_name+'/server/doorbellGo',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `ServerUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
+                    else if(file.originalname.split('.')[0]==='lambda'){
+                        const params={
+                            Bucket:Bucket_name+'/server/lambda',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `ServerUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
+                    else if(file.originalname.split('.')[0]==='sleepcore'){
+                        const params={
+                            Bucket:Bucket_name+'/server/sleepcore',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `ServerUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
+                    else if(file.originalname.split('.')[0]==='fastStroke'){
+                        const params={
+                            Bucket:Bucket_name+'/server/fastStroke',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `ServerUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
+                    else if(file.originalname.split('.')[0]==='doorbellApp'){
+                        const params={
+                            Bucket:Bucket_name+'/app/doorbellApp',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `AppUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
+                    else if(file.originalname.split('.')[0]==='sleepcoreApp'){
+                        const params={
+                            Bucket:Bucket_name+'/app/sleepcoreApp',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `AppUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
+                    else if(file.originalname.split('.')[0]==='fastStrokeApp'){
+                        const params={
+                            Bucket:Bucket_name+'/app/fastStrokeApp',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                contents: `AppUploadData.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }else{
+                        let error = {
+                            message:`올바른 파일확장자(device : bin, server,app : zip)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
+                        }
+                        res.render('error',{error:error,param:param,data:loginData})
+                    }
+
+                })
             }
+
 
         },
     }

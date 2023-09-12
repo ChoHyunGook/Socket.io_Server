@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko" style="align-items: center">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Blaubit Version Management(Update Success)</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.css">
+</head>
+<body>
+<div style="text-align: center">
+    <br />
+    <br />
+    <img src="https://github.com/ChoHyunGook/pubpic/blob/main/new_blaubit.png?raw=true"
+         width="350" height="120">
+    <br />
+    <h1> 로그 조회</h1>
+    <h5>|| 접속부서 : <%= data.department %> || 접속한 시간 : <%= data.date %> ||</h5>
+    <h5>|| 접속한 아이디 : <%= data.access_id %> || 접속한 담당자 : <%= data.access_name %> || </h5>
+    <br />
+        <h1> 조회 부서 : <%= check %> </h1>
+    <div id="findData" style="display: none"><%= JSON.stringify(findData) %></div><br/>
+    <form
+            action="http://socket.doorbellsquare.com:8080/version/dev/file/Management"
+            method="get"
+            enctype="application/x-www-form-urlencoded"
+    >
+        <input type="hidden" name="dev" value="<%= param.param%>">
+        <button type="submit" class="custom-btn btn-12">
+            <span> Move !</span>
+            <span> Management 이동 </span>
+        </button>
+    </form>
+    <div id="wrap">
+
+        <div class="pt-3"></div>
+
+        <div class="container">
+
+            <!-- 테이블 생성 부분 -->
+
+            <table id="table">
+
+                <thead>
+
+                <tr>
+
+                    <!-- JSON 값과 매칭될 field를 명시 -->
+
+                    <th data-field="department">부서</th>
+
+                    <th data-field="access_name">담당자</th>
+
+                    <th data-field="access_id">아이디</th>
+
+                    <th data-field="contents">로그 내용</th>
+
+                    <th data-field="date">로그 시간</th>
+
+                </tr>
+
+                </thead>
+
+                <tbody>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <br/>
+
+    </div>
+
+    <br/>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+
+
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+
+        crossorigin="anonymous"></script>
+
+<script src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
+<script>
+
+    // document ready
+
+    $(function () {
+
+        var $table = $("#table");
+        const findData = JSON.parse(document.getElementById('findData').innerHTML)
+        // 테이블 표현할 데이터 표현
+
+        var data = findData
+
+        $table.bootstrapTable({ data: data })
+
+    });
+
+</script>
+</body>
+</html>
