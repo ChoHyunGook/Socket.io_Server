@@ -80,6 +80,7 @@ const management = function () {
         documentsDownload(req,res){
             const bodyData =req.body
             console.log(bodyData)
+            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const loginData = JSON.parse(bodyData.data)
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
             let param = {
@@ -104,6 +105,7 @@ const management = function () {
                             access_id: loginData.access_id,
                             access_name: loginData.access_name,
                             department: loginData.department,
+                            ip:ip,
                             contents: `download.${bodyData.documents}`,
                             date: date.format('YYYY-MM-DD HH:mm:ss')
                         }
@@ -160,6 +162,7 @@ const management = function () {
         departmentVersionDelete(req,res){
             const bodyData = req.body
             const loginData = JSON.parse(bodyData.data)
+            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
@@ -185,6 +188,7 @@ const management = function () {
                             access_id: loginData.access_id,
                             access_name: loginData.access_name,
                             department: loginData.department,
+                            ip:ip,
                             contents: `delete.${bodyData.versionSelect}`,
                             date: date.format('YYYY-MM-DD HH:mm:ss')
                         }
@@ -200,6 +204,7 @@ const management = function () {
         async departVersionDownload(req, res) {
             const bodyData = req.body
             const loginData = JSON.parse(bodyData.data)
+            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
@@ -226,6 +231,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `download.${bodyData.versionSelect}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -247,6 +253,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `download.${bodyData.versionSelect}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -417,6 +424,7 @@ const management = function () {
         deviceS3Upload(req, res) {
             const file = req.file
             const loginData = JSON.parse(req.body.data)
+            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
@@ -468,6 +476,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `DocumentsUploadData.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -490,6 +499,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -512,6 +522,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -535,6 +546,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -557,6 +569,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -579,6 +592,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -601,6 +615,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -623,6 +638,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -646,6 +662,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -669,6 +686,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -692,6 +710,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -715,6 +734,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -738,6 +758,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -761,6 +782,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -784,6 +806,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
+                                ip:ip,
                                 contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
