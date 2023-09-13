@@ -23,6 +23,60 @@ const s3 = new AWS.S3({
 
 const management = function () {
     return{
+        searchTable(req,res){
+            console.log(req.body)
+            const bodyData = req.body
+            const loginData =JSON.parse(bodyData.data)
+            const param = bodyData.param
+            const contents = bodyData.contents
+            let sendData=[]
+            if(contents === 'All'){
+                Version.find({})
+                    .then(findData=>{
+                        res.render('table',{data:loginData,param:param,findData:findData})
+                    })
+            }else{
+                if(bodyData.department === 'All'){
+                    Version.find({})
+                        .then(findData=>{
+                            findData.map(e=>{
+                                if(e.contents.split('.')[0] === contents){
+                                    sendData.push(e)
+                                }
+                            })
+                            res.render('table',{data:loginData,param:param,findData:sendData})
+                        })
+                }else{
+                    Version.find({department:bodyData.department})
+                        .then(findData=>{
+                            findData.map(e=>{
+                                if(e.contents.split('.')[0] === contents){
+                                    sendData.push(e)
+                                }
+                            })
+                            res.render('table',{data:loginData,param:param,findData:sendData})
+                        })
+                }
+            }
+        },
+        deleteLog(req,res){
+            const bodyData = req.body
+            const loginData =JSON.parse(bodyData.data)
+            const param = bodyData.param
+            console.log(bodyData)
+            Version.deleteMany({department:bodyData.department,date:bodyData.time})
+                .then(data=>{
+                    console.log('delete Success')
+                    Version.find({}).sort({"date":-1})
+                        .then(findCeo=>{
+                            res.render('table',{data:loginData,param:param,findData:findCeo})
+                        })
+                })
+                .catch(err=>{
+                    console.log(err)
+                })
+        },
+
         documentsDownload(req,res){
             const bodyData =req.body
             console.log(bodyData)
@@ -50,7 +104,7 @@ const management = function () {
                             access_id: loginData.access_id,
                             access_name: loginData.access_name,
                             department: loginData.department,
-                            contents: `DownloadDocumentsData.${bodyData.documents}`,
+                            contents: `download.${bodyData.documents}`,
                             date: date.format('YYYY-MM-DD HH:mm:ss')
                         }
                         new Version(versionData).save()
@@ -85,47 +139,21 @@ const management = function () {
 
         versionLogFind(req,res){
             const bodyData = req.body
-            const check = bodyData.checkManager
             const loginData = JSON.parse(bodyData.data)
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
-
-            if(check === '담당자 선택' || check === 'none'){
-                let error = {
-                    message:'담당자를 선택 후 클릭해주세요.'
-                }
-                res.render('error',{data:loginData,error:error,param:param})
-            } else if(check === 'All'){
-                Version.find({}).sort({"date": -1})
-                    .then(all=>{
-                        res.render('table',{data:loginData,param:param,check:check,findData:all})
-                    })
-            } else if(check === 'CEO'){
-                Version.find({department:'CEO'}).sort({"date":-1})
-                    .then(findCeo=>{
-                        res.render('table',{data:loginData,param:param,check:check,findData:findCeo})
-                    })
-            }
-            else if(check === 'Server'){
-                Version.find({department:'Server'}).sort({"date":-1})
-                    .then(findServer=>{
-                        res.render('table',{data:loginData,param:param,check:check,findData:findServer})
-                    })
-            }
-            else if(check === 'Device') {
-                Version.find({department: 'Device'}).sort({"date": -1})
-                    .then(findDevice => {
-                        res.render('table',{data:loginData,param:param,check:check,findData:findDevice})
-                    })
-            }
-            else if(check === 'App'){
-                Version.find({department:'App'}).sort({"date":-1})
-                    .then(findApp=>{
-                        res.render('table',{data:loginData,param:param,check:check,findData:findApp})
-                    })
-            }
+            Version.find({}).sort({"date": -1})
+                .then(all=>{
+                    res.render('table',{data:loginData,param:param,findData:all})
+                })
+                .catch(err=>{
+                    let error = {
+                        message:`조회실패 에러내용: ${err}`
+                    }
+                    res.render('error',{error:error,param:param,data:loginData})
+                })
 
         },
 
@@ -157,7 +185,7 @@ const management = function () {
                             access_id: loginData.access_id,
                             access_name: loginData.access_name,
                             department: loginData.department,
-                            contents: `DeleteData.${bodyData.versionSelect}`,
+                            contents: `delete.${bodyData.versionSelect}`,
                             date: date.format('YYYY-MM-DD HH:mm:ss')
                         }
                         new Version(versionData).save()
@@ -198,7 +226,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `DownloadData.${bodyData.versionSelect}`,
+                                contents: `download.${bodyData.versionSelect}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -219,7 +247,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `DownloadData.${bodyData.versionSelect}`,
+                                contents: `download.${bodyData.versionSelect}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -321,13 +349,14 @@ const management = function () {
                 res.render('dangerous')
             } else {
                 const date = moment().tz('Asia/Seoul')
+                const name = devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' : devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선'
 
                 let data = {
                     access_id: devAdmin.split('.')[4] + '.' + devAdmin.split('.')[5] + '.' + devAdmin.split('.')[6],
-                    access_name: devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' : devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선',
+                    access_name: name,
                     department: devAdmin.split('.')[1],
                     ip:ip,
-                    contents: 'devLogin',
+                    contents: `login.${devAdmin.split('.')[1]}.${devAdmin.split('.')[3]}.${devAdmin.split('.')[4].split('@')[0]}`,
                     date: date.format('YYYY-MM-DD HH:mm:ss')
                 }
                 new Version(data).save()
@@ -339,12 +368,20 @@ const management = function () {
                         let deviceData = []
                         let appData = []
                         let serverData = []
+                        let documentData = []
                         contents.map(e => {
                             if(e.Key.split('/')[0]==='server'){
-                                let keyData = {
-                                    key:e.Key
+                                if(e.Key.split('/')[1] === 'documents'){
+                                    let keyData = {
+                                        key:e.Key
+                                    }
+                                    documentData.push(keyData)
+                                }else{
+                                    let keyData = {
+                                        key:e.Key
+                                    }
+                                    serverData.push(keyData)
                                 }
-                                serverData.push(keyData)
                                 //console.log(serverData)
                             }
                             if(e.Key.split('/')[0]==='device'){
@@ -360,12 +397,8 @@ const management = function () {
                                 appData.push(keyData)
                             }
                         })
-                        let documentData = []
-                        serverData.map(e=>{
-                            if(e.key.split('/')[1] === 'documents'){
-                                documentData.push(e)
-                            }
-                        })
+
+
                         res.render('index', {
                             data: data,
                             deviceData:deviceData.reverse(),
@@ -373,7 +406,6 @@ const management = function () {
                             serverData:serverData.reverse(),
                             documentData:documentData
                         })
-
 
                     })
 
@@ -458,7 +490,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `DeviceUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -480,7 +512,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `DeviceUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
 
@@ -503,7 +535,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `DeviceUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -525,7 +557,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `DeviceUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -547,7 +579,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `DeviceUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -569,7 +601,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `ServerUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -591,7 +623,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `ServerUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -614,7 +646,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `ServerUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -637,7 +669,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `ServerUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -660,7 +692,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `ServerUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -683,7 +715,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `ServerUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -706,7 +738,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `AppUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -729,7 +761,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `AppUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -752,7 +784,7 @@ const management = function () {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                contents: `AppUploadData.${file.originalname}`,
+                                contents: `upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()

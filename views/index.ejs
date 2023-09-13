@@ -31,7 +31,7 @@
         >
         <h3> 버전 파일 업로드</h3>
         <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
-        <input type="file" name="file" id="file">
+        <input type="file" name="file" id="file" style="width: 350px; padding-right: 10px">
             <button type="submit" class="custom-btn btn-12">
                 <span> Upload !</span>
                 <span> 파일 업로드 </span>
@@ -61,7 +61,7 @@
                     <option> 개발 선택 </option>
                 </select>
 
-                <select name="versionSelect" id="versionSelect">
+                <select name="versionSelect" id="versionSelect" style="width: 170px; padding-right: 10px">
                     <option> 버전 선택 </option>
                 </select>
 
@@ -83,7 +83,7 @@
                     <option> 개발 선택 </option>
                 </select>
 
-                <select name="versionSelect" id="versionSelect">
+                <select name="versionSelect" id="versionSelect" style="width: 170px; padding-right: 10px">
                     <option> 버전 선택 </option>
                 </select>
 
@@ -104,7 +104,7 @@
                     <option> 개발 선택 </option>
                 </select>
 
-                <select name="versionSelect" id="versionSelect">
+                <select name="versionSelect" id="versionSelect" style="width: 170px; padding-right: 10px">
                     <option> 버전 선택 </option>
                 </select>
 
@@ -130,7 +130,7 @@
                     <option value="none" selected>선택</option>
                     <option name="Server" value="Server">Server</option>
                 </select>
-                <select name='documents' id="documents">
+                <select name='documents' id="documents" style="width: 170px; padding-right: 10px">
                     <option> 문서 선택 </option>
                 </select>
 
@@ -165,7 +165,7 @@
                     <option> 개발 선택 </option>
                 </select>
 
-                <select name="versionSelect" id="delVersionSelect">
+                <select name="versionSelect" id="delVersionSelect" style="width: 170px; padding-right: 10px">
                     <option> 버전 선택 </option>
                 </select>
 
@@ -187,7 +187,7 @@
                     <option> 개발 선택 </option>
                 </select>
 
-                <select name="versionSelect" id="delVersionSelect">
+                <select name="versionSelect" id="delVersionSelect" style="width: 170px; padding-right: 10px">
                     <option> 버전 선택 </option>
                 </select>
 
@@ -208,7 +208,7 @@
                     <option> 개발 선택 </option>
                 </select>
 
-                <select name="versionSelect" id="delVersionSelect">
+                <select name="versionSelect" id="delVersionSelect" style="width: 170px; padding-right: 10px">
                     <option> 버전 선택 </option>
                 </select>
 
@@ -230,15 +230,6 @@
             >
                 <h3>로그 조회</h3>
                 <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
-
-                    <select name='checkManager' id="select_department">
-                        <option value="none" selected>담당자 선택</option>
-                        <option name="all" value="All">All</option>
-                        <option name="ceo" value="CEO">CEO</option>
-                        <option name="server" value="Server">Server</option>
-                        <option name="device" value="Device">Device</option>
-                        <option name="app" value="App">App</option>
-                    </select>
 
                     <button type="submit" class="custom-btn btn-12">
                         <span> Find it !</span>

@@ -24,7 +24,6 @@
     <h5>|| 접속부서 : <%= data.department %> || 접속한 시간 : <%= data.date %> || 접속한 ip : <%= data.ip %> ||</h5>
     <h5>|| 접속한 아이디 : <%= data.access_id %> || 접속한 담당자 : <%= data.access_name %> || </h5>
     <br />
-        <h1> 조회 부서 : <%= check %> </h1>
     <div id="findData" style="display: none"><%= JSON.stringify(findData) %></div><br/>
     <form
             action="http://socket.doorbellsquare.com:8080/version/dev/file/Management"
@@ -32,11 +31,89 @@
             enctype="application/x-www-form-urlencoded"
     >
         <input type="hidden" name="dev" value="<%= param.param%>">
+
         <button type="submit" class="custom-btn btn-12">
             <span> Move !</span>
             <span> Management 이동 </span>
         </button>
     </form>
+    <br />
+    <div>
+    <form
+            action="http://socket.doorbellsquare.com:8080/history/search/table"
+            method="post"
+            enctype="application/x-www-form-urlencoded"
+            style="float: left; padding-left: 30%"
+    >
+        <input type="hidden" name="data" value="<%= JSON.stringify(data)%>">
+        <input type="hidden" name="param" value="<%= param.param%>">
+        <input type="hidden" name="department" value="All">
+        <input type="hidden" name="contents" value="All">
+        <button type="submit" class="custom-btn btn-12">
+            <span> Find All !</span>
+            <span> 전체 조회 </span>
+        </button>
+    </form>
+    <form
+            action="http://socket.doorbellsquare.com:8080/history/search/table"
+            method="post"
+            enctype="application/x-www-form-urlencoded"
+            style="float: left; padding-left: 30px"
+    >
+
+        <input type="hidden" name="data" value="<%= JSON.stringify(data)%>">
+        <input type="hidden" name="param" value="<%= param.param%>">
+
+            <select name="department" id="departmentSelect" style="width: 170px; padding-right: 10px">
+                <option value="none" selected>===== 선택 =====</option>
+                <option value="All">전체 부서</option>
+                <option value="Server">Server</option>
+                <option value="Device">Device</option>
+                <option value="App">App</option>
+                <option value="CEO">CEO</option>
+            </select>
+
+        <select name='contents' id="select_department" style="width: 170px; padding-right: 10px">
+            <option value="none" selected>===== 선택 =====</option>
+            <option value="upload">Upload</option>
+            <option value="download">Download</option>
+            <option value="delete">Delete</option>
+            <option value="login">Login</option>
+        </select>
+        <button type="submit" class="custom-btn btn-12">
+            <span> Find !</span>
+            <span> 조회 </span>
+        </button>
+    </form>
+    </div>
+    <br/>
+    <br/><br/>
+
+<!--    <% if(data.department === 'Server') { %>-->
+<!--    <form-->
+<!--            action="http://socket.doorbellsquare.com:8080/history/logs/deleted"-->
+<!--            method="post"-->
+<!--            enctype="application/x-www-form-urlencoded"-->
+<!--    >-->
+<!--        <input type="hidden" name="data" value="<%= JSON.stringify(data)%>">-->
+<!--        <input type="hidden" name="param" value="<%= param.param%>">-->
+<!--        <select name='department' id="select_department" onchange="CheckBox(this)">-->
+<!--            <option value="none" selected>== 선택 ==</option>-->
+<!--            <option value="Server">Server</option>-->
+<!--            <option value="Device">Device</option>-->
+<!--            <option value="App">App</option>-->
+<!--            <option value="CEO">CEO</option>-->
+<!--        </select>-->
+<!--        <select name="time" id="timeSelect">-->
+<!--            <option> 시간 선택 </option>-->
+<!--        </select>-->
+<!--        <button type="submit" class="custom-btn btn-12">-->
+<!--            <span> Delete !</span>-->
+<!--            <span> 로그데이터 삭제 </span>-->
+<!--        </button>-->
+<!--    </form>-->
+<!--    <% } %>-->
+
     <div id="wrap">
 
         <div class="pt-3"></div>
@@ -113,6 +190,26 @@
 
     });
 
+    function CheckBox(e){
+       const select = e.value
+        const findData = JSON.parse(document.getElementById('findData').innerHTML)
+        let contents = []
+        var target =document.getElementById('timeSelect')
+        findData.map(e=>{
+            if(e.department === select){
+                contents.push(e.date)
+            }
+        })
+
+        target.options.length = 0;
+        for(x in contents){
+            var opt = document.createElement("option");
+            opt.value = contents[x];
+            opt.name = contents[x]
+            opt.innerHTML = contents[x];
+            target.appendChild(opt);
+        }
+    }
 </script>
 </body>
 </html>

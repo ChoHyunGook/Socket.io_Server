@@ -68,6 +68,12 @@ app.post('/management/history/log',(req,res)=>{
 app.post('/management/documents/file/download',(req,res)=>{
     Management().documentsDownload(req,res)
 })
+app.post('/history/logs/deleted',(req,res)=>{
+    Management().deleteLog(req,res)
+})
+app.post('/history/search/table',(req,res)=>{
+    Management().searchTable(req,res)
+})
 
 
 
