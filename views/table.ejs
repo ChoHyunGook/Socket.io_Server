@@ -21,7 +21,7 @@
          width="350" height="120">
     <br />
     <h1> 로그 조회</h1>
-    <h5>|| 접속부서 : <%= data.department %> || 접속한 시간 : <%= data.date %> ||</h5>
+    <h5>|| 접속부서 : <%= data.department %> || 접속한 시간 : <%= data.date %> || 접속한 ip : <%= data.ip %> ||</h5>
     <h5>|| 접속한 아이디 : <%= data.access_id %> || 접속한 담당자 : <%= data.access_name %> || </h5>
     <br />
         <h1> 조회 부서 : <%= check %> </h1>
@@ -58,6 +58,8 @@
                     <th data-field="access_name">담당자</th>
 
                     <th data-field="access_id">아이디</th>
+
+                    <th data-field="ip">접속 아이피</th>
 
                     <th data-field="contents">로그 내용</th>
 

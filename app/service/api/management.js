@@ -305,6 +305,7 @@ const management = function () {
 
         async fileManagement(req, res) {
             const devAdmin = req.query.dev
+            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const ClientId = AWS_SECRET
             const ClientSecret = AWS_ACCESS
             const Bucket_name = AWS_BUCKET_NAME
@@ -325,6 +326,7 @@ const management = function () {
                     access_id: devAdmin.split('.')[4] + '.' + devAdmin.split('.')[5] + '.' + devAdmin.split('.')[6],
                     access_name: devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' : devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선',
                     department: devAdmin.split('.')[1],
+                    ip:ip,
                     contents: 'devLogin',
                     date: date.format('YYYY-MM-DD HH:mm:ss')
                 }

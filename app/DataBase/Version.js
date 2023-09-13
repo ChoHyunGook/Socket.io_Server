@@ -4,6 +4,7 @@ const version = function (mongoose){
         access_name:{type:String, trim: true},
         department:{type:String,trim:true},
         contents:{type:String,trim:true},
+        ip:{type:String,trim:true},
         date:{type:String,trim:true}
     },{ versionKey : false })
     return mongoose.model('version',versionSchema)
