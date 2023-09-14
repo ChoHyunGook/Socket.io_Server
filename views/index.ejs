@@ -29,7 +29,7 @@
                 action="http://socket.doorbellsquare.com:8080/uploadS3File"
                 method="post" enctype="multipart/form-data"
         >
-        <h3> 버전 파일 업로드</h3>
+        <h3> 파일 업로드 </h3>
         <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
         <input type="file" name="file" id="file" style="width: 350px; padding-right: 10px">
             <button type="submit" class="custom-btn btn-12">
@@ -46,7 +46,7 @@
                 method="post"
                 enctype="application/x-www-form-urlencoded"
         >
-            <h3> 버전 별 다운로드</h3>
+            <h3> 파일 다운로드 </h3>
             <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
             <% if (data.department === 'Server' || data.department === 'CEO') { %>
 
@@ -124,7 +124,7 @@
                     method="post"
                     enctype="application/x-www-form-urlencoded"
             >
-                <h3> Server 문서 다운로드 </h3>
+                <h3> 문서 다운로드 </h3>
                 <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
                 <select name='docCheck' id="select_department" onchange="changeDocuments(this)">
                     <option value="none" selected>선택</option>
@@ -150,7 +150,7 @@
                 method="post"
                 enctype="application/x-www-form-urlencoded"
         >
-            <h3>버전 별 파일 삭제 </h3>
+            <h3> 업로드 파일 삭제 </h3>
             <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
             <% if (data.department === 'Server' || data.department === 'CEO') { %>
 
@@ -228,7 +228,7 @@
                     method="post"
                     enctype="application/x-www-form-urlencoded"
             >
-                <h3>로그 조회</h3>
+                <h3> History 조회 </h3>
                 <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
 
                     <button type="submit" class="custom-btn btn-12">
