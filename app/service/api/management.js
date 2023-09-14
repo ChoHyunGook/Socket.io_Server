@@ -64,15 +64,23 @@ const management = function () {
                             res.render('table',{data:loginData,param:param,findData:sendData})
                         })
                 }else{
-                    Version.find({department:department})
-                        .then(findData=>{
-                            findData.map(e=>{
-                                if(e.contents.split('.')[0] === contents){
-                                    sendData.push(e)
-                                }
+                    if(contents === 'All'){
+                        Version.find({department:department})
+                            .then(findData=>{
+                                res.render('table',{data:loginData, param:param, findData:findData})
                             })
-                            res.render('table',{data:loginData, param:param, findData:sendData})
-                        })
+                    }else{
+                        Version.find({department:department})
+                            .then(findData=>{
+                                findData.map(e=>{
+                                    if(e.contents.split('.')[0] === contents){
+                                        sendData.push(e)
+                                    }
+                                })
+                                res.render('table',{data:loginData, param:param, findData:sendData})
+                            })
+                    }
+
                 }
             }
         },
