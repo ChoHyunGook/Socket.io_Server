@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko" style="align-items: center">
+<head>
+    <link rel="shortcut icon" type="image/x-icon" href="https://github.com/ChoHyunGook/pubpic/blob/main/new_blaubit.png?raw=true">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Blaubit Version Management(Error)</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div style="text-align: center">
+    <br />
+    <br />
+    <img src="https://github.com/ChoHyunGook/pubpic/blob/main/new_blaubit.png?raw=true"
+         width="350" height="120">
+    <br />
+    <h1>Error</h1>
+    <h3>|| 접속 부서 : <%= data.department %> || 접속 시간 : <%= data.date %> || 접속한 ip : <%= data.ip %> ||</h3>
+    <h3>|| 접속한 아이디 : <%= data.access_id %> || 접속 담당자 : <%= data.access_name %> || </h3>
+    <br />
+    <div class="outset">
+        <h2> ErrorMessage : </h2>
+        <h4><%= error.message %></h4>
+        <form
+                action="http://socket.doorbellsquare.com:8080/management/history/log"
+                method="post"
+                enctype="application/x-www-form-urlencoded"
+        >
+            <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
+            <button type="submit" class="custom-btn btn-12">
+                <span> Move !</span>
+                <span> 로그조회 이동 </span>
+            </button>
+        </form>
+    </div>
+    <br/>
+
+</div>
+</body>
+</html>

@@ -38,7 +38,8 @@ const management = function () {
                 let error = {
                     message:`선택사항을 선택 후 클릭 해주세요. 선택 : ${department}, ${contents}`
                 }
-                res.render('error',{error:error,param:param,data:loginData})
+                res.render('tableError',{error:error,data:loginData})
+
             }else{
                 if(department === 'Connect'){
                     //접속실패
