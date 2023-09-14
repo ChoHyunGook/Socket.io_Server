@@ -30,8 +30,7 @@
             method="get"
             enctype="application/x-www-form-urlencoded"
     >
-        <input type="hidden" name="dev" value="<%= param.param%>">x
-
+        <input type="hidden" name="dev" value="<%= param.param %>">
         <button type="submit" class="custom-btn btn-12">
             <span> Move !</span>
             <span> Management 이동 </span>
@@ -43,7 +42,6 @@
             action="http://socket.doorbellsquare.com:8080/history/search/table"
             method="post"
             enctype="application/x-www-form-urlencoded"
-            style="float: left; padding-left: 30%"
     >
         <input type="hidden" name="data" value="<%= JSON.stringify(data)%>">
         <input type="hidden" name="param" value="<%= param.param%>">
@@ -54,18 +52,19 @@
             <span> 전체 조회 </span>
         </button>
     </form>
+        <br />
     <form
             action="http://socket.doorbellsquare.com:8080/history/search/table"
             method="post"
             enctype="application/x-www-form-urlencoded"
-            style="float: left; padding-left: 30px"
     >
 
         <input type="hidden" name="data" value="<%= JSON.stringify(data)%>">
         <input type="hidden" name="param" value="<%= param.param%>">
 
-            <select name="department" id="departmentSelect" style="width: 170px; padding-right: 10px">
+            <select name="department" id="departmentSelect" onchange="CheckBox(this)" style="width: 170px; padding-right: 10px">
                 <option value="none" selected>===== 선택 =====</option>
+                <option value="Connect">접근시도</option>
                 <option value="All">전체 부서</option>
                 <option value="Server">Server</option>
                 <option value="Device">Device</option>
@@ -73,12 +72,8 @@
                 <option value="CEO">CEO</option>
             </select>
 
-        <select name='contents' id="select_department" style="width: 170px; padding-right: 10px">
-            <option value="none" selected>===== 선택 =====</option>
-            <option value="upload">Upload</option>
-            <option value="download">Download</option>
-            <option value="delete">Delete</option>
-            <option value="login">Login</option>
+        <select name='contents' id="contents" style="width: 170px; padding-right: 10px">
+            <option>===== 선택 =====</option>
         </select>
         <button type="submit" class="custom-btn btn-12">
             <span> Find !</span>
@@ -86,8 +81,6 @@
         </button>
     </form>
     </div>
-    <br/>
-    <br/><br/>
 
 <!--    <% if(data.department === 'Server') { %>-->
 <!--    <form-->
@@ -192,14 +185,19 @@
 
     function CheckBox(e){
        const select = e.value
-        const findData = JSON.parse(document.getElementById('findData').innerHTML)
-        let contents = []
-        var target =document.getElementById('timeSelect')
-        findData.map(e=>{
-            if(e.department === select){
-                contents.push(e.date)
-            }
-        })
+        let beforeLogin = ['접속시도(실패)데이터']
+        let afterLogin = ['===== 선택 =====','Upload','Download','Delete','Login']
+        let afterDepartmentLogin = ['===== 선택 =====','All','Upload','Download','Delete','Login']
+        var target =document.getElementById('contents')
+        let contents
+        if(select === 'Connect'){
+            contents = beforeLogin
+        }else if(select === 'All'){
+            contents = afterLogin
+        }else{
+            contents = afterDepartmentLogin
+        }
+
 
         target.options.length = 0;
         for(x in contents){

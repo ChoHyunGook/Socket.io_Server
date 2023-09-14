@@ -24,19 +24,36 @@ const s3 = new AWS.S3({
 const management = function () {
     return{
         searchTable(req,res){
-            console.log(req.body)
             const bodyData = req.body
             const loginData =JSON.parse(bodyData.data)
-            const param = bodyData.param
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            let param = {
+                param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
+            }
+            const department = bodyData.department
             const contents = bodyData.contents
             let sendData=[]
-            if(contents === 'All'){
-                Version.find({})
-                    .then(findData=>{
-                        res.render('table',{data:loginData,param:param,findData:findData})
-                    })
+            console.log(bodyData)
+            if(department === 'none' || contents === '===== 선택 ====='){
+                let error = {
+                    message:`선택사항을 선택 후 클릭 해주세요. 선택 : ${department}, ${contents}`
+                }
+                res.render('error',{error:error,param:param,data:loginData})
             }else{
-                if(bodyData.department === 'All'){
+                if(department === 'Connect'){
+                    //접속실패
+                    Version.find({department:'Check the Ip Address',access_name:'Unknown',access_id:'Disconnect'})
+                        .then(findData=>{
+                            res.render('table',{data:loginData,param:param,findData:findData})
+                        })
+                }
+                else if(department === 'All' && contents === 'All'){
+                    Version.find({})
+                        .then(findData=>{
+                            res.render('table',{data:loginData,param:param,findData:findData})
+                        })
+                }
+                else if(department === 'All'){
                     Version.find({})
                         .then(findData=>{
                             findData.map(e=>{
@@ -47,14 +64,14 @@ const management = function () {
                             res.render('table',{data:loginData,param:param,findData:sendData})
                         })
                 }else{
-                    Version.find({department:bodyData.department})
+                    Version.find({department:department})
                         .then(findData=>{
                             findData.map(e=>{
                                 if(e.contents.split('.')[0] === contents){
                                     sendData.push(e)
                                 }
                             })
-                            res.render('table',{data:loginData,param:param,findData:sendData})
+                            res.render('table',{data:loginData, param:param, findData:sendData})
                         })
                 }
             }
@@ -62,7 +79,10 @@ const management = function () {
         deleteLog(req,res){
             const bodyData = req.body
             const loginData =JSON.parse(bodyData.data)
-            const param = bodyData.param
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            let param = {
+                param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
+            }
             console.log(bodyData)
             Version.deleteMany({department:bodyData.department,date:bodyData.time})
                 .then(data=>{
@@ -106,7 +126,7 @@ const management = function () {
                             access_name: loginData.access_name,
                             department: loginData.department,
                             ip:ip,
-                            contents: `download.${bodyData.documents}`,
+                            contents: `Download.${bodyData.documents}`,
                             date: date.format('YYYY-MM-DD HH:mm:ss')
                         }
                         new Version(versionData).save()
@@ -189,7 +209,7 @@ const management = function () {
                             access_name: loginData.access_name,
                             department: loginData.department,
                             ip:ip,
-                            contents: `delete.${bodyData.versionSelect}`,
+                            contents: `Delete.${bodyData.versionSelect}`,
                             date: date.format('YYYY-MM-DD HH:mm:ss')
                         }
                         new Version(versionData).save()
@@ -232,7 +252,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `download.${bodyData.versionSelect}`,
+                                contents: `Download.${bodyData.versionSelect}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -254,7 +274,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `download.${bodyData.versionSelect}`,
+                                contents: `Download.${bodyData.versionSelect}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -353,6 +373,19 @@ const management = function () {
 
             if (devAdmin !== DEV_CEO_ADMIN && devAdmin !== DEV_SEVER_ADMIN && devAdmin !== DEV_APP_ADMIN &&
                 devAdmin !== DEV_DEVICE_ADMIN) {
+                const date = moment().tz('Asia/Seoul')
+                let data = {
+                    access_id:'Disconnect',
+                    access_name:'Unknown',
+                    department:'Check the Ip Address',
+                    ip:ip,
+                    contents:`Someone unknown tried to approach.`,
+                    date:date.format('YYYY-MM-DD HH:mm:ss')
+                }
+                new Version(data).save()
+                    .then(r => console.log('Version Login Fail History Save Success'))
+                    .catch(err => console.log('Version Login Fail History Save Fail', err))
+
                 res.render('dangerous')
             } else {
                 const date = moment().tz('Asia/Seoul')
@@ -363,7 +396,7 @@ const management = function () {
                     access_name: name,
                     department: devAdmin.split('.')[1],
                     ip:ip,
-                    contents: `login.${devAdmin.split('.')[1]}.${devAdmin.split('.')[3]}.${devAdmin.split('.')[4].split('@')[0]}`,
+                    contents: `Login.${devAdmin.split('.')[1]}.${devAdmin.split('.')[3]}.${devAdmin.split('.')[4].split('@')[0]}`,
                     date: date.format('YYYY-MM-DD HH:mm:ss')
                 }
                 new Version(data).save()
@@ -477,7 +510,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `DocumentsUploadData.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -500,7 +533,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -523,7 +556,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
 
@@ -547,7 +580,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -570,7 +603,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -593,7 +626,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -616,7 +649,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -639,7 +672,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -663,7 +696,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -687,7 +720,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -711,7 +744,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -735,7 +768,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -759,7 +792,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -783,7 +816,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
@@ -807,7 +840,7 @@ const management = function () {
                                 access_name: loginData.access_name,
                                 department: loginData.department,
                                 ip:ip,
-                                contents: `upload.${file.originalname}`,
+                                contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
