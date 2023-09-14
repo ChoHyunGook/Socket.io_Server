@@ -33,7 +33,6 @@ const management = function () {
             const department = bodyData.department
             const contents = bodyData.contents
             let sendData=[]
-            console.log(bodyData)
             if(department === 'none' || contents === '===== 선택 ====='){
                 let error = {
                     message:`선택사항을 선택 후 클릭 해주세요. 선택 : ${department}, ${contents}`
@@ -92,23 +91,24 @@ const management = function () {
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
-            console.log(bodyData)
+
             Version.deleteMany({department:bodyData.department,date:bodyData.time})
                 .then(data=>{
-                    console.log('delete Success')
                     Version.find({}).sort({"date":-1})
                         .then(findCeo=>{
                             res.render('table',{data:loginData,param:param,findData:findCeo})
                         })
                 })
                 .catch(err=>{
-                    console.log(err)
+                    let error = {
+                        message:`데이터 로그 삭제 에러... 에러내용 : ${err}`
+                    }
+                    res.render('error',{error:error,param:param,data:loginData})
                 })
         },
 
         documentsDownload(req,res){
             const bodyData =req.body
-            console.log(bodyData)
             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const loginData = JSON.parse(bodyData.data)
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
@@ -127,7 +127,10 @@ const management = function () {
                 }
                 s3.getObject(params, function (err, data) {
                     if(err){
-                        console.log(err)
+                        let error = {
+                            message:`데이터 다운로드 전 조회 에러... 에러내용 : ${err}`
+                        }
+                        res.render('error',{error:error,param:param,data:loginData})
                     }else{
                         const date = moment().tz('Asia/Seoul')
                         let versionData = {
@@ -210,7 +213,10 @@ const management = function () {
                 }
                 s3.deleteObject(params,function (err,data){
                     if(err){
-                        console.log(err)
+                        let error = {
+                            message:`데이터 삭제 에러... 에러내용 : ${err}`
+                        }
+                        res.render('error',{error:error,param:param,data:loginData})
                     }else{
                         const date = moment().tz('Asia/Seoul')
                         let versionData = {
@@ -252,7 +258,10 @@ const management = function () {
                 }
                 s3.getObject(params, function (err, data) {
                     if (err) {
-                        console.log(err)
+                        let error = {
+                            message:`데이터 다운로드 에러... 에러내용 : ${err}`
+                        }
+                        res.render('error',{error:error,param:param,data:loginData})
                     } else {
                         if(devVersion === 'device'){
                             const date = moment().tz('Asia/Seoul')
@@ -447,13 +456,12 @@ const management = function () {
                             }
                         })
 
-
                         res.render('index', {
                             data: data,
                             deviceData:deviceData.reverse(),
                             appData:appData.reverse(),
                             serverData:serverData.reverse(),
-                            documentData:documentData
+                            documentData:documentData.reverse()
                         })
 
                     })

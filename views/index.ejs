@@ -269,6 +269,8 @@
                 }
             })
         }
+        contents = [contents[contents.length -1],...contents]
+        contents.pop()
 
         target.options.length = 0;
         for(x in contents){
@@ -388,20 +390,32 @@
         const serverData = JSON.parse(document.getElementById('serverData').innerHTML)
         const appData = JSON.parse(document.getElementById('appData').innerHTML)
         const deviceData = JSON.parse(document.getElementById('deviceData').innerHTML);
-
+        const documentData = JSON.parse(document.getElementById('documentData').innerHTML);
         let contents =[]
 
         var target =document.getElementById('delVersionSelect')
+        console.log(select)
         if(allCheck === 'Server'){
-            serverData.map(e=>{
-                if(e.key.split('/')[1] === select){
+            if(select === 'documents'){
+                documentData.map(e=>{
                     if(e.key.split('/')[2].length === 0){
                         contents.push('=== 선택 ===')
                     }else{
                         contents.push(e.key.split('/')[2])
                     }
-                }
-            })
+                })
+            }else{
+                serverData.map(e=>{
+                    if(e.key.split('/')[1] === select){
+                        if(e.key.split('/')[2].length === 0){
+                            contents.push('=== 선택 ===')
+                        }else{
+                            contents.push(e.key.split('/')[2])
+                        }
+                    }
+                })
+            }
+
         }else if(allCheck === 'Device'){
             deviceData.map(e=>{
                 if(e.key.split('/')[1] === select){
@@ -422,7 +436,6 @@
                     }
                 }
             })
-
         }
 
         target.options.length = 0;
