@@ -42,19 +42,19 @@ const management = function () {
             }else{
                 if(department === 'Connect'){
                     //접속실패
-                    Version.find({department:'Check the Ip Address',access_name:'Unknown',access_id:'Disconnect'})
+                    Version.find({department:'Check the Ip Address',access_name:'Unknown',access_id:'Disconnect'}).sort({"date":-1})
                         .then(findData=>{
                             res.render('table',{data:loginData,param:param,findData:findData})
                         })
                 }
                 else if(department === 'All' && contents === 'All'){
-                    Version.find({})
+                    Version.find({}).sort({"date":-1})
                         .then(findData=>{
                             res.render('table',{data:loginData,param:param,findData:findData})
                         })
                 }
                 else if(department === 'All'){
-                    Version.find({})
+                    Version.find({}).sort({"date":-1})
                         .then(findData=>{
                             findData.map(e=>{
                                 if(e.contents.split('.')[0] === contents){
@@ -65,12 +65,12 @@ const management = function () {
                         })
                 }else{
                     if(contents === 'All'){
-                        Version.find({department:department})
+                        Version.find({department:department}).sort({"date":-1})
                             .then(findData=>{
                                 res.render('table',{data:loginData, param:param, findData:findData})
                             })
                     }else{
-                        Version.find({department:department})
+                        Version.find({department:department}).sort({"date":-1})
                             .then(findData=>{
                                 findData.map(e=>{
                                     if(e.contents.split('.')[0] === contents){
