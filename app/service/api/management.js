@@ -33,7 +33,13 @@ const management = function () {
             const department = bodyData.department
             const contents = bodyData.contents
             let sendData=[]
-            if(department === 'none' || contents === '===== 선택 ====='){
+            if(department === 'none' && contents === '===== 선택 ====='){
+                Version.find({}).sort({"date":-1})
+                    .then(findData=>{
+                        res.render('table',{data:loginData,param:param,findData:findData})
+                    })
+            }
+            else if(department === 'none' || contents === '===== 선택 ====='){
                 let error = {
                     message:`선택사항을 선택 후 클릭 해주세요. 선택 : ${department}, ${contents}`
                 }
