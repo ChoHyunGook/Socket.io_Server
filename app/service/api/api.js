@@ -18,6 +18,7 @@ var Client = require('mongodb').MongoClient;
 const apiLogs = db.logs
 const Info = db.Info
 const History = db.history
+const Face = db.face
 
 
 let count = 0;
@@ -37,6 +38,96 @@ const {
 
 const api = function () {
     return {
+        // param=create, bodyData = { device_id: "" ,name: "" ,phone: "" }
+        // param=del, bodyData = { device_id: "" }
+        // param=find, bodyData = { device_id: ""}
+
+        face_register(req,res){
+            const params = req.query.contents
+            const data = req.body
+
+            if(params === 'create'){
+                Face.find({device_id:data.device_id, phone:data.phone})
+                    .then(findData=>{
+                        //[1,2,3,4,5,6,7,8,9,10]
+                        const saveTime = moment().tz('Asia/Seoul')
+                        let filterData = []
+                        if(findData.length >= 10){
+                            res.status(400).send(`Saved Data Exceed`)
+                        }else{
+                            if(findData.length >= 1){
+                                findData.map(e=>{
+                                        if(filterData.length === 0){
+                                            filterData.push(e)
+                                        }else{
+                                            filterData.map(fd=>{
+                                                if(e.index > fd.index){
+                                                    filterData[0] = e
+                                                }
+                                            })
+                                        }
+
+                                })
+                                let savedData = {
+                                    device_id: data.device_id,
+                                    name:data.name,
+                                    phone:data.phone,
+                                    index:filterData[0].index + 1,
+                                    date:saveTime.format('YYYY_MM_DD.kk:mm:ss')
+                                }
+                                new Face(savedData).save()
+                                    .then(r=>res.status(200).send('Saved Data Completed'))
+                                    .catch(err=>
+                                    {
+                                        if(err.keyPattern.name === 1){
+                                            res.status(400).send('Duplicated Name')
+                                        }else{
+                                            res.status(400).send(err)
+                                        }
+                                    })
+
+                            }else{
+                                let saveData = {
+                                    device_id: data.device_id,
+                                    name:data.name,
+                                    phone:data.phone,
+                                    index:1,
+                                    date:saveTime.format('YYYY_MM_DD.kk:mm:ss')
+                                }
+                                new Face(saveData).save()
+                                    .then(r=>res.status(200).send('Saved Data Completed'))
+                                    .catch(err=> res.status(400).send(err))
+                            }
+
+                        }
+                    })
+                    .catch(err=>{
+                        if(err.keyPattern.name === 1){
+                            res.status(400).send('Duplicated Name')
+                        }else{
+                            res.status(400).send(err)
+                        }
+                    })
+            }
+            if(params === 'del'){
+                Face.deleteMany({device_id:data.device_id})
+                    .then(dbs=>{
+                        res.status(200).send(`${data.device_id} deleted`)
+                    })
+                    .catch(err=>{
+                        res.status(400).send(err)
+                    })
+            }
+            if(params === 'find'){
+                Face.find({device_id:data.device_id})
+                    .then(findData=>{
+                        res.status(200).send(findData)
+                    })
+                    .catch(err=>{
+                        res.status(400).send(err)
+                    })
+            }
+        },
         //{id:xx, tel:xx}
         start_up(req, res) {
             const data = req.body

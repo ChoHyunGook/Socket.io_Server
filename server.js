@@ -44,7 +44,7 @@ async function startServer(){
 
     app.use(morgan('dev'))
 
-    WebRtc()
+    //WebRtc()
 
     app.use('/socketServer',Socket)
     app.use(Api)

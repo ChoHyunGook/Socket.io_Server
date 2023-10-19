@@ -24,7 +24,15 @@
     <div id="appData" style="display: none"><%= JSON.stringify(appData) %></div>
     <div id="deviceData" style="display: none"><%= JSON.stringify(deviceData) %></div>
     <div id="loginData" style="display: none"><%= JSON.stringify(data) %></div>
+    <div id="uploadData" style="display: none"><%= JSON.stringify(uploadData) %></div>
+
+
+<br/>
+
+
+
     <div class="outset">
+
     <form
                 action="http://socket.doorbellsquare.com:8080/uploadS3File"
                 method="post" enctype="multipart/form-data"
@@ -242,7 +250,11 @@
 
 
 </div>
+
 </body>
+
+
+
 <script>
 
     let devSelect
@@ -454,4 +466,5 @@
 
 
 </script>
+
 </html>

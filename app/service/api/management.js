@@ -23,6 +23,116 @@ const s3 = new AWS.S3({
 
 const management = function () {
     return{
+        async fileManagement(req, res) {
+            const devAdmin = req.query.dev
+            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+            const ClientId = AWS_SECRET
+            const ClientSecret = AWS_ACCESS
+            const Bucket_name = AWS_BUCKET_NAME
+
+            const s3 = new AWS.S3({
+                accessKeyId: ClientId,
+                secretAccessKey: ClientSecret,
+                region: AWS_REGION
+            });
+
+            if (devAdmin !== DEV_CEO_ADMIN && devAdmin !== DEV_SEVER_ADMIN && devAdmin !== DEV_APP_ADMIN &&
+                devAdmin !== DEV_DEVICE_ADMIN) {
+                const date = moment().tz('Asia/Seoul')
+                let data = {
+                    access_id:'Disconnect',
+                    access_name:'Unknown',
+                    department:'Check the Ip Address',
+                    ip:ip,
+                    contents:`Someone unknown tried to approach.`,
+                    date:date.format('YYYY-MM-DD HH:mm:ss')
+                }
+                new Version(data).save()
+                    .then(r => console.log('Version Login Fail History Save Success'))
+                    .catch(err => console.log('Version Login Fail History Save Fail', err))
+
+                res.render('dangerous')
+            } else {
+                const date = moment().tz('Asia/Seoul')
+                const name = devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' : devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선'
+
+                let data = {
+                    access_id: devAdmin.split('.')[4] + '.' + devAdmin.split('.')[5] + '.' + devAdmin.split('.')[6],
+                    access_name: name,
+                    department: devAdmin.split('.')[1],
+                    ip:ip,
+                    contents: `Login.${devAdmin.split('.')[1]}.${devAdmin.split('.')[3]}.${devAdmin.split('.')[4].split('@')[0]}`,
+                    date: date.format('YYYY-MM-DD HH:mm:ss')
+                }
+                new Version(data).save()
+                    .then(r => console.log('Version Login History Save Success'))
+                    .catch(err => console.log('Version Login History Save Fail', err))
+
+                await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
+                    const contents = list.Contents
+                    let deviceData = []
+                    let appData = []
+                    let serverData = []
+                    let documentData = []
+
+                    contents.map(e => {
+                        if(e.Key.split('/')[0]==='server'){
+                            if(e.Key.split('/')[1] === 'documents'){
+                                let keyData = {
+                                    key:e.Key
+                                }
+                                documentData.push(keyData)
+                            }else{
+                                let keyData = {
+                                    key:e.Key
+                                }
+                                serverData.push(keyData)
+                            }
+                            //console.log(serverData)
+                        }
+                        if(e.Key.split('/')[0]==='device'){
+                            let keyData = {
+                                key:e.Key
+                            }
+                            deviceData.push(keyData)
+                        }
+                        if(e.Key.split('/')[0]==='app'){
+                            let keyData = {
+                                key:e.Key
+                            }
+                            appData.push(keyData)
+                        }
+                    })
+
+                    Version.find({}).sort({"date":-1})
+                        .then(findData=>{
+                            let uploadData = []
+                            let count = 0
+                            findData.map(e=>{
+                                if(e.contents.split('.')[0] === 'Upload'){
+                                    uploadData.push(e)
+                                }
+                            })
+                            res.render('index', {
+                                data: data,
+                                deviceData:deviceData.reverse(),
+                                appData:appData.reverse(),
+                                serverData:serverData.reverse(),
+                                documentData:documentData.reverse(),
+                                uploadData:uploadData
+                            })
+                        })
+
+
+                })
+
+
+            }
+        },
+
+
+
+
         searchTable(req,res){
             const bodyData = req.body
             const loginData =JSON.parse(bodyData.data)
@@ -382,99 +492,7 @@ const management = function () {
 
         },
 
-        async fileManagement(req, res) {
-            const devAdmin = req.query.dev
-            const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-            const ClientId = AWS_SECRET
-            const ClientSecret = AWS_ACCESS
-            const Bucket_name = AWS_BUCKET_NAME
 
-            const s3 = new AWS.S3({
-                accessKeyId: ClientId,
-                secretAccessKey: ClientSecret,
-                region: AWS_REGION
-            });
-
-            if (devAdmin !== DEV_CEO_ADMIN && devAdmin !== DEV_SEVER_ADMIN && devAdmin !== DEV_APP_ADMIN &&
-                devAdmin !== DEV_DEVICE_ADMIN) {
-                const date = moment().tz('Asia/Seoul')
-                let data = {
-                    access_id:'Disconnect',
-                    access_name:'Unknown',
-                    department:'Check the Ip Address',
-                    ip:ip,
-                    contents:`Someone unknown tried to approach.`,
-                    date:date.format('YYYY-MM-DD HH:mm:ss')
-                }
-                new Version(data).save()
-                    .then(r => console.log('Version Login Fail History Save Success'))
-                    .catch(err => console.log('Version Login Fail History Save Fail', err))
-
-                res.render('dangerous')
-            } else {
-                const date = moment().tz('Asia/Seoul')
-                const name = devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' : devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선'
-
-                let data = {
-                    access_id: devAdmin.split('.')[4] + '.' + devAdmin.split('.')[5] + '.' + devAdmin.split('.')[6],
-                    access_name: name,
-                    department: devAdmin.split('.')[1],
-                    ip:ip,
-                    contents: `Login.${devAdmin.split('.')[1]}.${devAdmin.split('.')[3]}.${devAdmin.split('.')[4].split('@')[0]}`,
-                    date: date.format('YYYY-MM-DD HH:mm:ss')
-                }
-                new Version(data).save()
-                    .then(r => console.log('Version Login History Save Success'))
-                    .catch(err => console.log('Version Login History Save Fail', err))
-
-                    await s3.listObjects({Bucket: Bucket_name}).promise().then((list) => {
-                        const contents = list.Contents
-                        let deviceData = []
-                        let appData = []
-                        let serverData = []
-                        let documentData = []
-                        contents.map(e => {
-                            if(e.Key.split('/')[0]==='server'){
-                                if(e.Key.split('/')[1] === 'documents'){
-                                    let keyData = {
-                                        key:e.Key
-                                    }
-                                    documentData.push(keyData)
-                                }else{
-                                    let keyData = {
-                                        key:e.Key
-                                    }
-                                    serverData.push(keyData)
-                                }
-                                //console.log(serverData)
-                            }
-                            if(e.Key.split('/')[0]==='device'){
-                                    let keyData = {
-                                        key:e.Key
-                                    }
-                                    deviceData.push(keyData)
-                            }
-                            if(e.Key.split('/')[0]==='app'){
-                                let keyData = {
-                                    key:e.Key
-                                }
-                                appData.push(keyData)
-                            }
-                        })
-
-                        res.render('index', {
-                            data: data,
-                            deviceData:deviceData.reverse(),
-                            appData:appData.reverse(),
-                            serverData:serverData.reverse(),
-                            documentData:documentData.reverse()
-                        })
-
-                    })
-
-
-            }
-        },
 
 
         deviceS3Upload(req, res) {

@@ -4,6 +4,7 @@ const logs = require("./Logs");
 const InfoData = require('./Info')
 const history = require('./history')
 const version = require('./Version')
+const FaceRegister = require('./FaceRegister')
 
 const db = {}
 db.mongoose = mongoose
@@ -12,6 +13,7 @@ db.logs=new logs(mongoose)
 db.Info =new InfoData(mongoose)
 db.history = new history(mongoose)
 db.version = new version(mongoose)
+db.face = new FaceRegister(mongoose)
 
 
 module.exports = db

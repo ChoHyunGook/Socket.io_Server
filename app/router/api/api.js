@@ -3,10 +3,13 @@ const app = express();
 const Api = require('../../service/api/api')
 const Management = require('../../service/api/management')
 const multer = require('multer');
-const {router} = require("express/lib/application");
 var storage = multer.memoryStorage()
 var upload = multer({storage: storage});
 
+
+app.post('/faceRegister',(req,res)=>{
+    Api().face_register(req,res)
+})
 
 app.post('/sendSms',(req,res)=>{
     Api().sendSms(req,res)
@@ -74,6 +77,7 @@ app.post('/history/logs/deleted',(req,res)=>{
 app.post('/history/search/table',(req,res)=>{
     Management().searchTable(req,res)
 })
+
 
 
 
