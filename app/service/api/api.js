@@ -47,9 +47,8 @@ const api = function () {
             const data = req.body
 
             if(params === 'create'){
-                Face.find({device_id:data.device_id, phone:data.phone})
+                Face.find({device_id:data.device_id, phone:data.phone}).sort({"date":-1})
                     .then(findData=>{
-                        //[1,2,3,4,5,6,7,8,9,10]
                         const saveTime = moment().tz('Asia/Seoul')
                         let filterData = []
                         if(findData.length >= 10){
