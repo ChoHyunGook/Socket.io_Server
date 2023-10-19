@@ -109,18 +109,30 @@ const api = function () {
                     })
             }
             if(params === 'del'){
-                Face.deleteMany({device_id:data.device_id})
-                    .then(dbs=>{
-                        res.status(200).send(`${data.device_id} deleted`)
+                Face.find({device_id:data.device_id})
+                    .then(findData=>{
+                        if(findData.length === 0){
+                            res.status(400).send('No data to delete.')
+                        }else{
+                            Face.deleteMany({device_id:data.device_id})
+                                .then(dbs=>{
+                                    res.status(200).send(`${data.device_id} deleted`)
+                                })
+                                .catch(err=>{
+                                    res.status(400).send(err)
+                                })
+                        }
                     })
-                    .catch(err=>{
-                        res.status(400).send(err)
-                    })
+
             }
             if(params === 'find'){
                 Face.find({device_id:data.device_id}).sort({"date":-1})
                     .then(findData=>{
-                        res.status(200).send(findData)
+                        if(findData.length === 0){
+                            res.status(400).send('No data to find')
+                        }else{
+                            res.status(200).send(findData)
+                        }
                     })
                     .catch(err=>{
                         res.status(400).send(err)
