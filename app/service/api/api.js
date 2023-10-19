@@ -47,7 +47,7 @@ const api = function () {
             const data = req.body
 
             if(params === 'create'){
-                Face.find({device_id:data.device_id, phone:data.phone}).sort({"date":-1})
+                Face.find({device_id:data.device_id, phone:data.phone})
                     .then(findData=>{
                         const saveTime = moment().tz('Asia/Seoul')
                         let filterData = []
@@ -118,7 +118,7 @@ const api = function () {
                     })
             }
             if(params === 'find'){
-                Face.find({device_id:data.device_id})
+                Face.find({device_id:data.device_id}).sort({"date":-1})
                     .then(findData=>{
                         res.status(200).send(findData)
                     })
