@@ -9,6 +9,7 @@ const fs = require("fs")
 const AWS = require("aws-sdk")
 
 
+
 const moment = require("moment-timezone");
 const axios = require("axios");
 const CryptoJS = require('crypto-js')
@@ -35,9 +36,142 @@ const {
     NICE_ACCESS_TOKEN, DEV_DEVICE_ADMIN, DEV_APP_ADMIN, DEV_SEVER_ADMIN, DEV_CEO_ADMIN
 } = applyDotenv(dotenv)
 
+let database;
+
 
 const api = function () {
     return {
+
+    // {
+    //     "device_id":{type:String, required:true},
+    //     "name":{type:String,required:true},
+    //     "contract_service":{type:String,required:true} => 주계약자, 부계약자,
+    //     "userId":{type:String,required:true,unique:true} => 유니크 값,
+    //     "addr":{type:String,required:true},
+    //     "tel":{type:String,required:true},
+    //     "communication":{type:Boolean,required:true},
+    //     "service_name":{type:String,required:true} => A-Type,B-Type(Single),B-Type(Multi) ,
+    //     "service_start":{type:String,required:true},
+    //     "service_end":{type:String,required:true},
+    //     "start_up":false
+    // }
+
+        // contract_num:{type:String,required:true,unique:true},
+        // device_id:{type:String, required:true},
+        // company:{type:String,required:true},
+        // name:{type:String,required:true},
+        // contract_service:{type:String,required:true},
+        // id:{type:String,required:true,unique:true},
+        // addr:{type:String,required:true},
+        // tel:{type:String,required:true},
+        // communication: {type:String,required:true},
+        // service_name:{type:String,required:true},
+        // service_start: {type:String,required:true},
+        // service_end: {type:String,required:true},
+        // start_up:{type:String,required:true},
+
+        b2cService(req,res){
+            const data = req.body
+            const params = req.query.contents
+
+            //아이디 중복체크
+            if(params === 'duplicate'){
+                Client.connect(MONGO_URI)
+                    .then(tableFind=> {
+                        database = tableFind.db(ADMIN_DB_NAME)
+                        tableFind.db(ADMIN_DB_NAME).collection('tables').find({}).toArray()
+                            .then(allData=>{
+                                let Duplicate;
+                                allData.map(e=>{
+                                    data.userId === e.id ? Duplicate = true : Duplicate = false
+                                })
+                                Duplicate === true ? res.status(400).send('Duplicate') : res.status(200).send('Available')
+                            })
+                    })
+            }
+
+            //가입
+            if(params === 'register'){
+                Client.connect(MONGO_URI)
+                    .then(tableFind=>{
+                        database= tableFind.db(ADMIN_DB_NAME)
+                        tableFind.db(ADMIN_DB_NAME).collection('tables').find({company:"Blaubit"}).toArray()
+                            .then(userData=>{
+                                let filterData=[];
+                                let Duplicate;
+                                userData.map(e=>{
+                                    if(data.userId === e.id) {
+                                        Duplicate = true
+                                    }
+                                    if(filterData.length !== 0){
+                                        if(Number(e.contract_num.split('Blau')[1]) > Number(filterData[0].contract_num.split('Blau')[1])){
+                                            filterData[0] = e
+                                        }
+                                    }else{
+                                        filterData.push(e)
+                                    }
+                                })
+                                if(Duplicate === true){
+                                    return res.status(400).send('Duplicate UserId')
+                                }else{
+                                    let contract_num = `Blau${Number(filterData[0].contract_num.split('Blau')[1]) + 1}`
+
+                                    //계약번호는 로직으로 Blau 뒤 숫자 +1(유니크값)
+                                    //비투씨는 company Blaubit 고정
+                                    //서비스 스타트날짜 => 오늘 날짜 자동, 엔드날짜 => 9999-12-30 고정(추후변경가능)
+                                    //contract_services => 주계약자로 바로 개통
+                                    //개통, 통신 => data.communication === true ? 'O':'X' data.start_up === true ? 'O':'X',
+
+                                    // 계약번호(유니크), 회사명, 계약자구분(주계약,부계약), 통신, 개통, 서비스시작날짜, 서비스해지날짜는 자동세팅
+                                    // 디바이스아이디(유니크), 이름, 아이디, 주소, 전화번호, 서비스종류 5개는 유저에게 받아야할 최소 단위
+
+                                    const saveTime = moment().tz('Asia/Seoul')
+
+                                    let saveData = {
+                                        contract_num: contract_num,
+                                        device_id: data.device_id,
+                                        company: "Blaubit",
+                                        name:data.name,
+                                        contract_service: '주계약자',
+                                        id:data.userId,
+                                        addr:data.addr,
+                                        tel:data.tel,
+                                        communication: 'O',
+                                        service_name:data.service_name,
+                                        service_start: saveTime.format('YYYY-MM-DD'),
+                                        service_end: "9999-12-30",
+                                        start_up: 'O',
+                                    }
+
+                                    database.collection('tables').insertOne(saveData)
+                                        .then(ls=>{
+                                            console.log('저장완료')
+                                            tableFind.close()
+                                            res.status(200).send('Save Success')
+                                        })
+                                        .catch(err=>{
+                                            console.log(err)
+                                            res.status(400).send(err)
+                                        })
+                                }
+
+                            })
+                            .catch(err=>{
+                                res.status(400).send(err)
+                            })
+                    })
+                    .catch(err=>{
+                        res.status(400).send(err)
+                    })
+            }
+
+
+
+        },
+
+
+
+
         // param=create, bodyData = { device_id: "" ,name: "" ,phone: "" }
         // param=del, bodyData = { device_id: "" }
         // param=find, bodyData = { device_id: ""}
