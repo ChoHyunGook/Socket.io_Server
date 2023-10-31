@@ -73,7 +73,6 @@ const api = function () {
         b2cService(req,res){
             const data = req.body
             const params = req.query.contents
-
             //아이디 중복체크
             if(params === 'duplicate'){
                 Client.connect(MONGO_URI)
@@ -81,11 +80,13 @@ const api = function () {
                         database = tableFind.db(ADMIN_DB_NAME)
                         tableFind.db(ADMIN_DB_NAME).collection('tables').find({}).toArray()
                             .then(allData=>{
-                                let Duplicate;
+                                let Duplicate = []
                                 allData.map(e=>{
-                                    data.userId === e.id ? Duplicate = true : Duplicate = false
+                                    if(data.userId === e.id){
+                                        Duplicate.push(e)
+                                    }
                                 })
-                                Duplicate === true ? res.status(400).send('Duplicate') : res.status(200).send('Available')
+                                Duplicate.length !== 0 ? res.status(400).send('Duplicate') : res.status(200).send('Available')
                             })
                     })
             }
