@@ -170,8 +170,7 @@ const api = function () {
 
         },
 
-
-
+        
 
         // param=create, bodyData = { device_id: "" ,name: "" ,phone: "" }
         // param=del, bodyData = { device_id: "" }
@@ -190,7 +189,11 @@ const api = function () {
                             res.status(400).send(`Saved Data Exceed`)
                         }else{
                             if(findData.length >= 1){
+                                let duplicateState = false
                                 findData.map(e=>{
+                                    if(e.name === data.name){
+                                       duplicateState = true
+                                    }else{
                                         if(filterData.length === 0){
                                             filterData.push(e)
                                         }else{
@@ -200,25 +203,26 @@ const api = function () {
                                                 }
                                             })
                                         }
-
+                                    }
                                 })
-                                let savedData = {
-                                    device_id: data.device_id,
-                                    name:data.name,
-                                    phone:data.phone,
-                                    index:filterData[0].index + 1,
-                                    date:saveTime.format('YYYY_MM_DD.kk:mm:ss')
-                                }
-                                new Face(savedData).save()
-                                    .then(r=>res.status(200).send('Saved Data Completed'))
-                                    .catch(err=>
-                                    {
-                                        if(err.keyPattern.name === 1){
-                                            res.status(400).send('Duplicated Name')
-                                        }else{
+
+                                if(duplicateState === true){
+                                    res.status(400).send('Duplicated Name')
+                                }else{
+                                    let savedData = {
+                                        device_id: data.device_id,
+                                        name:data.name,
+                                        phone:data.phone,
+                                        index:filterData[0].index + 1,
+                                        date:saveTime.format('YYYY_MM_DD.kk:mm:ss')
+                                    }
+                                    new Face(savedData).save()
+                                        .then(r=>res.status(200).send('Saved Data Completed'))
+                                        .catch(err=>
+                                        {
                                             res.status(400).send(err)
-                                        }
-                                    })
+                                        })
+                                }
 
                             }else{
                                 let saveData = {
@@ -236,11 +240,7 @@ const api = function () {
                         }
                     })
                     .catch(err=>{
-                        if(err.keyPattern.name === 1){
-                            res.status(400).send('Duplicated Name')
-                        }else{
                             res.status(400).send(err)
-                        }
                     })
             }
             if(params === 'del'){

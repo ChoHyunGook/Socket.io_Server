@@ -21,6 +21,8 @@ const s3 = new AWS.S3({
     region: AWS_REGION
 });
 
+
+
 const management = function () {
     return{
         async fileManagement(req, res) {
@@ -531,7 +533,7 @@ const management = function () {
                             message:`올바른 파일명(날짜_시간)을 작성 후 첨부해주세요. 올바른 예시 : 20230901_1301, 작성하신 파일명(날짜시간) : ${filter[filter.length -2]} `
                         }
                         res.render('error',{error:error,param:param,data:loginData})
-                    }else if(filter[2] !== 'bin' && filter[2] !== 'zip' && filter[2] !== 'pptx' && filter[2] !== 'pdf'){
+                    }else if(filter[2] !== 'bin' && filter[2] !== 'zip' && filter[2] !== 'pptx' && filter[2] !== 'pdf' ){
                         let error = {
                             message:`올바른 파일확장자(device : bin, server,app : zip)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
                         }
