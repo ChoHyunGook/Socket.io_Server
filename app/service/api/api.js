@@ -190,6 +190,7 @@ const api = function () {
                         }else{
                             if(findData.length >= 1){
                                 let duplicateState = false
+
                                 findData.map(e=>{
                                     if(e.name === data.name){
                                        duplicateState = true
