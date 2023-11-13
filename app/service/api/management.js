@@ -533,6 +533,7 @@ const management = function () {
                         }
                         res.render('error',{error:error,param:param,data:loginData})
                     }
+
                     else if(file.originalname.split('.')[0] === 'doc'){
                         const params = {
                             Bucket:Bucket_name+'/server/documents',
@@ -793,6 +794,30 @@ const management = function () {
                     else if(file.originalname.split('.')[0]==='fastStroke'){
                         const params={
                             Bucket:Bucket_name+'/server/fastStroke',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                ip:ip,
+                                contents: `Upload.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
+                    else if(file.originalname.split('.')[0]==='attendanceManagement'){
+                        const params={
+                            Bucket:Bucket_name+'/server/attendanceManagement',
                             Key:file.originalname.trim(),
                             Body:file.buffer
                         }
