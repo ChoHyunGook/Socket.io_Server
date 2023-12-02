@@ -7,6 +7,11 @@ var storage = multer.memoryStorage()
 var upload = multer({storage: storage});
 
 
+
+app.post('/start_up',(req,res)=>{
+
+})
+
 app.post('/b2c/service',(req,res)=>{
     Api().b2cService(req,res)
 })

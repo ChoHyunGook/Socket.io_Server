@@ -70,6 +70,8 @@ const api = function () {
         // service_end: {type:String,required:true},
         // start_up:{type:String,required:true},
 
+
+
         b2cService(req,res){
             const data = req.body
             const params = req.query.contents
