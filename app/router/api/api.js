@@ -3,14 +3,71 @@ const app = express();
 const Api = require('../../service/api/api')
 const Management = require('../../service/api/management')
 const multer = require('multer');
+const applyDotenv = require("../../../lambdas/applyDotenv");
+const dotenv = require("dotenv");
+const AWS = require("aws-sdk");
 var storage = multer.memoryStorage()
 var upload = multer({storage: storage});
+const moment = require("moment-timezone");
+const db = require("../../DataBase")
 
 
+const {
+    AWS_SECRET, AWS_ACCESS, AWS_REGION,AWS_DOORBELL_NAME
+} = applyDotenv(dotenv)
 
-app.post('/start_up',(req,res)=>{
+const ClientId = AWS_SECRET
+const ClientSecret = AWS_ACCESS
+const Bucket_name = AWS_DOORBELL_NAME
 
-})
+const s3 = new AWS.S3({
+    accessKeyId: ClientId,
+    secretAccessKey: ClientSecret,
+    region: AWS_REGION
+});
+
+const Log = db.logs
+
+
+setInterval(()=>{
+    s3.listObjects({Bucket:Bucket_name}).promise().then((list)=>{
+        const listData = list.Contents
+        const filterTime = moment().tz('Asia/Seoul')
+        let beforeTime = filterTime.subtract(3,'d').format('YYYY-MM-DD kk:mm:ss')
+        let testTime = filterTime.subtract(1,'minutes').format('YYYY-MM-DD kk:mm:ss')
+        listData.map(e=>{
+            if(e.Key.split('/')[2] !== undefined){
+                const splitData = new Date(e.LastModified)
+                const year = splitData.getFullYear()
+                let month = ('0' + (splitData.getMonth() +  1 )).slice(-2);
+                let date = ('0' + splitData.getDate()).slice(-2);
+                let hour = ('0' + splitData.getHours()).slice(-2);
+                let minutes = ('0' + splitData.getMinutes()).slice(-2);
+                let seconds = ('0' + splitData.getSeconds()).slice(-2);
+                let checkTime = `${year}-${month}-${date} ${hour}:${minutes}:${seconds}`
+                //console.log(moment(checkTime).isBefore(testTime))
+                if(moment(checkTime).isBefore(beforeTime) === true){
+                    const params = {
+                        Bucket:Bucket_name,
+                        Key:e.Key
+                    }
+                    s3.deleteObject(params,function (err,delPoint){
+                        if(err){
+                            console.log(err)
+                        }else{
+                            let saveData = {
+                                log:`Automatically delete video files 3 days ago:${Bucket_name}:${e.Key}:VideoSaveTime_${checkTime}:StandardTime_${testTime}`
+                            }
+                            new Log(saveData).save()
+                                .then(r=>console.log(saveData.log))
+                                .catch(err=>console.log(err))
+                        }
+                    })
+                }
+            }
+        })
+    })
+},1000)
 
 app.post('/b2c/service',(req,res)=>{
     Api().b2cService(req,res)

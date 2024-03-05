@@ -26,6 +26,7 @@ const applyDotenv = dotenv => {
         DEV_APP_ADMIN:process.env.DEV_APP_ADMIN,
         DEV_SEVER_ADMIN:process.env.DEV_SEVER_ADMIN,
         DEV_CEO_ADMIN:process.env.DEV_CEO_ADMIN,
+        AWS_DOORBELL_NAME:process.env.AWS_DOORBELL_NAME
     }
 }
 
