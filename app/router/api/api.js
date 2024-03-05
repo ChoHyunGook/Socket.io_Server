@@ -32,9 +32,10 @@ const Log = db.logs
 setInterval(()=>{
     s3.listObjects({Bucket:Bucket_name}).promise().then((list)=>{
         const listData = list.Contents
+        console.log(list)
         const filterTime = moment().tz('Asia/Seoul')
         let beforeTime = filterTime.subtract(3,'d').format('YYYY-MM-DD kk:mm:ss')
-        let testTime = filterTime.subtract(1,'minutes').format('YYYY-MM-DD kk:mm:ss')
+        //let testTime = filterTime.subtract(1,'minutes').format('YYYY-MM-DD kk:mm:ss')
         listData.map(e=>{
             if(e.Key.split('/')[2] !== undefined){
                 const splitData = new Date(e.LastModified)
