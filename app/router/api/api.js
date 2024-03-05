@@ -10,6 +10,7 @@ var storage = multer.memoryStorage()
 var upload = multer({storage: storage});
 const moment = require("moment-timezone");
 const db = require("../../DataBase")
+const semiDate = require("../../service/Data/date")
 
 
 const {
@@ -56,7 +57,8 @@ setInterval(()=>{
                             console.log(err)
                         }else{
                             let saveData = {
-                                log:`Automatically delete video files 3 days ago:${Bucket_name}:${e.Key}:VideoSaveTime_${checkTime}:StandardTime_${testTime}`
+                                log:`Automatically delete video files 3 days ago:${Bucket_name}:${e.Key}:VideoSaveTime_${checkTime}:StandardTime_${beforeTime}`,
+                                date:semiDate.logDate()
                             }
                             new Log(saveData).save()
                                 .then(r=>console.log(saveData.log))
@@ -68,7 +70,9 @@ setInterval(()=>{
         })
     })
 },1000)
-
+app.get('/findLog',(req,res)=>{
+    Api().findLog(req,res)
+})
 app.post('/b2c/service',(req,res)=>{
     Api().b2cService(req,res)
 })

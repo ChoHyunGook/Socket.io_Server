@@ -22,6 +22,7 @@ const History = db.history
 const Face = db.face
 
 
+
 let count = 0;
 let awsLogsData = [];
 
@@ -71,6 +72,12 @@ const api = function () {
         // start_up:{type:String,required:true},
 
 
+        findLog(req,res){
+            apiLogs.find({}).sort({"date":-1})
+                .then(findData=>{
+                    res.status(200).send(findData)
+                })
+        },
 
         b2cService(req,res){
             const data = req.body
@@ -326,7 +333,7 @@ const api = function () {
             const connectDate = semiDate.connectDate()
 
             res.send(`@@@@@ ${today} 서버 ON 접속 IP: ${ip} @@@@@ 서버오픈 ${openDay} @@@@@`)
-            const logDb = {log: `API::GET::${connectDate}::${ip}::${logOpenDay}::/getSign`}
+            const logDb = {log: `API::GET::${connectDate}::${ip}::${logOpenDay}::/getSign`,date:semiDate.logDate()}
 
             new apiLogs(logDb).save()
                 .then(r => console.log('Log data Save...'))
