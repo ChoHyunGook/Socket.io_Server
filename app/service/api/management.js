@@ -377,7 +377,7 @@ const management = function () {
                 }
                 res.render('error',{error:error,param:param,data:loginData})
             }else{
-                const devVersion = bodyData.allCheck === 'Server' ? 'server' : bodyData.allCheck === 'App' ? 'app' : 'device'
+                const devVersion = bodyData.allCheck === 'Server' ? 'server' ? bodyData.allCheck === 'Front' ? 'server' : bodyData.allCheck === 'App' ? 'app' : 'device'
                 const params = {
                     Bucket: Bucket_name,
                     Key: devVersion+'/'+bodyData.devSelect+'/'+bodyData.versionSelect
