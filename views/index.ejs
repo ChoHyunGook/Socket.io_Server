@@ -61,6 +61,7 @@
                 <select name='allCheck' id="select_department" onchange="changeCheckBox(this)">
                     <option value="none" selected>선택</option>
                     <option name="Server" value="Server">Server</option>
+                    <option name="Front" value="Front">Front</option>
                     <option name="Device" value="Device">Device</option>
                     <option name="App" value="App">App</option>
                 </select>
@@ -73,6 +74,27 @@
                     <option> 버전 선택 </option>
                 </select>
 
+
+                <button type="submit" class="custom-btn btn-12">
+                    <span> Download !</span>
+                    <span> 다운로드 </span>
+                </button>
+
+            <% } %>
+
+            <% if (data.department === 'Front') { %>
+                <select name='allCheck' id="select_department" onchange="changeCheckBox(this)">
+                    <option value="none" selected>선택</option>
+                    <option name="Front" value="Front">Front</option>
+                </select>
+
+                <select name="devSelect" id="devSelect" onchange="devCheck(this)">
+                    <option> 개발 선택 </option>
+                </select>
+
+                <select name="versionSelect" id="versionSelect" style="width: 170px; padding-right: 10px">
+                    <option> 버전 선택 </option>
+                </select>
 
                 <button type="submit" class="custom-btn btn-12">
                     <span> Download !</span>
@@ -165,6 +187,7 @@
                 <select name='allCheck' id="select_department" onchange="delChangeCheckBox(this)">
                     <option value="none" selected>선택</option>
                     <option name="Server" value="Server">Server</option>
+                    <option name="Front" value="Front">Front</option>
                     <option name="Device" value="Device">Device</option>
                     <option name="App" value="App">App</option>
                 </select>
@@ -177,6 +200,27 @@
                     <option> 버전 선택 </option>
                 </select>
 
+
+                <button type="submit" class="custom-btn btn-12">
+                    <span> Delete !</span>
+                    <span> 삭제하기 </span>
+                </button>
+
+            <% } %>
+
+            <% if (data.department === 'Front') { %>
+                <select name='allCheck' id="select_department" onchange="delChangeCheckBox(this)">
+                    <option value="none" selected>선택</option>
+                    <option name="Front" value="Front">Front</option>
+                </select>
+
+                <select name="devSelect" id="delDevSelect" onchange="delDevCheck(this)">
+                    <option> 개발 선택 </option>
+                </select>
+
+                <select name="versionSelect" id="delVersionSelect" style="width: 170px; padding-right: 10px">
+                    <option> 버전 선택 </option>
+                </select>
 
                 <button type="submit" class="custom-btn btn-12">
                     <span> Delete !</span>
@@ -298,11 +342,13 @@
     function changeCheckBox(e){
         const select = e.value
         let serverSelect = ['=== 선택 ===','apiServer','doorbellAdmin','doorbellGo','lambda','sleepcore','fastStroke']
+        let frontSelect = ['=== 선택 ===','doorbellAdmin','sleepcore','fastStroke','myrucell']
         let deviceSelect = ['=== 선택 ===','bldb','bldc','blwc','blvc','blsi']
-        let appSelect = ['=== 선택 ===','doorbellApp','sleepcoreApp','fastStrokeApp']
+        let appSelect = ['=== 선택 ===','doorbellApp','sleepcoreApp','fastStrokeApp','myrucellApp']
 
         var target =document.getElementById('devSelect')
         if(select === 'Server') var contents = serverSelect
+        if(select === 'Front') var contents = frontSelect
         else if(select === 'Device') var contents = deviceSelect
         else if(select === 'App') var contents = appSelect
         target.options.length = 0;
@@ -321,6 +367,7 @@
     function devCheck(e){
         const select = e.value
         const serverData = JSON.parse(document.getElementById('serverData').innerHTML)
+        const frontData = JSON.parse(document.getElementById('serverData').innerHTML)
         const appData = JSON.parse(document.getElementById('appData').innerHTML)
         const deviceData = JSON.parse(document.getElementById('deviceData').innerHTML);
 
@@ -333,6 +380,17 @@
                     if(e.key.split('/')[2].length === 0){
                         contents.push('=== 선택 ===')
                     }else{
+                        contents.push(e.key.split('/')[2])
+                    }
+                }
+            })
+        }else if(allCheck === 'Front'){
+            frontData.map(e=>{
+                if(e.key.split('/')[1] === select){
+                    if(e.key.split('/')[2].length === 0){
+                        contents.push('=== 선택 ===')
+                    }else{
+
                         contents.push(e.key.split('/')[2])
                     }
                 }
@@ -377,11 +435,13 @@
     function delChangeCheckBox(e){
         const select = e.value
         let serverSelect = ['=== 선택 ===','apiServer','doorbellAdmin','doorbellGo','lambda','sleepcore','fastStroke','documents']
+        let frontSelect = ['=== 선택 ===','doorbellAdmin','sleepcore','fastStroke','myrucell']
         let deviceSelect = ['=== 선택 ===','bldb','bldc','blwc','blvc','blsi']
-        let appSelect = ['=== 선택 ===','doorbellApp','sleepcoreApp','fastStrokeApp']
+        let appSelect = ['=== 선택 ===','doorbellApp','sleepcoreApp','fastStrokeApp','myrucellApp']
 
         var target =document.getElementById('delDevSelect')
         if(select === 'Server') var contents = serverSelect
+        else if(select === 'Front') var contents = frontSelect
         else if(select === 'Device') var contents = deviceSelect
         else if(select === 'App') var contents = appSelect
         target.options.length = 0;
@@ -428,7 +488,18 @@
                 })
             }
 
-        }else if(allCheck === 'Device'){
+        }else if(allCheck === 'Front'){
+            serverData.map(e=>{
+                if(e.key.split('/')[1] === select){
+                    if(e.key.split('/')[2].length === 0){
+                        contents.push('=== 선택 ===')
+                    }else{
+                        contents.push(e.key.split('/')[2])
+                    }
+                }
+            })
+        }
+        else if(allCheck === 'Device'){
             deviceData.map(e=>{
                 if(e.key.split('/')[1] === select){
                     if(e.key.split('/')[2].length === 0){

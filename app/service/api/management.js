@@ -6,7 +6,7 @@ const db = require("../../DataBase");
 
 const {
     AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, DEV_DEVICE_ADMIN, DEV_APP_ADMIN,
-    DEV_SEVER_ADMIN, DEV_CEO_ADMIN
+    DEV_SEVER_ADMIN, DEV_CEO_ADMIN,DEV_FRONT_ADMIN
 } = applyDotenv(dotenv)
 
 const Version = db.version
@@ -39,7 +39,7 @@ const management = function () {
             });
 
             if (devAdmin !== DEV_CEO_ADMIN && devAdmin !== DEV_SEVER_ADMIN && devAdmin !== DEV_APP_ADMIN &&
-                devAdmin !== DEV_DEVICE_ADMIN) {
+                devAdmin !== DEV_DEVICE_ADMIN && devAdmin !== DEV_FRONT_ADMIN) {
                 const date = moment().tz('Asia/Seoul')
                 let data = {
                     access_id:'Disconnect',
@@ -56,7 +56,8 @@ const management = function () {
                 res.render('dangerous')
             } else {
                 const date = moment().tz('Asia/Seoul')
-                const name = devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' : devAdmin.split('.')[3] === 'JungJC' ? '정지창' : '김의선'
+                const name = devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' :
+                    devAdmin.split('.')[3] === 'ChunJH' ? '천정환' : devAdmin.split('.')[3] === 'SeoSM' ? '서성민':'김의선'
 
                 let data = {
                     access_id: devAdmin.split('.')[4] + '.' + devAdmin.split('.')[5] + '.' + devAdmin.split('.')[6],
@@ -92,6 +93,7 @@ const management = function () {
                             }
                             //console.log(serverData)
                         }
+
                         if(e.Key.split('/')[0]==='device'){
                             let keyData = {
                                 key:e.Key
@@ -138,7 +140,8 @@ const management = function () {
         searchTable(req,res){
             const bodyData = req.body
             const loginData =JSON.parse(bodyData.data)
-            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -205,7 +208,8 @@ const management = function () {
         deleteLog(req,res){
             const bodyData = req.body
             const loginData =JSON.parse(bodyData.data)
-            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -229,7 +233,8 @@ const management = function () {
             const bodyData =req.body
             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const loginData = JSON.parse(bodyData.data)
-            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -292,7 +297,8 @@ const management = function () {
         versionLogFind(req,res){
             const bodyData = req.body
             const loginData = JSON.parse(bodyData.data)
-            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -313,7 +319,8 @@ const management = function () {
             const bodyData = req.body
             const loginData = JSON.parse(bodyData.data)
             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -358,7 +365,8 @@ const management = function () {
             const bodyData = req.body
             const loginData = JSON.parse(bodyData.data)
             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -501,7 +509,8 @@ const management = function () {
             const file = req.file
             const loginData = JSON.parse(req.body.data)
             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':loginData.access_name === '남대현' ? 'NamDH':'JungJC'
+            const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -839,9 +848,57 @@ const management = function () {
                             res.render('update',{data:versionData,param:param})
                         })
                     }
+                    else if(file.originalname.split('.')[0]==='myrucell'){
+                        const params={
+                            Bucket:Bucket_name+'/server/myrucell',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                ip:ip,
+                                contents: `Upload.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
                     else if(file.originalname.split('.')[0]==='doorbellApp'){
                         const params={
                             Bucket:Bucket_name+'/app/doorbellApp',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                ip:ip,
+                                contents: `Upload.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
+                    }
+                    else if(file.originalname.split('.')[0]==='myrucellApp'){
+                        const params={
+                            Bucket:Bucket_name+'/app/myrucellApp',
                             Key:file.originalname.trim(),
                             Body:file.buffer
                         }
