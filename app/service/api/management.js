@@ -635,6 +635,29 @@ const management = function () {
                                 .catch(err => console.log('Version Update History Save Fail', err))
                             res.render('update',{data:versionData,param:param})
                         })
+                    }else if(file.originalname.split('.')[0] === 'blss'){
+                        const params={
+                            Bucket:Bucket_name+'/device/blss',
+                            Key:file.originalname.trim(),
+                            Body:file.buffer
+                        }
+
+                        s3.upload(params,function (err,data){
+                            if(err) throw err;
+                            const date = moment().tz('Asia/Seoul')
+                            let versionData = {
+                                access_id: loginData.access_id,
+                                access_name: loginData.access_name,
+                                department: loginData.department,
+                                ip:ip,
+                                contents: `Upload.${file.originalname}`,
+                                date: date.format('YYYY-MM-DD HH:mm:ss')
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update',{data:versionData,param:param})
+                        })
                     } else if(file.originalname.split('.')[0] === 'blvc'){
                         const params={
                             Bucket:Bucket_name+'/device/blvc',
