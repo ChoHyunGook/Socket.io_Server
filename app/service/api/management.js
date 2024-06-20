@@ -993,7 +993,7 @@ const management = function () {
                         })
                     }else{
                         let error = {
-                            message:`올바른 파일확장자(device : bin, server,app : zip)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
+                            message:`올바른 파일확장자(device : bin, server : zip, app : apk)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
                         }
                         res.render('error',{error:error,param:param,data:loginData})
                     }
