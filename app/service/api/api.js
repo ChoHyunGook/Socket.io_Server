@@ -125,12 +125,11 @@ const api = function () {
                                                     .then(sendData=>{
                                                         axios.post('https://l122dwssje.execute-api.ap-northeast-2.amazonaws.com/Prod/user/signup',saveAwsData)
                                                             .then(awsResponse=>{
-                                                                console.log(awsResponse)
                                                                 res.status(200).json({msg:'Success Signup',checkData:sendData[0],awsResponse:awsResponse.data})
                                                                 tableFind.close()
                                                             })
                                                             .catch(err=>{
-                                                                console.log(err)
+                                                                res.status(400).send(err)
                                                             })
 
                                                     })
