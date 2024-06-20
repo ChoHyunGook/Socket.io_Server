@@ -34,7 +34,7 @@ const logOpenDay = semiDate.logOpenDay()
 const {
     AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, MONGO_URI, ADMIN_DB_NAME, SMS_service_id,
     SMS_secret_key, SMS_access_key, SMS_PHONE, NICE_CLIENT_ID, NICE_CLIENT_SECRET, NICE_PRODUCT_CODE,
-    NICE_ACCESS_TOKEN, DEV_DEVICE_ADMIN, DEV_APP_ADMIN, DEV_SEVER_ADMIN, DEV_CEO_ADMIN
+    NICE_ACCESS_TOKEN, DEV_DEVICE_ADMIN, DEV_APP_ADMIN, DEV_SEVER_ADMIN, DEV_CEO_ADMIN,AWS_LAMBDA_SIGNUP
 } = applyDotenv(dotenv)
 
 let database;
@@ -118,18 +118,20 @@ const api = function () {
                                 .then(findData=>{
                                     if(findData.length !== 0){
                                         res.status(400).send('Duplicate UserId')
+                                        tableFind.close()
                                     }else{
                                         tableFind.db(ADMIN_DB_NAME).collection('tables').insertOne(mongoData)
                                             .then(suc=>{
                                                 tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
                                                     .then(sendData=>{
-                                                        axios.post('https://l122dwssje.execute-api.ap-northeast-2.amazonaws.com/Prod/user/signup',saveAwsData)
+                                                        axios.post(AWS_LAMBDA_SIGNUP,saveAwsData)
                                                             .then(awsResponse=>{
                                                                 res.status(200).json({msg:'Success Signup',checkData:sendData[0],awsResponse:awsResponse.data})
                                                                 tableFind.close()
                                                             })
                                                             .catch(err=>{
                                                                 res.status(400).send(err)
+                                                                tableFind.close()
                                                             })
 
                                                     })
