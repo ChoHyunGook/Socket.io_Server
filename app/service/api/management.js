@@ -536,7 +536,7 @@ const management = function () {
                         }
                         res.render('error',{param:param,error:error,data:loginData})
                     }
-                    else if(filter[2] !== 'bin' && filter[2] !== 'zip' && filter[2] !== 'pptx' && filter[2] !== 'pdf' ){
+                    else if(filter[2] !== 'bin' && filter[2] !== 'zip' && filter[2] !== 'pptx' && filter[2] !== 'pdf' && filter[2] !== 'apk' ){
                         let error = {
                             message:`올바른 파일확장자(device : bin, server : zip, app : apk)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
                         }
