@@ -442,6 +442,48 @@ const management = function () {
             }
         },
 
+        async apkDownload(req,res){
+            await s3.listObjects({Bucket:Bucket_name}).promise()
+                .then((list)=>{
+                    const contents = list.Contents
+                    //console.log(contents)
+                    let checkData = []
+                    contents.map(e=>{
+                        if(e.Key.split('/')[0] === "app" && e.Key.split('/')[1] === "doorbellApk"){
+                            if(e.Key.split('/')[2].length !== 0){
+                                checkData.push(e)
+                            }
+
+                        }
+                    })
+                    let latestData = checkData.reduce((latest, current) => {
+                        return new Date(latest.LastModified) > new Date(current.LastModified) ? latest : current;
+                    });
+                    console.log(latestData)
+                    const params = {
+                        Bucket: Bucket_name,
+                        Key: latestData.Key
+                    }
+                    s3.getObject(params, function (err, data) {
+                        if (err) {
+                            console.log(err)
+                        } else {
+                            console.log(latestData.Key)
+                            res.writeHead(200,
+                                {
+                                    'Content-Type': `application/octet-stream`,
+                                    'Content-Length': data.ContentLength,
+                                    'Content-Disposition': `filename="${latestData.Key.split('/')[2]}";`
+                                },
+                            )
+                            res.end(Buffer.from(data.Body, 'base64'))
+
+                        }
+                    })
+                })
+        },
+
+
         async deviceVersionDownload(req, res) {
             const models = req.query.version
 

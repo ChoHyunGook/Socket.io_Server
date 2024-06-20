@@ -122,6 +122,9 @@ app.get('/', (req,res)=>{
 app.get('/deviceVersion/download',(req,res,next)=>{
     Management().deviceVersionDownload(req,res)
 })
+app.get('/blaubit/doorbellsquare/apk/download',(req,res)=>{
+    Management().apkDownload(req,res)
+})
 app.get('/version/dev/file/Management',(req,res)=>{
     Management().fileManagement(req,res)
 })
