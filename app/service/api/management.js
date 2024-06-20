@@ -57,7 +57,7 @@ const management = function () {
             } else {
                 const date = moment().tz('Asia/Seoul')
                 const name = devAdmin.split('.')[3] === 'ChoHG' ? '조현국' : devAdmin.split('.')[3] === 'NamDH' ? '남대현' :
-                    devAdmin.split('.')[3] === 'ChunJH' ? '천정환' : devAdmin.split('.')[3] === 'SeoSM' ? '서성민':'김의선'
+                    devAdmin.split('.')[3] === 'KimSY' ? '김수영' : devAdmin.split('.')[3] === 'SeoSM' ? '서성민':'김의선'
 
                 let data = {
                     access_id: devAdmin.split('.')[4] + '.' + devAdmin.split('.')[5] + '.' + devAdmin.split('.')[6],
@@ -141,7 +141,7 @@ const management = function () {
             const bodyData = req.body
             const loginData =JSON.parse(bodyData.data)
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
-                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'KimSY'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -209,7 +209,7 @@ const management = function () {
             const bodyData = req.body
             const loginData =JSON.parse(bodyData.data)
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
-                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'KimSY'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -234,7 +234,7 @@ const management = function () {
             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const loginData = JSON.parse(bodyData.data)
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
-                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'KimSY'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -298,7 +298,7 @@ const management = function () {
             const bodyData = req.body
             const loginData = JSON.parse(bodyData.data)
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
-                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'KimSY'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -320,7 +320,7 @@ const management = function () {
             const loginData = JSON.parse(bodyData.data)
             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
-                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'KimSY'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -366,7 +366,7 @@ const management = function () {
             const loginData = JSON.parse(bodyData.data)
             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
-                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'KimSY'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
@@ -510,7 +510,7 @@ const management = function () {
             const loginData = JSON.parse(req.body.data)
             const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
             const name = loginData.access_name === '조현국' ? 'ChoHG': loginData.access_name === '김의선' ? 'KimUS':
-                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'ChunJH'
+                loginData.access_name === '남대현' ? 'NamDH': loginData.access_name === '서성민' ? 'SeoSM':'KimSY'
             let param = {
                 param:'Blaubit.'+loginData.department+'.Administer.'+name+'.'+loginData.access_id
             }
