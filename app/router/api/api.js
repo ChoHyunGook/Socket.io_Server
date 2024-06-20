@@ -69,7 +69,7 @@ setInterval(()=>{
             }
         })
     })
-},1000)
+},1000*60*60*24)
 app.get('/findLog',(req,res)=>{
     Api().findLog(req,res)
 })

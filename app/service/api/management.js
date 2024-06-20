@@ -538,7 +538,7 @@ const management = function () {
                     }
                     else if(filter[2] !== 'bin' && filter[2] !== 'zip' && filter[2] !== 'pptx' && filter[2] !== 'pdf' ){
                         let error = {
-                            message:`올바른 파일확장자(device : bin, server,app : zip)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
+                            message:`올바른 파일확장자(device : bin, server : zip, app : apk)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
                         }
                         res.render('error',{error:error,param:param,data:loginData})
                     }
@@ -919,9 +919,9 @@ const management = function () {
                             res.render('update',{data:versionData,param:param})
                         })
                     }
-                    else if(file.originalname.split('.')[0]==='myrucellApp'){
+                    else if(file.originalname.split('.')[0]==='doorbellApk'){
                         const params={
-                            Bucket:Bucket_name+'/app/myrucellApp',
+                            Bucket:Bucket_name+'/app/doorbellApk',
                             Key:file.originalname.trim(),
                             Body:file.buffer
                         }
@@ -943,6 +943,7 @@ const management = function () {
                             res.render('update',{data:versionData,param:param})
                         })
                     }
+
                     else if(file.originalname.split('.')[0]==='sleepcoreApp'){
                         const params={
                             Bucket:Bucket_name+'/app/sleepcoreApp',
