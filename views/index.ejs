@@ -7,6 +7,32 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Blaubit Version Management</title>
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* 스피너 스타일 */
+        .spinner {
+            display: none;
+            width: 30px;
+            height: 30px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading .spinner {
+            display: inline-block;
+        }
+
+        .loading button {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+    </style>
 </head>
 <body>
 <div style="text-align: center">
@@ -35,7 +61,7 @@
 
     <form
                 action="http://socket.doorbellsquare.com:8080/uploadS3File"
-                method="post" enctype="multipart/form-data"
+                method="post" enctype="multipart/form-data" id="uploadForm"
         >
         <h3> 파일 업로드 </h3>
         <input type="hidden" name="data" value="<%= JSON.stringify(data) %>">
@@ -43,6 +69,7 @@
             <button type="submit" class="custom-btn btn-12">
                 <span> Upload !</span>
                 <span> 파일 업로드 </span>
+                <div class="spinner" id="spinner"></div>
             </button>
 
         </form>
@@ -304,6 +331,15 @@
     let devSelect
     let allCheck
     let docCheck
+
+    document.getElementById('uploadForm').addEventListener('submit', function(event) {
+        var form = event.target;
+        var spinner = document.getElementById('spinner');
+
+        // 스피너 활성화
+        form.classList.add('loading');
+        spinner.style.display = 'inline-block';
+    });
 
     function changeDocuments(e){
         const select = e.value
