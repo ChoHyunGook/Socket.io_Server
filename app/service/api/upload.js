@@ -27,7 +27,7 @@ async function uploadFile(file, loginData, ip,Bucket_name) {
 
     try {
         const data = await upload.promise();
-        const cloudFrontUrl = `https://${AWS_CLOUD_FRONT}/${file.originalname.trim()}`;
+        const cloudFrontUrl = `${AWS_CLOUD_FRONT}/${file.originalname.trim()}`;
         const date = moment().tz('Asia/Seoul');
         let versionData = {
             access_id: loginData.access_id,
