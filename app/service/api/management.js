@@ -976,14 +976,9 @@ const management = function () {
                             Key: file.originalname.trim(),
                             Body: file.buffer
                         }
-                        const upload = new AWS.S3.ManagedUpload({
-                            params: params,
-                            partSize: 20 * 1024 * 1024, // 10MB 단위로 분할 업로드
-                            queueSize: 5 // 동시에 업로드할 파트의 수
-                        });
-                        try {
-                            const data = await upload.promise();
-                            const date = moment().tz('Asia/Seoul');
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
+                            const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
@@ -991,18 +986,40 @@ const management = function () {
                                 ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
-                            };
+                            }
+                            new Version(versionData).save()
+                                .then(r => console.log('Version Update History Save Success'))
+                                .catch(err => console.log('Version Update History Save Fail', err))
+                            res.render('update', {data: versionData, param: param})
+                        })
 
-                            // 버전 업데이트 히스토리 저장
-                            await new Version(versionData).save();
-                            console.log('Version Update History Save Success');
-
-                            res.render('update', { data: versionData, param: params });
-
-                        } catch (err) {
-                            console.error('Error:', err);
-                            res.status(500).send('Internal Server Error');
-                        }
+                        // const upload = new AWS.S3.ManagedUpload({
+                        //     params: params,
+                        //     partSize: 20 * 1024 * 1024, // 10MB 단위로 분할 업로드
+                        //     queueSize: 5 // 동시에 업로드할 파트의 수
+                        // });
+                        // try {
+                        //     const data = await upload.promise();
+                        //     const date = moment().tz('Asia/Seoul');
+                        //     let versionData = {
+                        //         access_id: loginData.access_id,
+                        //         access_name: loginData.access_name,
+                        //         department: loginData.department,
+                        //         ip: ip,
+                        //         contents: `Upload.${file.originalname}`,
+                        //         date: date.format('YYYY-MM-DD HH:mm:ss')
+                        //     };
+                        //
+                        //     // 버전 업데이트 히스토리 저장
+                        //     await new Version(versionData).save();
+                        //     console.log('Version Update History Save Success');
+                        //
+                        //     res.render('update', { data: versionData, param: params });
+                        //
+                        // } catch (err) {
+                        //     console.error('Error:', err);
+                        //     res.status(500).send('Internal Server Error');
+                        // }
 
                         // const data = await upload.promise();
                         // const date = moment().tz('Asia/Seoul');
