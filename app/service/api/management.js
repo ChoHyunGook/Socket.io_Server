@@ -951,39 +951,6 @@ const management = function () {
                         })
                     } else if (file.originalname.split('.')[0] === 'doorbellApk') {
 
-                        const date = moment().tz('Asia/Seoul');
-                        let versionData = {
-                            access_id: loginData.access_id,
-                            access_name: loginData.access_name,
-                            department: loginData.department,
-                            ip: ip,
-                            contents: `Upload.${file.originalname}`,
-                            date: date.format('YYYY-MM-DD HH:mm:ss')
-                        };
-                        const params = {
-                            Bucket: `${Bucket_name}/app/doorbellApk`,
-                            Key: file.originalname.trim(),
-                            Body: file.buffer
-                        };
-
-                        res.render('update', {data: versionData, param: params});
-                        const result = await awsUpload(file, versionData, params)
-                        console.log('File uploaded successfully at', result.cloudFrontUrl);
-                        console.log('Version data:', result.versionData);
-                        console.log('S3 params:', result.params);
-                        // const params = {
-                        //     Bucket: Bucket_name + '/app/doorbellApk',
-                        //     Key: file.originalname.trim(),
-                        //     Body: file.buffer
-                        // }
-                        // const upload = new AWS.S3.ManagedUpload({
-                        //     params: params,
-                        //     partSize: 20 * 1024 * 1024, // 10MB 단위로 분할 업로드
-                        //     queueSize: 5 // 동시에 업로드할 파트의 수
-                        // });
-                        //
-                        // const data = await upload.promise();
-                        // const cloudFrontUrl = `${AWS_CLOUD_FRONT}/${file.name}`
                         // const date = moment().tz('Asia/Seoul');
                         // let versionData = {
                         //     access_id: loginData.access_id,
@@ -993,13 +960,47 @@ const management = function () {
                         //     contents: `Upload.${file.originalname}`,
                         //     date: date.format('YYYY-MM-DD HH:mm:ss')
                         // };
+                        // const params = {
+                        //     Bucket: `${Bucket_name}/app/doorbellApk`,
+                        //     Key: file.originalname.trim(),
+                        //     Body: file.buffer
+                        // };
                         //
-                        // // 버전 업데이트 히스토리 저장
-                        // new Version(versionData).save()
-                        //     .then(r => console.log('Version Update History Save Success'))
-                        //     .catch(err => console.log('Version Update History Save Fail', err));
-                        //
-                        // res.render('update', { data: versionData, param: params });
+                        // res.render('update', {data: versionData, param: params});
+                        // const result = await awsUpload(file, versionData, params)
+                        // console.log('File uploaded successfully at', result.cloudFrontUrl);
+                        // console.log('Version data:', result.versionData);
+                        // console.log('S3 params:', result.params);
+                        const params = {
+                            Bucket: Bucket_name + '/app/doorbellApk',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
+                        }
+                        const upload = new AWS.S3.ManagedUpload({
+                            params: params,
+                            partSize: 20 * 1024 * 1024, // 10MB 단위로 분할 업로드
+                            queueSize: 5 // 동시에 업로드할 파트의 수
+                        });
+
+                        const data = await upload.promise();
+                        const cloudFrontUrl = `${AWS_CLOUD_FRONT}/${file.name}`
+                        console.log(cloudFrontUrl)
+                        const date = moment().tz('Asia/Seoul');
+                        let versionData = {
+                            access_id: loginData.access_id,
+                            access_name: loginData.access_name,
+                            department: loginData.department,
+                            ip: ip,
+                            contents: `Upload.${file.originalname}`,
+                            date: date.format('YYYY-MM-DD HH:mm:ss')
+                        };
+
+                        // 버전 업데이트 히스토리 저장
+                        new Version(versionData).save()
+                            .then(r => console.log('Version Update History Save Success'))
+                            .catch(err => console.log('Version Update History Save Fail', err));
+
+                        res.render('update', { data: versionData, param: params });
 
 
                         // s3.upload(params, function (err, data) {
