@@ -3,6 +3,8 @@ const moment = require("moment-timezone");
 const applyDotenv = require("../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const db = require("../../DataBase");
+const fs = require("fs")
+
 
 const {
     AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, DEV_DEVICE_ADMIN, DEV_APP_ADMIN,
@@ -459,27 +461,13 @@ const management = function () {
                     let latestData = checkData.reduce((latest, current) => {
                         return new Date(latest.LastModified) > new Date(current.LastModified) ? latest : current;
                     });
-                    console.log(latestData)
                     const params = {
                         Bucket: Bucket_name,
-                        Key: latestData.Key
+                        Key: latestData.Key,
+                        Expires: 60 // URL 유효 기간(초 단위)
                     }
-                    s3.getObject(params, function (err, data) {
-                        if (err) {
-                            console.log(err)
-                        } else {
-                            console.log(latestData.Key)
-                            res.writeHead(200,
-                                {
-                                    'Content-Type': `application/octet-stream`,
-                                    'Content-Length': data.ContentLength,
-                                    'Content-Disposition': `filename="${latestData.Key.split('/')[2]}";`
-                                },
-                            )
-                            res.end(Buffer.from(data.Body, 'base64'))
-
-                        }
-                    })
+                    const url = s3.getSignedUrl('getObject', params);
+                    res.status(200).send(url)
                 })
         },
 
