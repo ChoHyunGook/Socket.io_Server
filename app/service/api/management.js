@@ -983,8 +983,6 @@ const management = function () {
                         });
 
                         const data = await upload.promise();
-                        const cloudFrontUrl = `${AWS_CLOUD_FRONT}/${file.name}`
-                        console.log(cloudFrontUrl)
                         const date = moment().tz('Asia/Seoul');
                         let versionData = {
                             access_id: loginData.access_id,
