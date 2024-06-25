@@ -560,88 +560,84 @@ const management = function () {
                 res.render('error',{param:param,error:error,data:loginData})
             }else{
                 const filter = file.originalname.split('.')
-                s3.listObjects({Bucket: Bucket_name}).promise().then((list)=>{
+                s3.listObjects({Bucket: Bucket_name}).promise().then(async (list) => {
                     const checkList = list.Contents
                     const overlap = file.originalname
                     let overlapCheck = false
-                    checkList.map(cl=>{
-                        if(cl.Key.split('/')[2] === overlap){
+                    checkList.map(cl => {
+                        if (cl.Key.split('/')[2] === overlap) {
                             overlapCheck = true
                         }
                     })
-                    if(overlapCheck === true){
+                    if (overlapCheck === true) {
                         let error = {
-                            message:`중복된 파일이 있습니다. fileName : ${overlap}`
+                            message: `중복된 파일이 있습니다. fileName : ${overlap}`
                         }
-                        res.render('error',{param:param,error:error,data:loginData})
-                    }
-                    else if(filter[2] !== 'bin' && filter[2] !== 'zip' && filter[2] !== 'pptx' && filter[2] !== 'pdf' && filter[2] !== 'apk' ){
+                        res.render('error', {param: param, error: error, data: loginData})
+                    } else if (filter[2] !== 'bin' && filter[2] !== 'zip' && filter[2] !== 'pptx' && filter[2] !== 'pdf' && filter[2] !== 'apk') {
                         let error = {
-                            message:`올바른 파일확장자(device : bin, server : zip, app : apk)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
+                            message: `올바른 파일확장자(device : bin, server : zip, app : apk)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length - 1]}`
                         }
-                        res.render('error',{error:error,param:param,data:loginData})
-                    }
-
-                    else if(file.originalname.split('.')[0] === 'doc'){
+                        res.render('error', {error: error, param: param, data: loginData})
+                    } else if (file.originalname.split('.')[0] === 'doc') {
                         const params = {
-                            Bucket:Bucket_name+'/server/documents',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                            Bucket: Bucket_name + '/server/documents',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0] === 'bldb'){
-                        const params={
-                            Bucket:Bucket_name+'/device/bldb',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'bldb') {
+                        const params = {
+                            Bucket: Bucket_name + '/device/bldb',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    } else if(file.originalname.split('.')[0] === 'bldc'){
-                        const params={
-                            Bucket:Bucket_name+'/device/bldc',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'bldc') {
+                        const params = {
+                            Bucket: Bucket_name + '/device/bldc',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
@@ -649,392 +645,406 @@ const management = function () {
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    } else if(file.originalname.split('.')[0] === 'blwc'){
-                        const params={
-                            Bucket:Bucket_name+'/device/blwc',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'blwc') {
+                        const params = {
+                            Bucket: Bucket_name + '/device/blwc',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }else if(file.originalname.split('.')[0] === 'blss'){
-                        const params={
-                            Bucket:Bucket_name+'/device/blss',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'blss') {
+                        const params = {
+                            Bucket: Bucket_name + '/device/blss',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    } else if(file.originalname.split('.')[0] === 'blvc'){
-                        const params={
-                            Bucket:Bucket_name+'/device/blvc',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'blvc') {
+                        const params = {
+                            Bucket: Bucket_name + '/device/blvc',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    } else if(file.originalname.split('.')[0] === 'blsi'){
-                        const params={
-                            Bucket:Bucket_name+'/device/blsi',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'blsi') {
+                        const params = {
+                            Bucket: Bucket_name + '/device/blsi',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }else if(file.originalname.split('.')[0]==='apiServer'){
-                        const params={
-                            Bucket:Bucket_name+'/server/apiServer',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'apiServer') {
+                        const params = {
+                            Bucket: Bucket_name + '/server/apiServer',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }else if(file.originalname.split('.')[0]==='doorbellAdmin'){
-                        const params={
-                            Bucket:Bucket_name+'/server/doorbellAdmin',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'doorbellAdmin') {
+                        const params = {
+                            Bucket: Bucket_name + '/server/doorbellAdmin',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0]==='doorbellGo'){
-                        const params={
-                            Bucket:Bucket_name+'/server/doorbellGo',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'doorbellGo') {
+                        const params = {
+                            Bucket: Bucket_name + '/server/doorbellGo',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0]==='lambda'){
-                        const params={
-                            Bucket:Bucket_name+'/server/lambda',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'lambda') {
+                        const params = {
+                            Bucket: Bucket_name + '/server/lambda',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0]==='sleepcore'){
-                        const params={
-                            Bucket:Bucket_name+'/server/sleepcore',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'sleepcore') {
+                        const params = {
+                            Bucket: Bucket_name + '/server/sleepcore',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0]==='fastStroke'){
-                        const params={
-                            Bucket:Bucket_name+'/server/fastStroke',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'fastStroke') {
+                        const params = {
+                            Bucket: Bucket_name + '/server/fastStroke',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0]==='attendanceManagement'){
-                        const params={
-                            Bucket:Bucket_name+'/server/attendanceManagement',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'attendanceManagement') {
+                        const params = {
+                            Bucket: Bucket_name + '/server/attendanceManagement',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0]==='myrucell'){
-                        const params={
-                            Bucket:Bucket_name+'/server/myrucell',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'myrucell') {
+                        const params = {
+                            Bucket: Bucket_name + '/server/myrucell',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0]==='doorbellApp'){
-                        const params={
-                            Bucket:Bucket_name+'/app/doorbellApp',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'doorbellApp') {
+                        const params = {
+                            Bucket: Bucket_name + '/app/doorbellApp',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0]==='doorbellApk'){
-                        const params={
-                            Bucket:Bucket_name+'/app/doorbellApk',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'doorbellApk') {
+                        const params = {
+                            Bucket: Bucket_name + '/app/doorbellApk',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
+                        }
+                        const upload = new AWS.S3.ManagedUpload({
+                            params: params,
+                            partSize: 10 * 1024 * 1024, // 10MB 단위로 분할 업로드
+                            queueSize: 10 // 동시에 업로드할 파트의 수
+                        });
+
+                        const data = await upload.promise();
+
+                        const date = moment().tz('Asia/Seoul');
+                        let versionData = {
+                            access_id: loginData.access_id,
+                            access_name: loginData.access_name,
+                            department: loginData.department,
+                            ip: ip,
+                            contents: `Upload.${file.originalname}`,
+                            date: date.format('YYYY-MM-DD HH:mm:ss')
+                        };
+
+                        // 버전 업데이트 히스토리 저장
+                        new Version(versionData).save()
+                            .then(r => console.log('Version Update History Save Success'))
+                            .catch(err => console.log('Version Update History Save Fail', err));
+
+                        res.render('update', { data: versionData, param: params });
+
+
+                        // s3.upload(params, function (err, data) {
+                        //     if (err) throw err;
+                        //     const date = moment().tz('Asia/Seoul')
+                        //     let versionData = {
+                        //         access_id: loginData.access_id,
+                        //         access_name: loginData.access_name,
+                        //         department: loginData.department,
+                        //         ip: ip,
+                        //         contents: `Upload.${file.originalname}`,
+                        //         date: date.format('YYYY-MM-DD HH:mm:ss')
+                        //     }
+                        //     new Version(versionData).save()
+                        //         .then(r => console.log('Version Update History Save Success'))
+                        //         .catch(err => console.log('Version Update History Save Fail', err))
+                        //     res.render('update', {data: versionData, param: param})
+                        // })
+                    } else if (file.originalname.split('.')[0] === 'sleepcoreApp') {
+                        const params = {
+                            Bucket: Bucket_name + '/app/sleepcoreApp',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-
-                    else if(file.originalname.split('.')[0]==='sleepcoreApp'){
-                        const params={
-                            Bucket:Bucket_name+'/app/sleepcoreApp',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
+                    } else if (file.originalname.split('.')[0] === 'fastStrokeApp') {
+                        const params = {
+                            Bucket: Bucket_name + '/app/fastStrokeApp',
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
                         }
 
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
+                        s3.upload(params, function (err, data) {
+                            if (err) throw err;
                             const date = moment().tz('Asia/Seoul')
                             let versionData = {
                                 access_id: loginData.access_id,
                                 access_name: loginData.access_name,
                                 department: loginData.department,
-                                ip:ip,
+                                ip: ip,
                                 contents: `Upload.${file.originalname}`,
                                 date: date.format('YYYY-MM-DD HH:mm:ss')
                             }
                             new Version(versionData).save()
                                 .then(r => console.log('Version Update History Save Success'))
                                 .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
+                            res.render('update', {data: versionData, param: param})
                         })
-                    }
-                    else if(file.originalname.split('.')[0]==='fastStrokeApp'){
-                        const params={
-                            Bucket:Bucket_name+'/app/fastStrokeApp',
-                            Key:file.originalname.trim(),
-                            Body:file.buffer
-                        }
-
-                        s3.upload(params,function (err,data){
-                            if(err) throw err;
-                            const date = moment().tz('Asia/Seoul')
-                            let versionData = {
-                                access_id: loginData.access_id,
-                                access_name: loginData.access_name,
-                                department: loginData.department,
-                                ip:ip,
-                                contents: `Upload.${file.originalname}`,
-                                date: date.format('YYYY-MM-DD HH:mm:ss')
-                            }
-                            new Version(versionData).save()
-                                .then(r => console.log('Version Update History Save Success'))
-                                .catch(err => console.log('Version Update History Save Fail', err))
-                            res.render('update',{data:versionData,param:param})
-                        })
-                    }else{
+                    } else {
                         let error = {
-                            message:`올바른 파일확장자(device : bin, server : zip, app : apk)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length -1]}`
+                            message: `올바른 파일확장자(device : bin, server : zip, app : apk)을 첨부해주세요. 첨부된 확장자 : ${filter[filter.length - 1]}`
                         }
-                        res.render('error',{error:error,param:param,data:loginData})
+                        res.render('error', {error: error, param: param, data: loginData})
                     }
 
                 })
