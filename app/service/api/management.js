@@ -467,7 +467,16 @@ const management = function () {
                         Expires: 60 // URL 유효 기간(초 단위)
                     }
                     const url = s3.getSignedUrl('getObject', params);
-                    res.status(200).send(url)
+                    // res.status(200).send(url)
+                    res.status(200).send(`
+            <html>
+                <body>
+                    <script type="text/javascript">
+                        window.location.href = "${url}";
+                    </script>
+                </body>
+            </html>
+        `);
                 })
         },
 
