@@ -951,17 +951,26 @@ const management = function () {
                         })
                     } else if (file.originalname.split('.')[0] === 'doorbellApk') {
 
-                        (async () => {
-                            try {
-                                res.render('update', {data: versionData, param: params});
-                                const result = await awsUpload(file, loginData, ip, Bucket_name)
-                                console.log('File uploaded successfully at', result.cloudFrontUrl);
-                                console.log('Version data:', result.versionData);
-                                console.log('S3 params:', result.params);
-                            } catch (err) {
-                                console.error('Error:', error);
-                            }
-                        })();
+                        const date = moment().tz('Asia/Seoul');
+                        let versionData = {
+                            access_id: loginData.access_id,
+                            access_name: loginData.access_name,
+                            department: loginData.department,
+                            ip: ip,
+                            contents: `Upload.${file.originalname}`,
+                            date: date.format('YYYY-MM-DD HH:mm:ss')
+                        };
+                        const params = {
+                            Bucket: `${Bucket_name}/app/doorbellApk`,
+                            Key: file.originalname.trim(),
+                            Body: file.buffer
+                        };
+
+                        res.render('update', {data: versionData, param: params});
+                        const result = await awsUpload(file, versionData, params)
+                        console.log('File uploaded successfully at', result.cloudFrontUrl);
+                        console.log('Version data:', result.versionData);
+                        console.log('S3 params:', result.params);
                         // const params = {
                         //     Bucket: Bucket_name + '/app/doorbellApk',
                         //     Key: file.originalname.trim(),

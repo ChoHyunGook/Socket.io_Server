@@ -12,12 +12,8 @@ const {
 
 const Version = db.version
 
-async function uploadFile(file, loginData, ip,Bucket_name) {
-    const params = {
-        Bucket: `${Bucket_name}/app/doorbellApk`,
-        Key: file.originalname.trim(),
-        Body: file.buffer
-    };
+async function uploadFile(file, versionData,params) {
+
 
     const upload = new AWS.S3.ManagedUpload({
         params: params,
@@ -28,15 +24,6 @@ async function uploadFile(file, loginData, ip,Bucket_name) {
     try {
         const data = await upload.promise();
         const cloudFrontUrl = `${AWS_CLOUD_FRONT}/${file.originalname.trim()}`;
-        const date = moment().tz('Asia/Seoul');
-        let versionData = {
-            access_id: loginData.access_id,
-            access_name: loginData.access_name,
-            department: loginData.department,
-            ip: ip,
-            contents: `Upload.${file.originalname}`,
-            date: date.format('YYYY-MM-DD HH:mm:ss')
-        };
 
         // 버전 업데이트 히스토리 저장
         await new Version(versionData).save();
