@@ -20,7 +20,8 @@ const Bucket_name = AWS_BUCKET_NAME
 const s3 = new AWS.S3({
     accessKeyId: ClientId,
     secretAccessKey: ClientSecret,
-    region: AWS_REGION
+    region: AWS_REGION,
+    useAccelerateEndpoint: true
 });
 
 
@@ -207,6 +208,7 @@ const management = function () {
                 }
             }
         },
+
         deleteLog(req,res){
             const bodyData = req.body
             const loginData =JSON.parse(bodyData.data)
@@ -954,8 +956,8 @@ const management = function () {
                         }
                         const upload = new AWS.S3.ManagedUpload({
                             params: params,
-                            partSize: 10 * 1024 * 1024, // 10MB 단위로 분할 업로드
-                            queueSize: 10 // 동시에 업로드할 파트의 수
+                            partSize: 5 * 1024 * 1024, // 10MB 단위로 분할 업로드
+                            queueSize: 20 // 동시에 업로드할 파트의 수
                         });
 
                         const data = await upload.promise();
