@@ -155,9 +155,13 @@ const api = function () {
                 .then(tableFind=> {
                             tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.id,company:"Sunil"}).toArray()
                                 .then(findData=>{
-
-                                    res.status(200).send(findData)
-                                    tableFind.close()
+                                    if(findData.length === 0){
+                                        res.status(400).send('There is no corresponding information.')
+                                        tableFind.close()
+                                    }else{
+                                        res.status(200).send(findData)
+                                        tableFind.close()
+                                    }
                                 })
                                 .catch(err=>{
                                     res.status(400).send(err)
