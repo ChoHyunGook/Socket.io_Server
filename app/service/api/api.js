@@ -149,6 +149,27 @@ const api = function () {
 
         },
 
+        findItems(req,res){
+            const data = req.body
+            Client.connect(MONGO_URI)
+                .then(tableFind=> {
+                            tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.id,company:"Sunil"}).toArray()
+                                .then(findData=>{
+
+                                    res.status(200).send(findData)
+                                    tableFind.close()
+                                })
+                                .catch(err=>{
+                                    res.status(400).send(err)
+                                    tableFind.close()
+                                })
+
+                })
+                .catch(err=>{
+                    res.status(400).send(err)
+                })
+        },
+
 
         findLog(req,res){
             apiLogs.find({}).sort({"date":-1})

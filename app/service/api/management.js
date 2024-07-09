@@ -21,8 +21,7 @@ const Bucket_name = AWS_BUCKET_NAME
 const s3 = new AWS.S3({
     accessKeyId: ClientId,
     secretAccessKey: ClientSecret,
-    region: AWS_REGION,
-    useAccelerateEndpoint: true
+    region: AWS_REGION
 });
 
 

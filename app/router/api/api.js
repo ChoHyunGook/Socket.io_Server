@@ -121,6 +121,9 @@ app.get('/', (req,res)=>{
 app.post('/signup/overseas',(req,res)=>{
     Api().overseasSignup(req,res)
 })
+app.post('/find/overseas',(req,res)=>{
+    Api().findItems(req,res)
+})
 app.get('/deviceVersion/download',(req,res,next)=>{
     Management().deviceVersionDownload(req,res)
 })
