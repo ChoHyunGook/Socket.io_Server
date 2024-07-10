@@ -70,6 +70,8 @@ setInterval(()=>{
         })
     })
 },1000*60*60*24)
+
+
 app.get('/findLog',(req,res)=>{
     Api().findLog(req,res)
 })
@@ -121,8 +123,17 @@ app.get('/', (req,res)=>{
 app.post('/signup/overseas',(req,res)=>{
     Api().overseasSignup(req,res)
 })
-app.post('/find/overseas',(req,res)=>{
-    Api().findItems(req,res)
+app.get('/find/overseas',(req,res)=>{
+    Api().findAWS(req,res)
+})
+app.get('/find/test',(req,res)=>{
+    Api().findAWS(req,res)
+})
+app.post('/save/userKey',(req,res)=>{
+    Api().saveUserKey(req,res)
+})
+app.post('/save/deviceId',(req,res)=>{
+    Api().saveDeivceId(req,res)
 })
 app.get('/deviceVersion/download',(req,res,next)=>{
     Management().deviceVersionDownload(req,res)

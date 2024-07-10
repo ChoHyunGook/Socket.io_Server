@@ -5,6 +5,7 @@ const history = require('./history')
 const dotenv = require("dotenv");
 const {DynamoDB} = require("@aws-sdk/client-dynamodb")
 const qs = require('qs')
+const jwt = require("jsonwebtoken")
 const fs = require("fs")
 const AWS = require("aws-sdk")
 
@@ -23,6 +24,8 @@ const Face = db.face
 
 
 
+
+
 let count = 0;
 let awsLogsData = [];
 
@@ -34,15 +37,26 @@ const logOpenDay = semiDate.logOpenDay()
 const {
     AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, MONGO_URI, ADMIN_DB_NAME, SMS_service_id,
     SMS_secret_key, SMS_access_key, SMS_PHONE, NICE_CLIENT_ID, NICE_CLIENT_SECRET, NICE_PRODUCT_CODE,
-    NICE_ACCESS_TOKEN, DEV_DEVICE_ADMIN, DEV_APP_ADMIN, DEV_SEVER_ADMIN, DEV_CEO_ADMIN,AWS_LAMBDA_SIGNUP
+    NICE_ACCESS_TOKEN, DEV_DEVICE_ADMIN, DEV_APP_ADMIN, DEV_SEVER_ADMIN, DEV_CEO_ADMIN,AWS_LAMBDA_SIGNUP,
+    AWS_TOKEN
 } = applyDotenv(dotenv)
 
+const ClientId = AWS_SECRET
+const ClientSecret = AWS_ACCESS
+
 let database;
+
+AWS.config.update({
+    accessKeyId: ClientId,
+    secretAccessKey: ClientSecret,
+    region: AWS_REGION
+});
+
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 
 const api = function () {
     return {
-
     // {
     //     "device_id":{type:String, required:true},
     //     "name":{type:String,required:true},
@@ -113,6 +127,7 @@ const api = function () {
                                 service_start: saveTime.format('YYYY-MM-DD'),
                                 service_end: "9999-12-30",
                                 start_up: 'O',
+                                user_key:"",
                             }
                             tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
                                 .then(findData=>{
@@ -149,19 +164,43 @@ const api = function () {
 
         },
 
-        findItems(req,res){
+        saveDeivceId(req,res){
             const data = req.body
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
-                            tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.id,company:"Sunil"}).toArray()
+                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: data.user_key,
+                            company: "Sunil"})
+                        .then(findData=>{
+                            tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: data.user_key,
+                                company: "Sunil"},{
+                                $set:{
+                                    device_id:findData.device_id+","+data.device_id
+                                }
+                            })
+                                .then(suc=>{
+                                    console.log(`${findData.id}-${findData.name}-${data.device_id} saved`)
+                                    res.status(200).send('success')
+                                })
+                        })
+                })
+        },
+
+
+
+        saveUserKey(req,res){
+
+            const data = req.body
+
+            Client.connect(MONGO_URI)
+                .then(tableFind=> {
+                            tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:data.id,company:"Sunil"},
+                                {$set:{
+                                        user_key:data.user_key
+                                    }})
                                 .then(findData=>{
-                                    if(findData.length === 0){
-                                        res.status(400).send('There is no corresponding information.')
-                                        tableFind.close()
-                                    }else{
-                                        res.status(200).send(findData)
-                                        tableFind.close()
-                                    }
+                                    console.log(`Login-id:${data.id}- user_key Save Success`)
+                                    res.status(200).send('success')
+                                    tableFind.close()
                                 })
                                 .catch(err=>{
                                     res.status(400).send(err)
@@ -172,6 +211,115 @@ const api = function () {
                 .catch(err=>{
                     res.status(400).send(err)
                 })
+        },
+
+        testToken(req,res){
+          const data = req.body
+          const token = jwt.sign({user_key:data.user_key},AWS_TOKEN)
+          res.status(200).send(token)
+        },
+
+        // async userKeyTest(req, res) {
+        //     const params = {
+        //         TableName: 'USER_TABLE'
+        //     }
+        //     let items = []
+        //     const data = await dynamoDB.scan(params).promise()
+        //     items=items.concat(data.Items);
+        //     //console.log(items)
+        //     Client.connect(MONGO_URI)
+        //         .then(tableFind=> {
+        //             tableFind.db(ADMIN_DB_NAME).collection('tables').find({}).toArray()
+        //                 .then(findData=>{
+        //                     findData.map(e=>{
+        //                         const findIndex = items.find(el=>el.user_id === e.id)
+        //                         //console.log(findIndex)
+        //                         if(findIndex !== undefined){
+        //                             console.log(findIndex.user_key)
+        //                             tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:e.id},
+        //                                 {$set:{user_key:findIndex.user_key}})
+        //                                 .then(suc=>{
+        //                                     console.log(`${e.id} save - user_key ${findIndex.user_key}`)
+        //                                 })
+        //                         }else{
+        //                             tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:e.id},
+        //                                 {$set:{user_key:null}})
+        //                                 .then(suc=>{
+        //                                     console.log(`${e.id} save - user_key null`)
+        //                                 })
+        //                         }
+        //
+        //                         //tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:findIndex.id}).toArray()
+        //                     })
+        //                 })
+        //         })
+        // },
+
+
+        findAWS(req,res){
+            const token = req.headers['token']
+
+            if(token !== undefined){
+                const tokenVerify = jwt.verify(token,AWS_TOKEN)
+                // // 테이블 스캔 함수
+                const scanTable = async (tableName, filterExpression, expressionAttributeValues) => {
+                    const params = {
+                        TableName: tableName,
+                        FilterExpression: filterExpression,
+                        ExpressionAttributeValues: expressionAttributeValues
+                    };
+
+                    try {
+                        const data = await dynamoDB.scan(params).promise();
+                        return data.Items;
+                    } catch (error) {
+                        console.error('Error scanning table:', error);
+                        return [];
+                    }
+                };
+
+
+                const tableName = 'DEVICE_TABLE'; // 조회하려는 DynamoDB 테이블 이름
+                const filterExpression = 'user_key = :user_key'; // 필터 조건 (여러 조건을 추가할 수 있음)
+                const expressionAttributeValues = {
+                    ':user_key': tokenVerify.user_key // 필터 조건에 해당하는 값
+                };
+
+                scanTable(tableName, filterExpression, expressionAttributeValues).then(items => {
+                    Client.connect(MONGO_URI)
+                        .then(tableFind=> {
+                            tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key:tokenVerify.user_key})
+                                .then(findData=>{
+                                    let check = []
+                                    items.map(e=>{
+                                        check.push(e.device_id)
+                                    })
+
+                                    let splitData = findData.device_id.split(',')
+                                    let excludedDeviceIds = splitData.filter(id => !check.includes(id));
+
+                                    res.status(200).json({msg:'Data query successful',
+                                        unconnectDeviceId:excludedDeviceIds.length === 0 ? "be all connected":excludedDeviceIds,
+                                        openingData:findData,connectData:items})
+
+                                })
+                                .catch(err=>{
+                                    res.status(400).send(err)
+                                    tableFind.close()
+                                })
+
+                        })
+                    // if (items.length > 0) {
+                    //
+                    //
+                    // } else {
+                    //     res.status(400).json({msg:'The data is not available.',data:undefined})
+                    // }
+                });
+            }else{
+                res.status(400).send('Header has no token value, please check again.')
+            }
+
         },
 
 
