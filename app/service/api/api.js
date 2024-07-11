@@ -299,7 +299,7 @@ const api = function () {
                                     let excludedDeviceIds = splitData.filter(id => !check.includes(id));
 
                                     res.status(200).json({msg:'Data query successful',
-                                        unconnectDeviceId:excludedDeviceIds.length === 0 ? "be all connected":excludedDeviceIds,
+                                        unconnectDeviceId:excludedDeviceIds,
                                         openingData:findData,connectData:items})
 
                                 })
