@@ -118,7 +118,7 @@ const api = function () {
                                 tel:data.tel,
                                 addr:data.addr,
                                 contract_num: `Sunil-overseas-${Number(maxContractNum)+1}`,//데이터 조회 후 +1씩증가
-                                device_id: data.device_id,
+                                device_id: data.device_id.trim().toLowerCase(),
                                 company: "Sunil",
                                 contract_service: '주계약자',
                                 id:data.user_id,
@@ -127,7 +127,7 @@ const api = function () {
                                 service_start: saveTime.format('YYYY-MM-DD'),
                                 service_end: "9999-12-30",
                                 start_up: 'O',
-                                user_key:"",
+                                user_key:null,
                             }
                             tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
                                 .then(findData=>{
@@ -193,20 +193,35 @@ const api = function () {
 
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
-                            tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:data.id,company:"Sunil"},
-                                {$set:{
-                                        user_key:data.user_key
-                                    }})
-                                .then(findData=>{
-                                    console.log(`Login-id:${data.id}- user_key Save Success`)
-                                    res.status(200).send('success')
-                                    tableFind.close()
-                                })
-                                .catch(err=>{
-                                    console.log(err)
-                                    res.status(400).send(err)
-                                    tableFind.close()
-                                })
+                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({id:data.id})
+                        .then(findData=>{
+                            if(findData.user_key === null){
+                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:data.id,company:"Sunil"},
+                                        {$set:{
+                                                user_key:data.user_key
+                                            }})
+                                        .then(findsData=>{
+                                            console.log(`Login-id:${data.id}- user_key Save Success`)
+                                            res.status(200).send('success')
+                                            tableFind.close()
+                                        })
+                                        .catch(err=>{
+                                            console.log(err)
+                                            res.status(400).send(err)
+                                            tableFind.close()
+                                        })
+                            }else{
+                                    console.log(`Login-id:${data.id}- This is already saved user_key`)
+                                    res.status(200).send('Saved user_key')
+                                tableFind.close()
+                            }
+                        })
+                        .catch(err=>{
+                            console.log(err)
+                            res.status(400).send(err)
+                            tableFind.close()
+                        })
+
 
                 })
                 .catch(err=>{
