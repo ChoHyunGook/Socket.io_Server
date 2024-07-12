@@ -188,7 +188,7 @@ const api = function () {
 
             const data = req.body
 
-            console.log(data.bodyData)
+            console.log(data)
 
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
