@@ -159,9 +159,6 @@ const api = function () {
                 })
 
 
-              //데이터를 람다로 쏘면됨.
-
-
         },
 
         saveDeivceId(req,res){
@@ -190,6 +187,8 @@ const api = function () {
         saveUserKey(req,res){
 
             const data = req.body
+
+            console.log(data.bodyData)
 
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
