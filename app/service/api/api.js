@@ -188,8 +188,6 @@ const api = function () {
 
             const data = req.body
 
-            console.log(data)
-
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({id:data.id})
