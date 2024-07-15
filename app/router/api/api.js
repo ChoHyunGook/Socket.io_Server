@@ -113,9 +113,9 @@ app.get('/', (req,res)=>{
     Api().getService(req,res)
 })
 
-// app.get('/date',(req,res)=>{
-//     Api().deviceVideoDate(req,res)
-// })
+app.get('/date',(req,res)=>{
+    Api().userKeyTest(req,res)
+})
 
 // app.post('/dynamoUserKey',(req,res)=>{
 //     Api().dynamoUserKey(req,res)
@@ -126,8 +126,8 @@ app.post('/signup/overseas',(req,res)=>{
 app.get('/find/overseas',(req,res)=>{
     Api().findAWS(req,res)
 })
-app.get('/find/test',(req,res)=>{
-    Api().findAWS(req,res)
+app.post('/find/test',(req,res)=>{
+    Api().testToken(req,res)
 })
 app.post('/save/userKey',(req,res)=>{
     Api().saveUserKey(req,res)

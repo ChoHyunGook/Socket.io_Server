@@ -168,16 +168,23 @@ const api = function () {
                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: data.user_key,
                             company: "Sunil"})
                         .then(findData=>{
-                            tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: data.user_key,
-                                company: "Sunil"},{
-                                $set:{
-                                    device_id:findData.device_id+","+data.device_id
-                                }
-                            })
-                                .then(suc=>{
-                                    console.log(`${findData.id}-${findData.name}-${data.device_id} saved`)
-                                    res.status(200).send('success')
+                            const dataArray = findData.device_id.split(',')
+                            if(dataArray.includes(data.device_id)){
+                                res.status(200).send(`device_id:${data.device_id}- This is already saved device_id`)
+                            }else{
+                                tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: data.user_key,
+                                    company: "Sunil"},{
+                                    $set:{
+                                        device_id:findData.device_id+","+data.device_id
+                                    }
                                 })
+                                    .then(suc=>{
+                                        console.log(`${findData.id}-${findData.name}-${data.device_id} saved`)
+                                        res.status(200).send('success')
+                                        tableFind.close()
+                                    })
+                            }
+
                         })
                 })
         },
@@ -232,41 +239,53 @@ const api = function () {
           res.status(200).send(token)
         },
 
-        // async userKeyTest(req, res) {
-        //     const params = {
-        //         TableName: 'USER_TABLE'
-        //     }
-        //     let items = []
-        //     const data = await dynamoDB.scan(params).promise()
-        //     items=items.concat(data.Items);
-        //     //console.log(items)
-        //     Client.connect(MONGO_URI)
-        //         .then(tableFind=> {
-        //             tableFind.db(ADMIN_DB_NAME).collection('tables').find({}).toArray()
-        //                 .then(findData=>{
-        //                     findData.map(e=>{
-        //                         const findIndex = items.find(el=>el.user_id === e.id)
-        //                         //console.log(findIndex)
-        //                         if(findIndex !== undefined){
-        //                             console.log(findIndex.user_key)
-        //                             tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:e.id},
-        //                                 {$set:{user_key:findIndex.user_key}})
-        //                                 .then(suc=>{
-        //                                     console.log(`${e.id} save - user_key ${findIndex.user_key}`)
-        //                                 })
-        //                         }else{
-        //                             tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:e.id},
-        //                                 {$set:{user_key:null}})
-        //                                 .then(suc=>{
-        //                                     console.log(`${e.id} save - user_key null`)
-        //                                 })
-        //                         }
-        //
-        //                         //tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:findIndex.id}).toArray()
-        //                     })
-        //                 })
-        //         })
-        // },
+        userKeyTest(req, res) {
+            //let data = "dmitc1IsSUmM2vBRxG49Ev:APA91bFzGHhczyTlAXxaB7C7p78m5Fut4F2re08KmZP5hhcvgrQJ67GuDptf-SVImWS_8ODB5d-EW_P2t8CSyrKnRUeI-kfpSrvtJ0LYFiyxkwCVlF3LvaYLdJCzDpf2hCZj309VPwCe+QP1A.190711.020+eg3kjvx9QT2bxJOvakrlZT:APA91bFS8Xa6eyDsGW6qBSdiQS--Wf9rCtfGTCijRK698r3e1YA8B6Oanlo61EvJ0PsgBTQFrJnDVyxuBagSM2A1iVxlrOWoXqPZEOxRz5WxdvgTy_p48wkUxii_okpTwKAtiGHMSFSe+PPR1.180610.011+cVg26F6_RbGAuMtOj_6B2o:APA91bH-8hy8hyifq2deB6QOIIWqUWjE481ldAvzY4hHFvOH_3BbZYNpX-UvuCpdPOI00ue6rMLL3tLXWrK7mC3V3qLEUh4O3daAqxRzvM5eTBMgl3cSbYvOtkn2xTEjxaZ2BqUvURhG+TP1A.220624.014+"
+
+
+            //let resss = "dmitc1IsSUmM2vBRxG49Ev:APA91bFzGHhczyTlAXxaB7C7p78m5Fut4F2re08KmZP5hhcvgrQJ67GuDptf-SVImWS_8ODB5d-EW_P2t8CSyrKnRUeI-kfpSrvtJ0LYFiyxkwCVlF3LvaYLdJCzDpf2hCZj309VPwCe+QP1A.190711.020+fl95091gTVqc1p4x6gKSUx:APA91bH_YPCkvP8acaM74RHvXc060t4-G-o3a5lmnsCeyuLPJO4Ec_oXsoBQ7zIUSzqXdIU6u5BciROxmlR3Mwo_y-dwKrL9kmRh-mzq9b3Zs8YP-MJMWdHxRjnOQ0LCVS5LLNmrntSV+PPR1.180610.011+cVg26F6_RbGAuMtOj_6B2o:APA91bH-8hy8hyifq2deB6QOIIWqUWjE481ldAvzY4hHFvOH_3BbZYNpX-UvuCpdPOI00ue6rMLL3tLXWrK7mC3V3qLEUh4O3daAqxRzvM5eTBMgl3cSbYvOtkn2xTEjxaZ2BqUvURhG+TP1A.220624.014+"
+            // uuid가 data에 포함되어 있는지 확인
+
+            let uuid = "PPR1.180610.011"
+            let fcm = "fl95091gTVqc1p4x6gKSUx:APA91bH_YPCkvP8acaM74RHvXc060t4-G-o3a5lmnsCeyuLPJO4Ec_oXsoBQ7zIUSzqXdIU6u5BciROxmlR3Mwo_y-dwKrL9kmRh-mzq9b3Zs8YP-MJMWdHxRjnOQ0LCVS5LLNmrntSV";
+            const changeData = fcm+`+${uuid}+`
+            let dbData = "dmitc1IsSUmM2vBRxG49Ev:APA91bFzGHhczyTlAXxaB7C7p78m5Fut4F2re08KmZP5hhcvgrQJ67GuDptf-SVImWS_8ODB5d-EW_P2t8CSyrKnRUeI-kfpSrvtJ0LYFiyxkwCVlF3LvaYLdJCzDpf2hCZj309VPwCe+QP1A.190711.020+eg3kjvx9QT2bxJOvakrlZT:APA91bFS8Xa6eyDsGW6qBSdiQS--Wf9rCtfGTCijRK698r3e1YA8B6Oanlo61EvJ0PsgBTQFrJnDVyxuBagSM2A1iVxlrOWoXqPZEOxRz5WxdvgTy_p48wkUxii_okpTwKAtiGHMSFSe+PPR1.180610.011+cVg26F6_RbGAuMtOj_6B2o:APA91bH-8hy8hyifq2deB6QOIIWqUWjE481ldAvzY4hHFvOH_3BbZYNpX-UvuCpdPOI00ue6rMLL3tLXWrK7mC3V3qLEUh4O3daAqxRzvM5eTBMgl3cSbYvOtkn2xTEjxaZ2BqUvURhG+TP1A.220624.014+"
+
+            let fcm_token_data;
+
+
+            if (dbData.includes(`+${uuid}+`)) {
+                // '+'를 구분자로 데이터 분리
+                let listData = dbData.split("+");
+                // uuid를 포함하는 인덱스를 찾고 해당 부분 제거
+                for (let i = 1; i < listData.length; i += 2) {
+                    if (listData[i] === uuid) {
+                        listData.splice(i - 1, 2); // fcm과 uuid 제거
+                        break; // 일치하는 첫 번째 항목만 제거
+                    }
+                }
+                // 변경된 데이터를 다시 합치기
+                fcm_token_data = listData.join("+") + changeData;
+            } else {
+                fcm_token_data = dbData + changeData;
+            }
+
+
+
+
+                // uuid를 포함하는 부분을 찾기 위한 정규식
+//             let uuidRegex = new RegExp(`([^+]+)${uuid}([^+]+)`, 'g');
+//
+// // uuid를 포함하는 부분을 찾아서 대체
+//             data = data.replace(uuidRegex, `${fcm}+${uuid}$2`);
+            // if (data.includes(uuid)) {
+            //     data = data.replace(uuid, `${fcm}+${uuid}`);
+            // } else {
+            //     // uuid가 없으면 data 끝에 fcm+uuid+ 추가
+            //     data += `${fcm}+${uuid}+`;
+            // }
+            res.status(200).send(fcm_token_data)
+        },
 
 
         findAWS(req,res){
