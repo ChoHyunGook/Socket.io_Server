@@ -196,16 +196,17 @@ const api = function () {
 
             const data = req.body
             //데이터 유저키,아이디 등등 없을때 에러 저장 로직 추가하기
-
+            console.log(data)
 
             new AwsLogin(data).save()
                 .then(suc=>{
+
                     console.log(suc)
-                    console.log(`${data.user_id} - Login-log Save Success`)
+                    console.log(`${data.id} - Login-log Save Success`)
                 })
                 .catch(err=>{
                     console.log(err)
-                    console.log(`${data.user_id} - Login-log Save Fail`)
+                    console.log(`${data.id} - Login-log Save Fail`)
                 })
 
             Client.connect(MONGO_URI)

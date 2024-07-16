@@ -2,7 +2,7 @@
 
 const AWSLogin = function (mongoose){
     const errorSchema = new mongoose.Schema({
-        user_id:{type:String},
+        id:{type:String},
         fcm_token:{type:String},
         up_key:{type:String},
         createdAt: {
