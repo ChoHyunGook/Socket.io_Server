@@ -21,6 +21,7 @@ const apiLogs = db.logs
 const Info = db.Info
 const History = db.history
 const Face = db.face
+const AwsLogin = db.AWSLogin
 
 
 
@@ -194,6 +195,18 @@ const api = function () {
         saveUserKey(req,res){
 
             const data = req.body
+            //데이터 유저키,아이디 등등 없을때 에러 저장 로직 추가하기
+
+
+            new AwsLogin(data).save()
+                .then(suc=>{
+                    console.log(suc)
+                    console.log(`${data.user_id} - Login-log Save Success`)
+                })
+                .catch(err=>{
+                    console.log(err)
+                    console.log(`${data.user_id} - Login-log Save Fail`)
+                })
 
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
