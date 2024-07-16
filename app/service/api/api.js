@@ -201,7 +201,6 @@ const api = function () {
 
             new AwsLogin({...bodyData,id:bodyData.user_id,up_key:bodyData.upKey}).save()
                 .then(suc=>{
-                    console.log(suc)
                     console.log(`${bodyData.user_id} - Login-log Save Success`)
                 })
                 .catch(err=>{
