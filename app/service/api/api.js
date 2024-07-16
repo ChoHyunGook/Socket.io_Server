@@ -196,30 +196,30 @@ const api = function () {
 
             const data = req.body
             //데이터 유저키,아이디 등등 없을때 에러 저장 로직 추가하기
-            console.log(data)
+            const bodyData = data.bodyData
+            const userData = data.userData
 
-            new AwsLogin(data).save()
+            new AwsLogin({...bodyData,id:bodyData.user_id}).save()
                 .then(suc=>{
-
                     console.log(suc)
-                    console.log(`${data.id} - Login-log Save Success`)
+                    console.log(`${bodyData.user_id} - Login-log Save Success`)
                 })
                 .catch(err=>{
                     console.log(err)
-                    console.log(`${data.id} - Login-log Save Fail`)
+                    console.log(`${bodyData.user_id} - Login-log Save Fail`)
                 })
 
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
-                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({id:data.id})
+                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({id:bodyData.user_id})
                         .then(findData=>{
                             if(findData.user_key === null){
-                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:data.id,company:"Sunil"},
+                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:bodyData.user_id,company:"Sunil"},
                                         {$set:{
-                                                user_key:data.user_key
+                                                user_key:userData.user_key
                                             }})
                                         .then(findsData=>{
-                                            console.log(`Login-id:${data.id}- user_key Save Success`)
+                                            console.log(`Login-id:${bodyData.user_id}- user_key Save Success`)
                                             res.status(200).send('success')
                                             tableFind.close()
                                         })
@@ -229,7 +229,7 @@ const api = function () {
                                             tableFind.close()
                                         })
                             }else{
-                                    console.log(`Login-id:${data.id}- This is already saved user_key`)
+                                    console.log(`Login-id:${bodyData.user_id}- This is already saved user_key`)
                                     res.status(200).send('Saved user_key')
                                 tableFind.close()
                             }
