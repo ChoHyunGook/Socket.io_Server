@@ -56,6 +56,7 @@ AWS.config.update({
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 
+
 const api = function () {
     return {
     // {
@@ -87,73 +88,104 @@ const api = function () {
         // start_up:{type:String,required:true},
 
 
+        checkDeivceId(req,res){
+          const data = req.body
+            Client.connect(MONGO_URI)
+                .then(tableFind=>{
+                    tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
+                        .then(contracts=>{
+                            // 각 계약의 device_id 필드에서 MAC 주소를 확인
+                            const exists = contracts.some(contract => {
+                                const deviceIds = contract.device_id.split(',');
+                                return deviceIds.includes(data.device_id.toLowerCase());
+                            });
+                            res.status(200).send(exists)
+                        })
+                })
+        },
+
 
 
         overseasSignup(req,res){
           const data = req.body
             const saveTime = moment().tz('Asia/Seoul')
+
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
-                    database = tableFind.db(ADMIN_DB_NAME)
                     tableFind.db(ADMIN_DB_NAME).collection('tables').find({company:"Sunil"}).toArray()
                         .then(allData=>{
-                            //console.log(allData)
-                            let maxContractNumObj = allData
-                                .filter(item => item.contract_num.startsWith('Sunil-overseas-'))
-                                .reduce((max, item) => {
-                                    const num = parseInt(item.contract_num.split('Sunil-overseas-')[1], 10);
-                                    return (num > parseInt(max.contract_num.split('Sunil-overseas-')[1], 10)) ? item : max;
-                                });
-                            const maxContractNum = parseInt(maxContractNumObj.contract_num.split('Sunil-overseas-')[1], 10);
-                            //user_id,user_pw,name,tel,addr(국가),company(회사)
-                            let saveAwsData = {
-                                user_id:data.user_id,
-                                user_pw:data.user_pw,
-                                name:data.name,
-                                tel:data.tel,
-                                addr:data.addr,
-                                company: "Sunil",
-                            }
-                            let mongoData = {
-                                name:data.name,
-                                tel:data.tel,
-                                addr:data.addr,
-                                contract_num: `Sunil-overseas-${Number(maxContractNum)+1}`,//데이터 조회 후 +1씩증가
-                                device_id: data.device_id.trim().toLowerCase(),
-                                company: "Sunil",
-                                contract_service: '주계약자',
-                                id:data.user_id,
-                                communication: 'O',
-                                service_name:"SunilService",
-                                service_start: saveTime.format('YYYY-MM-DD'),
-                                service_end: "9999-12-30",
-                                start_up: 'O',
-                                user_key:null,
-                            }
-                            tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
-                                .then(findData=>{
-                                    if(findData.length !== 0){
-                                        res.status(400).send('Duplicate UserId')
-                                        tableFind.close()
+                            tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
+                                .then(contracts=>{
+                                    // 각 계약의 device_id 필드에서 MAC 주소를 확인
+                                    const exists = contracts.some(contract => {
+                                        const deviceIds = contract.device_id.split(',');
+                                        return deviceIds.includes(data.device_id);
+                                    });
+                                    if(exists){
+                                        //디바이스 아이디중복 확인
+                                        res.status(400).send('Duplicate device_id')
                                     }else{
-                                        tableFind.db(ADMIN_DB_NAME).collection('tables').insertOne(mongoData)
-                                            .then(suc=>{
-                                                tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
-                                                    .then(sendData=>{
-                                                        axios.post(AWS_LAMBDA_SIGNUP,saveAwsData)
-                                                            .then(awsResponse=>{
-                                                                res.status(200).json({msg:'Success Signup',checkData:sendData[0],awsResponse:awsResponse.data})
-                                                                tableFind.close()
-                                                            })
-                                                            .catch(err=>{
-                                                                res.status(400).send(err)
-                                                                tableFind.close()
-                                                            })
+                                        let maxContractNumObj = allData
+                                            .filter(item => item.contract_num.startsWith('Sunil-overseas-'))
+                                            .reduce((max, item) => {
+                                                const num = parseInt(item.contract_num.split('Sunil-overseas-')[1], 10);
+                                                return (num > parseInt(max.contract_num.split('Sunil-overseas-')[1], 10)) ? item : max;
+                                            });
+                                        const maxContractNum = parseInt(maxContractNumObj.contract_num.split('Sunil-overseas-')[1], 10);
+                                        //user_id,user_pw,name,tel,addr(국가),company(회사)
+                                        let saveAwsData = {
+                                            user_id:data.user_id,
+                                            user_pw:data.user_pw,
+                                            name:data.name,
+                                            tel:data.tel,
+                                            addr:data.addr,
+                                            company: "Sunil",
+                                        }
+                                        let mongoData = {
+                                            name:data.name,
+                                            tel:data.tel,
+                                            addr:data.addr,
+                                            contract_num: `Sunil-overseas-${Number(maxContractNum)+1}`,//데이터 조회 후 +1씩증가
+                                            device_id: data.device_id.trim().toLowerCase(),
+                                            company: "Sunil",
+                                            contract_service: '주계약자',
+                                            id:data.user_id,
+                                            communication: 'O',
+                                            service_name:"SunilService",
+                                            service_start: saveTime.format('YYYY-MM-DD'),
+                                            service_end: "9999-12-30",
+                                            start_up: 'O',
+                                            user_key:null,
+                                        }
 
-                                                    })
+                                        tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
+                                            .then(findData=>{
+                                                if(findData.length !== 0){
+                                                    res.status(400).send('Duplicate UserId')
+                                                    tableFind.close()
+                                                }else{
+                                                    tableFind.db(ADMIN_DB_NAME).collection('tables').insertOne(mongoData)
+                                                        .then(suc=>{
+                                                            tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
+                                                                .then(sendData=>{
+                                                                    axios.post(AWS_LAMBDA_SIGNUP,saveAwsData)
+                                                                        .then(awsResponse=>{
+                                                                            res.status(200).json({msg:'Success Signup',checkData:sendData[0],awsResponse:awsResponse.data})
+                                                                            tableFind.close()
+                                                                        })
+                                                                        .catch(err=>{
+                                                                            res.status(400).send(err)
+                                                                            tableFind.close()
+                                                                        })
+
+                                                                })
+                                                        })
+                                                }
                                             })
                                     }
                                 })
+
+                            //console.log(allData)
 
 
                         })

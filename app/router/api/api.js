@@ -120,6 +120,10 @@ app.get('/date',(req,res)=>{
 // app.post('/dynamoUserKey',(req,res)=>{
 //     Api().dynamoUserKey(req,res)
 // })
+
+app.post('/check/deviceId',(req,res)=>{
+    Api().checkDeivceId(req,res)
+})
 app.post('/signup/overseas',(req,res)=>{
     Api().overseasSignup(req,res)
 })
