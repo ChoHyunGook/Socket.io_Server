@@ -151,9 +151,50 @@ const api = function () {
                                                         return Promise.all(deletePromises);
                                                     })
                                                     .then(() => {
-                                                        console.log(`Updated device_id: ${contract.id}-${contract.name}`);
-                                                        res.status(200).json({msg:`Updated device_id: ${contract.id}-${contract.name}`,
-                                                            changeData:lastData})
+                                                        const s3 = new AWS.S3();
+                                                        const BUCKET_NAME = 'doorbell-video';
+                                                        // device_ids 변형
+                                                        const transformedDeviceId = data.device_id.split(':').join('_');
+                                                        //const folderPath = `${BUCKET_NAME}/${transformedDeviceId}`;
+
+                                                        // 폴더 내의 객체 나열
+                                                        const listObjectsParams = {
+                                                            Bucket: BUCKET_NAME,
+                                                            Prefix: `${transformedDeviceId}/`
+                                                        };
+
+                                                        s3.listObjectsV2(listObjectsParams).promise()
+                                                            .then(s3Data => {
+                                                                if (s3Data.Contents.length === 0) {
+                                                                    console.log(`No objects found in folder ${BUCKET_NAME}/${transformedDeviceId}`);
+                                                                    return;
+                                                                }
+
+                                                                // 객체 삭제 요청
+                                                                const deleteParams = {
+                                                                    Bucket: BUCKET_NAME,
+                                                                    Delete: { Objects: [] }
+                                                                };
+
+                                                                s3Data.Contents.forEach(({ Key }) => {
+                                                                    deleteParams.Delete.Objects.push({ Key });
+                                                                });
+
+                                                                return s3.deleteObjects(deleteParams).promise();
+                                                            })
+                                                            .then(deleteData => {
+                                                                if (deleteData) {
+                                                                    console.log(`Successfully deleted folder ${BUCKET_NAME}/${transformedDeviceId}`);
+                                                                    console.log(`Deleted device_id: ${contract.id}-${contract.name}`);
+                                                                    res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${contract.id}-${contract.name} `,
+                                                                        changeData:lastData})
+                                                                }
+                                                            })
+                                                            .catch(error => {
+                                                                console.error('Error deleting folder:', error);
+                                                            });
+
+
                                                     })
                                                     .catch(error => {
                                                         console.error('Error deleting devices:', error);
