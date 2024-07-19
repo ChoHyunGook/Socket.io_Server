@@ -108,7 +108,6 @@ const api = function () {
                 .then(tableFind=> {
                     tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ device_id: new RegExp(lowerDeviceId, 'i') })
                         .then(contract=>{
-
                             if (contract) {
                                 // device_id에서 sendData 제거
                                 let updatedDeviceIds = contract.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
@@ -120,7 +119,6 @@ const api = function () {
                                 tableFind.db(ADMIN_DB_NAME).collection('tables')
                                     .updateOne({ _id: contract._id },{ $set: { device_id: updatedDeviceIds }})
                                     .then(succ=>{
-
                                         tableFind.db(ADMIN_DB_NAME).collection('tables')
                                             .findOne({ _id: contract._id })
                                             .then(lastData=>{
@@ -134,23 +132,22 @@ const api = function () {
                                                     .then(scanResults => {
                                                         const itemsToDelete = scanResults.Items;
 
-                                                        if (itemsToDelete.length === 0) {
-                                                            return res.status(404).send(`No devices found with device_id ${lowerDeviceId}`);
+                                                        if (itemsToDelete.length !== 0) {
+                                                            // 각 항목을 삭제
+                                                            const deletePromises = itemsToDelete.map(item => {
+                                                                const deleteParams = {
+                                                                    TableName: DEVICE_TABLE,
+                                                                    Key: {
+                                                                        device_id: item.device_id,
+                                                                        // 필요에 따라 다른 키 속성 추가
+                                                                        // 예: sort_key: item.sort_key
+                                                                    }
+                                                                };
+                                                                return dynamoDB.delete(deleteParams).promise();
+                                                            });
+                                                            return Promise.all(deletePromises);
                                                         }
 
-                                                        // 각 항목을 삭제
-                                                        const deletePromises = itemsToDelete.map(item => {
-                                                            const deleteParams = {
-                                                                TableName: DEVICE_TABLE,
-                                                                Key: {
-                                                                    device_id: item.device_id,
-                                                                    // 필요에 따라 다른 키 속성 추가
-                                                                    // 예: sort_key: item.sort_key
-                                                                }
-                                                            };
-                                                            return dynamoDB.delete(deleteParams).promise();
-                                                        });
-                                                        return Promise.all(deletePromises);
                                                     })
                                                     .then(() => {
                                                         const s3 = new AWS.S3();
@@ -167,22 +164,19 @@ const api = function () {
 
                                                         s3.listObjectsV2(listObjectsParams).promise()
                                                             .then(s3Data => {
-                                                                if (s3Data.Contents.length === 0) {
-                                                                    console.log(`No objects found in folder ${BUCKET_NAME}/${transformedDeviceId}`);
-                                                                    return;
+                                                                if (s3Data.Contents.length !== 0) {
+                                                                    // 객체 삭제 요청
+                                                                    const deleteParams = {
+                                                                        Bucket: BUCKET_NAME,
+                                                                        Delete: { Objects: [] }
+                                                                    };
+
+                                                                    s3Data.Contents.forEach(({ Key }) => {
+                                                                        deleteParams.Delete.Objects.push({ Key });
+                                                                    });
+
+                                                                    return s3.deleteObjects(deleteParams).promise();
                                                                 }
-
-                                                                // 객체 삭제 요청
-                                                                const deleteParams = {
-                                                                    Bucket: BUCKET_NAME,
-                                                                    Delete: { Objects: [] }
-                                                                };
-
-                                                                s3Data.Contents.forEach(({ Key }) => {
-                                                                    deleteParams.Delete.Objects.push({ Key });
-                                                                });
-
-                                                                return s3.deleteObjects(deleteParams).promise();
                                                             })
                                                             .then(deleteData => {
                                                                 if (deleteData) {
@@ -193,14 +187,14 @@ const api = function () {
                                                                 }
                                                             })
                                                             .catch(error => {
-                                                                console.error('Error deleting folder:', error);
+                                                                res.status(400).send(error);
                                                             });
 
 
                                                     })
                                                     .catch(error => {
                                                         console.error('Error deleting devices:', error);
-                                                        res.status(500).send('Internal server error');
+                                                        res.status(400).send(error);
                                                     });
 
 
