@@ -2,6 +2,8 @@ const db = require("../../DataBase");
 
 const History = db.history
 
+// a4:da:22:11:a0:f1,a4:da:22:11:a8:4b,a4:da:22:11:9b:9c,a4:da:22:11:9c:27,a4:da:22:11:9c:df,a4:da:22:11:9d:88,a4:da:22:11:9d:9d,a4:da:22:11:9e:78
+
 const history = function (){
     return{
         historiesData(req,res){

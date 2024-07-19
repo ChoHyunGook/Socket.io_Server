@@ -123,6 +123,7 @@ const api = function () {
                                     });
                                     if(exists){
                                         //디바이스 아이디중복 확인
+                                        console.log('Duplicate device_id')
                                         res.status(400).send('Duplicate device_id')
                                     }else{
                                         let maxContractNumObj = allData
