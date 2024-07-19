@@ -24,9 +24,6 @@ const Face = db.face
 const AwsLogin = db.AWSLogin
 
 
-
-
-
 let count = 0;
 let awsLogsData = [];
 
@@ -102,6 +99,82 @@ const api = function () {
                             res.status(200).send(exists)
                         })
                 })
+        },
+
+        deleteDeviceId(req,res){
+          const data = req.body
+            Client.connect(MONGO_URI)
+                .then(tableFind=> {
+                    tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ device_id: new RegExp(data.device_id, 'i') })
+                        .then(contract=>{
+                            if (contract) {
+                                // device_id에서 sendData 제거
+                                let updatedDeviceIds = contract.device_id.split(',').filter(id => id !== data.device_id).join(',');
+
+                                // device_id가 빈 문자열이면 null로 설정
+                                if (updatedDeviceIds === '') {
+                                    updatedDeviceIds = null;
+                                }
+                                tableFind.db(ADMIN_DB_NAME).collection('tables')
+                                    .updateOne({ _id: contract._id },{ $set: { device_id: updatedDeviceIds }})
+                                    .then(succ=>{
+
+                                        tableFind.db(ADMIN_DB_NAME).collection('tables')
+                                            .findOne({ _id: contract._id })
+                                            .then(lastData=>{
+                                                const DEVICE_TABLE = 'DEVICE_TABLE';
+                                                const scanParams = {
+                                                    TableName: DEVICE_TABLE,
+                                                    FilterExpression: 'device_id = :device_id',
+                                                    ExpressionAttributeValues: { ':device_id': data.device_id }
+                                                };
+                                                dynamoDB.scan(scanParams).promise()
+                                                    .then(scanResults => {
+                                                        const itemsToDelete = scanResults.Items;
+
+                                                        if (itemsToDelete.length === 0) {
+                                                            return res.status(404).send(`No devices found with device_id ${data.device_id}`);
+                                                        }
+
+                                                        // 각 항목을 삭제
+                                                        const deletePromises = itemsToDelete.map(item => {
+                                                            const deleteParams = {
+                                                                TableName: DEVICE_TABLE,
+                                                                Key: {
+                                                                    device_id: item.device_id,
+                                                                    // 필요에 따라 다른 키 속성 추가
+                                                                    // 예: sort_key: item.sort_key
+                                                                }
+                                                            };
+                                                            return dynamoDB.delete(deleteParams).promise();
+                                                        });
+                                                        return Promise.all(deletePromises);
+                                                    })
+                                                    .then(() => {
+                                                        console.log(`Updated device_id: ${contract.id}-${contract.name}`);
+                                                        res.status(200).json({msg:`Updated device_id: ${contract.id}-${contract.name}`,
+                                                            changeData:lastData})
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error deleting devices:', error);
+                                                        res.status(500).send('Internal server error');
+                                                    });
+
+
+                                            })
+
+                                    })
+                                    .catch(err=>{
+                                        res.status(400).send(err)
+                                    })
+                            } else {
+                                console.log('No document found with the given device_id');
+                                res.status(400).send('No document found with the given device_id')
+                            }
+                        })
+                })
+
+
         },
 
 
