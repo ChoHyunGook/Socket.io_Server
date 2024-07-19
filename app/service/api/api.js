@@ -103,13 +103,15 @@ const api = function () {
 
         deleteDeviceId(req,res){
           const data = req.body
+            const lowerDeviceId = data.device_id.toLowerCase()
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
-                    tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ device_id: new RegExp(data.device_id, 'i') })
+                    tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ device_id: new RegExp(lowerDeviceId, 'i') })
                         .then(contract=>{
+
                             if (contract) {
                                 // device_id에서 sendData 제거
-                                let updatedDeviceIds = contract.device_id.split(',').filter(id => id !== data.device_id).join(',');
+                                let updatedDeviceIds = contract.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
 
                                 // device_id가 빈 문자열이면 null로 설정
                                 if (updatedDeviceIds === '') {
@@ -126,14 +128,14 @@ const api = function () {
                                                 const scanParams = {
                                                     TableName: DEVICE_TABLE,
                                                     FilterExpression: 'device_id = :device_id',
-                                                    ExpressionAttributeValues: { ':device_id': data.device_id }
+                                                    ExpressionAttributeValues: { ':device_id': lowerDeviceId }
                                                 };
                                                 dynamoDB.scan(scanParams).promise()
                                                     .then(scanResults => {
                                                         const itemsToDelete = scanResults.Items;
 
                                                         if (itemsToDelete.length === 0) {
-                                                            return res.status(404).send(`No devices found with device_id ${data.device_id}`);
+                                                            return res.status(404).send(`No devices found with device_id ${lowerDeviceId}`);
                                                         }
 
                                                         // 각 항목을 삭제
@@ -154,7 +156,7 @@ const api = function () {
                                                         const s3 = new AWS.S3();
                                                         const BUCKET_NAME = 'doorbell-video';
                                                         // device_ids 변형
-                                                        const transformedDeviceId = data.device_id.split(':').join('_');
+                                                        const transformedDeviceId = lowerDeviceId.split(':').join('_');
                                                         //const folderPath = `${BUCKET_NAME}/${transformedDeviceId}`;
 
                                                         // 폴더 내의 객체 나열
