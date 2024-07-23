@@ -179,12 +179,15 @@ const api = function () {
                                                                 }
                                                             })
                                                             .then(deleteData => {
-                                                                if (deleteData) {
-                                                                    console.log(`Successfully deleted folder ${BUCKET_NAME}/${transformedDeviceId}`);
-                                                                    console.log(`Deleted device_id: ${contract.id}-${contract.name}`);
-                                                                    res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${contract.id}-${contract.name} `,
-                                                                        changeData:lastData})
-                                                                }
+                                                                console.log(`Successfully deleted folder ${BUCKET_NAME}/${transformedDeviceId}`);
+                                                                console.log(`Deleted device_id: ${contract.id}-${contract.name}`);
+                                                                res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${contract.id}-${contract.name} `,
+                                                                    changeData:lastData})
+                                                                // if (deleteData) {
+                                                                //
+                                                                // }else{
+                                                                //
+                                                                // }
                                                             })
                                                             .catch(error => {
                                                                 res.status(400).send(error);
