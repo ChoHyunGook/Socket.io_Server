@@ -235,7 +235,26 @@ const api = function () {
 
         },
 
+        signOut(req,res){
+          const data = req.body
+          Client.connect(MONGO_URI)
+              .then(tableFind=>{
+                  tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key:data.user_key})
+                      .then(findData=>{
+                          tableFind.db(ADMIN_DB_NAME).collection('tables').deleteMany({user_key:data.user_key})
+                              .then(suc=>{
+                                    console.log(`${findData.id}-${findData.name} 회원탈퇴 성공`)
+                              })
+                              .catch(err=>{
+                                  console.log(err)
+                              })
+                      })
+                      .catch(err=>{
+                          console.log(err)
+                      })
 
+              })
+        },
 
         overseasSignup(req,res){
           const data = req.body
