@@ -168,7 +168,7 @@ const api = function () {
                                                                     // 폴더가 없는 경우
                                                                     return Promise.resolve(); // 빈 Promise 반환
                                                                 }
-                                                                / 객체 삭제 요청
+                                                                // 객체 삭제 요청
                                                                 const deleteParams = {
                                                                     Bucket: BUCKET_NAME,
                                                                     Delete: { Objects: [] }
