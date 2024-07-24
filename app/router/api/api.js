@@ -120,6 +120,10 @@ app.get('/date',(req,res)=>{
 // app.post('/dynamoUserKey',(req,res)=>{
 //     Api().dynamoUserKey(req,res)
 // })
+app.post('/add/deviceId',(req,res)=>{
+    Api().addDeviceId(req,res)
+})
+
 app.post('/delete/deviceId',(req,res)=>{
     Api().deleteDeviceId(req,res)
 })

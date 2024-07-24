@@ -308,6 +308,52 @@ const api = function () {
 
         },
 
+        addDeviceId(req,res){
+          const data  = req.body
+            const token = req.headers['token']
+            Client.connect(MONGO_URI)
+                .then(tableFind=> {
+                        tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
+                            .then(contracts=>{
+                                const tokenVerify = jwt.verify(token,AWS_TOKEN)
+
+                                const exists = contracts.some(contract => {
+                                    const deviceIds = contract.device_id.split(',');
+                                    return deviceIds.includes(data.device_id);
+                                });
+                                if(exists){
+                                    console.log('Duplicate device_id')
+                                    res.status(400).send('Duplicate device_id')
+                                }else{
+                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify,
+                                        company: "Sunil"})
+                                        .then(findData=>{
+                                            tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: tokenVerify,
+                                                company: "Sunil"},{
+                                                $set:{
+                                                    device_id:findData.device_id+","+data.device_id
+                                                }
+                                            })
+                                                .then(suc=>{
+                                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify,
+                                                        company: "Sunil"})
+                                                        .then(sendData=>{
+                                                            console.log(`${findData.id}-${findData.name}-${data.device_id} saved`)
+                                                            res.status(200).json({msg:'success',checkData:sendData})
+                                                            tableFind.close()
+                                                        })
+
+                                                })
+
+                                        })
+                                }
+                            })
+
+
+                })
+        },
+
+
         saveDeivceId(req,res){
             const data = req.body
             Client.connect(MONGO_URI)
