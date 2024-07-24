@@ -246,11 +246,14 @@ const api = function () {
                         .then(allData=>{
                             tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
                                 .then(contracts=>{
+                                    let exists;
                                     // 각 계약의 device_id 필드에서 MAC 주소를 확인
-                                    const exists = contracts.some(contract => {
-                                        const deviceIds = contract.device_id.split(',');
-                                        return deviceIds.includes(data.device_id);
-                                    });
+                                    if(contracts.length !== 0){
+                                        exists = contracts.some(contract => {
+                                            const deviceIds = contract.device_id.split(',');
+                                            return deviceIds.includes(data.device_id);
+                                        });
+                                    }
                                     if(exists){
                                         //디바이스 아이디중복 확인
                                         console.log('Duplicate device_id')
