@@ -164,21 +164,37 @@ const api = function () {
 
                                                         s3.listObjectsV2(listObjectsParams).promise()
                                                             .then(s3Data => {
-                                                                if (s3Data.Contents.length !== 0) {
-                                                                    // 객체 삭제 요청
-                                                                    const deleteParams = {
-                                                                        Bucket: BUCKET_NAME,
-                                                                        Delete: { Objects: [] }
-                                                                    };
-
-                                                                    s3Data.Contents.forEach(({ Key }) => {
-                                                                        deleteParams.Delete.Objects.push({ Key });
-                                                                    });
-
-                                                                    return s3.deleteObjects(deleteParams).promise();
+                                                                if (s3Data.Contents.length === 0) {
+                                                                    // 폴더가 없는 경우
+                                                                    return Promise.resolve(); // 빈 Promise 반환
                                                                 }
+                                                                / 객체 삭제 요청
+                                                                const deleteParams = {
+                                                                    Bucket: BUCKET_NAME,
+                                                                    Delete: { Objects: [] }
+                                                                };
+
+                                                                s3Data.Contents.forEach(({ Key }) => {
+                                                                    deleteParams.Delete.Objects.push({ Key });
+                                                                });
+
+                                                                return s3.deleteObjects(deleteParams).promise();
+
+                                                                // if (s3Data.Contents.length !== 0) {
+                                                                //     // 객체 삭제 요청
+                                                                //     const deleteParams = {
+                                                                //         Bucket: BUCKET_NAME,
+                                                                //         Delete: { Objects: [] }
+                                                                //     };
+                                                                //
+                                                                //     s3Data.Contents.forEach(({ Key }) => {
+                                                                //         deleteParams.Delete.Objects.push({ Key });
+                                                                //     });
+                                                                //
+                                                                //     return s3.deleteObjects(deleteParams).promise();
+                                                                // }
                                                             })
-                                                            .then(deleteData => {
+                                                            .then(() => {
                                                                 console.log(`Successfully deleted folder ${BUCKET_NAME}/${transformedDeviceId}`);
                                                                 console.log(`Deleted device_id: ${contract.id}-${contract.name}`);
                                                                 res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${contract.id}-${contract.name} `,
@@ -190,6 +206,7 @@ const api = function () {
                                                                 // }
                                                             })
                                                             .catch(error => {
+                                                                console.error('Error deleting folder:', error);
                                                                 res.status(400).send(error);
                                                             });
 
@@ -281,6 +298,8 @@ const api = function () {
                                                 }else{
                                                     tableFind.db(ADMIN_DB_NAME).collection('tables').insertOne(mongoData)
                                                         .then(suc=>{
+                                                            console.log(suc)
+                                                            console.log("saveSuccess")
                                                             tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
                                                                 .then(sendData=>{
                                                                     axios.post(AWS_LAMBDA_SIGNUP,saveAwsData)
@@ -296,6 +315,10 @@ const api = function () {
                                                                         })
 
                                                                 })
+                                                        })
+                                                        .catch(err=>{
+                                                            console.log('save Fail')
+                                                            console.log(err)
                                                         })
                                                 }
                                             })
