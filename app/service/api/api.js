@@ -275,6 +275,7 @@ const api = function () {
                                         tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
                                             .then(findData=>{
                                                 if(findData.length !== 0){
+                                                    console.log('Duplicate UserId')
                                                     res.status(400).send('Duplicate UserId')
                                                     tableFind.close()
                                                 }else{
@@ -284,10 +285,12 @@ const api = function () {
                                                                 .then(sendData=>{
                                                                     axios.post(AWS_LAMBDA_SIGNUP,saveAwsData)
                                                                         .then(awsResponse=>{
+                                                                            console.log('success SignUp')
                                                                             res.status(200).json({msg:'Success Signup',checkData:sendData[0],awsResponse:awsResponse.data})
                                                                             tableFind.close()
                                                                         })
                                                                         .catch(err=>{
+                                                                            console.log(err)
                                                                             res.status(400).send(err)
                                                                             tableFind.close()
                                                                         })
@@ -298,11 +301,20 @@ const api = function () {
                                             })
                                     }
                                 })
+                                .catch(err=>{
+                                    console.log(err)
+                                })
 
                             //console.log(allData)
 
 
                         })
+                        .catch(err=>{
+                            console.log(err)
+                        })
+                })
+                .catch(err=>{
+                    console.log(err)
                 })
 
 
