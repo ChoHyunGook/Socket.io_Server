@@ -270,7 +270,7 @@ const api = function () {
                                     const exists = contracts.some(contract => {
                                         // device_id가 null일 경우 빈 배열로 처리
                                         const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
-                                        return deviceIds.includes(data.device_id);
+                                        return deviceIds.includes(data.device_id.toLowerCase());
                                     });
                                     if(exists){
                                         //디바이스 아이디중복 확인
@@ -376,7 +376,7 @@ const api = function () {
                                 const exists = contracts.some(contract => {
                                     // device_id가 null일 경우 빈 배열로 처리
                                     const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
-                                    return deviceIds.includes(data.device_id);
+                                    return deviceIds.includes(data.device_id.toLowerCase());
                                 });
                                 if(exists){
                                     console.log('Duplicate device_id')
@@ -388,14 +388,14 @@ const api = function () {
                                             tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: tokenVerify,
                                                 company: "Sunil"},{
                                                 $set:{
-                                                    device_id:findData.device_id+","+data.device_id
+                                                    device_id:findData.device_id+","+data.device_id.toLowerCase()
                                                 }
                                             })
                                                 .then(suc=>{
                                                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify,
                                                         company: "Sunil"})
                                                         .then(sendData=>{
-                                                            console.log(`${findData.id}-${findData.name}-${data.device_id} saved`)
+                                                            console.log(`${findData.id}-${findData.name}-${data.device_id.toLowerCase()} saved`)
                                                             res.status(200).json({msg:'success',checkData:sendData})
                                                             tableFind.close()
                                                         })
@@ -418,18 +418,18 @@ const api = function () {
                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: data.user_key,
                             company: "Sunil"})
                         .then(findData=>{
-                            const dataArray = findData.device_id.split(',')
-                            if(dataArray.includes(data.device_id)){
-                                res.status(200).send(`device_id:${data.device_id}- This is already saved device_id`)
+                            const dataArray = findData.device_id.toLowerCase().split(',')
+                            if(dataArray.includes(data.device_id.toLowerCase())){
+                                res.status(200).send(`device_id:${data.device_id.toLowerCase()}- This is already saved device_id`)
                             }else{
                                 tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: data.user_key,
                                     company: "Sunil"},{
                                     $set:{
-                                        device_id:findData.device_id+","+data.device_id
+                                        device_id:findData.device_id+","+data.device_id.toLowerCase()
                                     }
                                 })
                                     .then(suc=>{
-                                        console.log(`${findData.id}-${findData.name}-${data.device_id} saved`)
+                                        console.log(`${findData.id}-${findData.name}-${data.device_id.toLowerCase()} saved`)
                                         res.status(200).send('success')
                                         tableFind.close()
                                     })
