@@ -93,8 +93,9 @@ const api = function () {
                         .then(contracts=>{
                             // 각 계약의 device_id 필드에서 MAC 주소를 확인
                             const exists = contracts.some(contract => {
-                                const deviceIds = contract.device_id.split(',');
-                                return deviceIds.includes(data.device_id.toLowerCase());
+                                // device_id가 null일 경우 빈 배열로 처리
+                                const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
+                                return deviceIds.includes(data.device_id);
                             });
                             res.status(200).send(exists)
                         })
@@ -242,18 +243,16 @@ const api = function () {
             console.log(data)
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
+
                     tableFind.db(ADMIN_DB_NAME).collection('tables').find({company:"Sunil"}).toArray()
                         .then(allData=>{
                             tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
                                 .then(contracts=>{
-                                    let exists;
-                                    // 각 계약의 device_id 필드에서 MAC 주소를 확인
-                                    if(contracts.length !== 0){
-                                        exists = contracts.some(contract => {
-                                            const deviceIds = contract.device_id.split(',');
-                                            return deviceIds.includes(data.device_id);
-                                        });
-                                    }
+                                    const exists = contracts.some(contract => {
+                                        // device_id가 null일 경우 빈 배열로 처리
+                                        const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
+                                        return deviceIds.includes(data.device_id);
+                                    });
                                     if(exists){
                                         //디바이스 아이디중복 확인
                                         console.log('Duplicate device_id')
@@ -356,7 +355,8 @@ const api = function () {
                                 const tokenVerify = jwt.verify(token,AWS_TOKEN)
 
                                 const exists = contracts.some(contract => {
-                                    const deviceIds = contract.device_id.split(',');
+                                    // device_id가 null일 경우 빈 배열로 처리
+                                    const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
                                     return deviceIds.includes(data.device_id);
                                 });
                                 if(exists){
