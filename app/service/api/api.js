@@ -222,7 +222,7 @@ const api = function () {
         overseasSignup(req,res){
           const data = req.body
             const saveTime = moment().tz('Asia/Seoul')
-
+            console.log(data)
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
                     tableFind.db(ADMIN_DB_NAME).collection('tables').find({company:"Sunil"}).toArray()
