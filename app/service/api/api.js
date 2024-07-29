@@ -614,7 +614,7 @@ const api = function () {
                                         check.push(e.device_id)
                                     })
                                     let excludedDeviceIds = []
-                                    if(findData.device_id.length > 0){
+                                    if(findData.device_id !== null){
                                         let splitData = findData.device_id.split(',')
                                         excludedDeviceIds = splitData.filter(id => !check.includes(id));
                                     }
