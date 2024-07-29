@@ -614,10 +614,6 @@ const api = function () {
                                     let splitData = findData.device_id.split(',')
                                     let excludedDeviceIds = splitData.filter(id => !check.includes(id));
 
-                                    if(excludedDeviceIds[0] === ""){
-                                        excludedDeviceIds = []
-                                    }
-
                                     res.status(200).json({msg:'Data query successful',
                                         unconnectDeviceId:excludedDeviceIds,
                                         openingData:findData,connectData:items})
