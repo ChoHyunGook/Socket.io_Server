@@ -98,6 +98,7 @@ const api = function () {
                                 return deviceIds.includes(data.device_id.toLowerCase());
                             });
                             res.status(200).send(exists)
+                            tableFind.close()
                         })
                 })
         },
@@ -105,6 +106,8 @@ const api = function () {
         deleteDeviceId(req,res){
           const data = req.body
             const lowerDeviceId = data.device_id.toLowerCase()
+            console.log(data)
+            console.log(lowerDeviceId)
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
                     tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ device_id: new RegExp(lowerDeviceId, 'i') })
@@ -113,10 +116,10 @@ const api = function () {
                                 // device_id에서 sendData 제거
                                 let updatedDeviceIds = contract.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
 
-                                // device_id가 빈 문자열이면 null로 설정
-                                if (updatedDeviceIds === '') {
-                                    updatedDeviceIds = null;
-                                }
+                                // // device_id가 빈 문자열이면 null로 설정
+                                // if (updatedDeviceIds === '') {
+                                //     updatedDeviceIds = "";
+                                // }
                                 tableFind.db(ADMIN_DB_NAME).collection('tables')
                                     .updateOne({ _id: contract._id },{ $set: { device_id: updatedDeviceIds }})
                                     .then(succ=>{
@@ -200,6 +203,7 @@ const api = function () {
                                                                 console.log(`Deleted device_id: ${contract.id}-${contract.name}-${data.device_id}`);
                                                                 res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${contract.id}-${contract.name} `,
                                                                     changeData:lastData})
+                                                                tableFind.close()
                                                                 // if (deleteData) {
                                                                 //
                                                                 // }else{
@@ -209,6 +213,7 @@ const api = function () {
                                                             .catch(error => {
                                                                 console.error('Error deleting folder:', error);
                                                                 res.status(400).send(error);
+                                                                tableFind.close()
                                                             });
 
 
@@ -216,6 +221,7 @@ const api = function () {
                                                     .catch(error => {
                                                         console.error('Error deleting devices:', error);
                                                         res.status(400).send(error);
+                                                        tableFind.close()
                                                     });
 
 
@@ -224,6 +230,7 @@ const api = function () {
                                     })
                                     .catch(err=>{
                                         res.status(400).send(err)
+                                        tableFind.close()
                                     })
                             } else {
                                 console.log('No document found with the given device_id');
@@ -244,13 +251,16 @@ const api = function () {
                           tableFind.db(ADMIN_DB_NAME).collection('tables').deleteMany({user_key:data.user_key})
                               .then(suc=>{
                                     console.log(`${findData.id}-${findData.name} 회원탈퇴 성공`)
+                                  tableFind.close()
                               })
                               .catch(err=>{
                                   console.log(err)
+                                  tableFind.close()
                               })
                       })
                       .catch(err=>{
                           console.log(err)
+                          tableFind.close()
                       })
 
               })
@@ -340,6 +350,7 @@ const api = function () {
                                                         .catch(err=>{
                                                             console.log('save Fail')
                                                             console.log(err)
+                                                            tableFind.close()
                                                         })
                                                 }
                                             })
@@ -347,6 +358,7 @@ const api = function () {
                                 })
                                 .catch(err=>{
                                     console.log(err)
+                                    tableFind.close()
                                 })
 
                             //console.log(allData)
@@ -355,6 +367,7 @@ const api = function () {
                         })
                         .catch(err=>{
                             console.log(err)
+                            tableFind.close()
                         })
                 })
                 .catch(err=>{
@@ -367,14 +380,12 @@ const api = function () {
         addDeviceId(req,res){
           const data  = req.body
             const token = req.headers['token']
-            console.log(data)
-            console.log(token)
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
                         tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
                             .then(contracts=>{
                                 const tokenVerify = jwt.verify(token,AWS_TOKEN)
-                                console.log(tokenVerify)
+
                                 const exists = contracts.some(contract => {
                                     // device_id가 null일 경우 빈 배열로 처리
                                     const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
