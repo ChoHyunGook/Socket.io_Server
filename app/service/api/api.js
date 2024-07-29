@@ -613,9 +613,11 @@ const api = function () {
                                     items.map(e=>{
                                         check.push(e.device_id)
                                     })
-
-                                    let splitData = findData.device_id.split(',')
-                                    let excludedDeviceIds = splitData.filter(id => !check.includes(id));
+                                    let excludedDeviceIds = []
+                                    if(findData.device_id.length > 0){
+                                        let splitData = findData.device_id.split(',')
+                                        excludedDeviceIds = splitData.filter(id => !check.includes(id));
+                                    }
 
                                     res.status(200).json({msg:'Data query successful',
                                         unconnectDeviceId:excludedDeviceIds,
@@ -623,6 +625,7 @@ const api = function () {
 
                                 })
                                 .catch(err=>{
+                                    console.log(err)
                                     res.status(400).send(err)
                                     tableFind.close()
                                 })
