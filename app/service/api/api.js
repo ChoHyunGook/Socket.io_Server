@@ -381,22 +381,30 @@ const api = function () {
                                 if(exists){
                                     console.log('Duplicate device_id')
                                     res.status(400).send('Duplicate device_id')
+                                    tableFind.close()
                                 }else{
-                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify,
+                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify.user_key,
                                         company: "Sunil"})
                                         .then(findData=>{
-                                            tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: tokenVerify,
+                                            console.log(findData)
+                                            tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: tokenVerify.user_key,
                                                 company: "Sunil"},{
                                                 $set:{
                                                     device_id:findData.device_id+","+data.device_id.toLowerCase()
                                                 }
                                             })
                                                 .then(suc=>{
-                                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify,
+                                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify.user_key,
                                                         company: "Sunil"})
                                                         .then(sendData=>{
                                                             console.log(`${findData.id}-${findData.name}-${data.device_id.toLowerCase()} saved`)
-                                                            res.status(200).json({msg:'success',checkData:sendData})
+                                                            res.status(200).json({msg:`Add a device_id saved Success`,
+                                                                target:{
+                                                                id:findData.id,
+                                                                    name:findData.name,
+                                                                    device_id:data.device_id.toLowerCase(),
+                                                                },
+                                                                checkData:sendData})
                                                             tableFind.close()
                                                         })
 
@@ -835,7 +843,7 @@ const api = function () {
             Client.connect(MONGO_URI)
                 .then(dbs => {
                     let database = dbs.db(ADMIN_DB_NAME)
-                    database.collection('tables').find({id: data.id, tel: data.tel}).toArray().then(data => {
+                    database.collection('tables').findOne({id: data.id, tel: data.tel}).toArray().then(data => {
                         if (data.length === 0) {
                             res.status(400).send('해당하는 가입정보가 없습니다. 개통 완료 후 이용해주세요.')
                         } else {
