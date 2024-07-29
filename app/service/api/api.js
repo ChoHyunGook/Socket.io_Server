@@ -404,7 +404,8 @@ const api = function () {
                                             tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: tokenVerify.user_key,
                                                 company: "Sunil"},{
                                                 $set:{
-                                                    device_id:findData.device_id+","+data.device_id.toLowerCase()
+                                                    device_id:findData.device_id !== null ? findData.device_id+","+data.device_id.toLowerCase():
+                                                        data.device_id.toLowerCase()
                                                 }
                                             })
                                                 .then(suc=>{
