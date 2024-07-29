@@ -578,6 +578,7 @@ const api = function () {
 
             if(token !== undefined){
                 const tokenVerify = jwt.verify(token,AWS_TOKEN)
+                console.log(tokenVerify)
                 // // 테이블 스캔 함수
                 const scanTable = async (tableName, filterExpression, expressionAttributeValues) => {
                     const params = {
