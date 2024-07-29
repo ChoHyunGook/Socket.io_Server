@@ -844,8 +844,8 @@ const api = function () {
             Client.connect(MONGO_URI)
                 .then(dbs => {
                     let database = dbs.db(ADMIN_DB_NAME)
-                    database.collection('tables').findOne({id: data.id, tel: data.tel}).then(data => {
-                        if (data === null) {
+                    database.collection('tables').find({id: data.id, tel: data.tel}).toArray().then(data => {
+                        if (data.length === 0) {
                             res.status(400).send('해당하는 가입정보가 없습니다. 개통 완료 후 이용해주세요.')
                         } else {
                             res.status(200).send(data)
