@@ -608,6 +608,7 @@ const api = function () {
                         .then(tableFind=> {
                             tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key:tokenVerify.user_key})
                                 .then(findData=>{
+                                    console.log(findData)
                                     let check = []
                                     items.map(e=>{
                                         check.push(e.device_id)
