@@ -95,7 +95,7 @@ const api = function () {
                             const exists = contracts.some(contract => {
                                 // device_id가 null일 경우 빈 배열로 처리
                                 const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
-                                return deviceIds.includes(data.device_id);
+                                return deviceIds.includes(data.device_id.toLowerCase());
                             });
                             res.status(200).send(exists)
                         })
