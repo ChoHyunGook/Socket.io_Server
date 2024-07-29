@@ -117,9 +117,9 @@ const api = function () {
                                 let updatedDeviceIds = contract.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
 
                                 // // device_id가 빈 문자열이면 null로 설정
-                                // if (updatedDeviceIds === '') {
-                                //     updatedDeviceIds = "";
-                                // }
+                                if (updatedDeviceIds === '') {
+                                    updatedDeviceIds = null;
+                                }
                                 tableFind.db(ADMIN_DB_NAME).collection('tables')
                                     .updateOne({ _id: contract._id },{ $set: { device_id: updatedDeviceIds }})
                                     .then(succ=>{
@@ -613,6 +613,9 @@ const api = function () {
 
                                     let splitData = findData.device_id.split(',')
                                     let excludedDeviceIds = splitData.filter(id => !check.includes(id));
+
+                                    if(excludedDeviceIds[0] === ""){
+                                    }
 
                                     res.status(200).json({msg:'Data query successful',
                                         unconnectDeviceId:excludedDeviceIds,
