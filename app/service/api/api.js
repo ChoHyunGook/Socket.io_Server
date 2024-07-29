@@ -367,12 +367,13 @@ const api = function () {
         addDeviceId(req,res){
           const data  = req.body
             const token = req.headers['token']
+            console.log(data)
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
                         tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
                             .then(contracts=>{
                                 const tokenVerify = jwt.verify(token,AWS_TOKEN)
-
+                                console.log(tokenVerify)
                                 const exists = contracts.some(contract => {
                                     // device_id가 null일 경우 빈 배열로 처리
                                     const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
