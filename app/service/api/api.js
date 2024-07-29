@@ -143,6 +143,7 @@ const api = function () {
                                                                     TableName: DEVICE_TABLE,
                                                                     Key: {
                                                                         device_id: item.device_id,
+                                                                        user_key : item.user_key,
                                                                         // 필요에 따라 다른 키 속성 추가
                                                                         // 예: sort_key: item.sort_key
                                                                     }
