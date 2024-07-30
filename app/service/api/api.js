@@ -1011,8 +1011,8 @@ const api = function () {
                                                                     const mailOptions = {
                                                                         from: `MyRucell`,
                                                                         to: data.email,
-                                                                        subject: `[MyRucell] 이메일 인증번호 서비스 입니다.`,
-                                                                        text: `안녕하세요 아래의 인증번호를 확인하여 이메일 주소 인증을 완료해 주세요.\n인증번호: ${authNum} \n해당 인증번호는 3분간 유효합니다.`
+                                                                        subject: `[MyRucell] This is an email authentication number service.`,
+                                                                        text: `Hello, please check the authentication number below to complete the authentication of your email address.\nAuthentication number: ${authNum} \nThis authentication number is valid for 3 minutes.`
                                                                     };
                                                                     transporter.sendMail(mailOptions, function (error,info) {
                                                                        if(error){
