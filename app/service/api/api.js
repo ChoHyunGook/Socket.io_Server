@@ -9,6 +9,7 @@ const jwt = require("jsonwebtoken")
 const fs = require("fs")
 const AWS = require("aws-sdk")
 const nodemailer = require("nodemailer");
+const { MongoClient } = require('mongodb');
 
 
 
@@ -960,7 +961,7 @@ const api = function () {
         async sendEmail(req, res) {
             const data = req.body
             try {
-                const client = await Client.connect(MONGO_URI);
+                const client = await MongoClient.connect(MONGO_URI);
                 const db = client.db(ADMIN_DB_NAME);
 
                 const findData = await db.collection("tables").findOne({id: data.user_id});
