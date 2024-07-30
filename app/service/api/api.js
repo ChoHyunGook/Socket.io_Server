@@ -957,67 +957,140 @@ const api = function () {
 
         },
 
-        sendEmail(req,res){
+        async sendEmail(req, res) {
             const data = req.body
-            Client.connect(MONGO_URI)
-                .then(tableFind=> {
-                    tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({id:data.user_id})
-                        .then(findData=>{
-                            if(!findData){
-                                tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({email:data.email})
-                                    .then(findEmail=>{
-                                        if(!findEmail){
-                                            let transporter = nodemailer.createTransport({
-                                                service: NODEMAILER_SERVICE,
-                                                host: NODEMAILER_HOST,
-                                                port: 587,
-                                                secure: false,
-                                                auth: {
-                                                    user: NODEMAILER_USER,
-                                                    pass: NODEMAILER_PASS
-                                                }
-                                            });
-                                            //인증번호 생성 및 토큰생성
-                                            let authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
-                                            const curr = new Date();
-                                            const kr_curr = new Date(curr.getTime() + (9 * 60 * 60 * 1000)); // UTC 시간에 9시간을 더함
-                                            transporter.sendMail({
-                                                from: `MyRucell`,
-                                                to: data.email,
-                                                subject: `[MyRucell] 이메일 인증번호 서비스 입니다.`,
-                                                text: `안녕하세요 아래의 인증번호를 확인하여 이메일 주소 인증을 완료해 주세요.\n 
-                        인증번호: ${authNum} \n
-                        해당 인증번호는 3분간 유효합니다.`
+            try {
+                const client = await Client.connect(MONGO_URI);
+                const db = client.db(ADMIN_DB_NAME);
 
-                                            }, function (error, info) {
-                                                if (error) {
-                                                    console.log(error)
-                                                    res.status(500).send(error)
-                                                }else{
-                                                    new AuthNumDB({
-                                                        email:data.email,
-                                                        user_id:data.user_id,
-                                                        num:authNum,
-                                                        expires: new Date(new Date().getTime() + 3 * 60 * 1000)
-                                                    })
-                                                        .save()
-                                                        .then(r=>{
-                                                            console.log('save Token')
-                                                            res.send('이메일이 전송되었습니다. 인증번호 유효시간은 3분입니다.');
-                                                        })
-                                                }
-                                            })
-                                            transporter.close()
-                                        }else{
-                                            res.status(400).send('Duplicate email address')
-                                        }
-                                    })
+                const findData = await db.collection("tables").findOne({id: data.user_id});
+                if (findData) {
+                    res.status(400).send('Duplicate user_id');
+                    return;
+                }
 
-                            }else{
-                                res.status(400).send('Duplicate user_id')
-                            }
-                        })
-                })
+                const findEmail = await db.collection("tables").findOne({email: data.email});
+                if (findEmail) {
+                    res.status(400).send('Duplicate email address');
+                    return;
+                }
+
+                const transporter = nodemailer.createTransport({
+                    service: NODEMAILER_SERVICE,
+                    host: NODEMAILER_HOST,
+                    port: 587,
+                    secure: false,
+                    auth: {
+                        user: NODEMAILER_USER,
+                        pass: NODEMAILER_PASS
+                    }
+                });
+
+                const authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+
+                const mailOptions = {
+                    from: `MyRucell`,
+                    to: data.email,
+                    subject: `[MyRucell] 이메일 인증번호 서비스 입니다.`,
+                    text: `안녕하세요 아래의 인증번호를 확인하여 이메일 주소 인증을 완료해 주세요.\n인증번호: ${authNum} \n해당 인증번호는 3분간 유효합니다.`
+                };
+
+                // 비동기적으로 이메일을 전송하고, 동시에 데이터베이스에 인증번호를 저장
+                await Promise.all([
+                    transporter.sendMail(mailOptions),
+                    new AuthNumDB({
+                        email: data.email,
+                        user_id: data.user_id,
+                        num: authNum,
+                        expires: new Date(new Date().getTime() + 3 * 60 * 1000)
+                    }).save()
+                ]);
+
+                res.send('이메일이 전송되었습니다. 인증번호 유효시간은 3분입니다.');
+            } catch (error) {
+                console.error('Error:', error);
+                res.status(500).send(error);
+            }
+            // Client.connect(MONGO_URI)
+            //     .then(tableFind=> {
+            //         tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({id:data.user_id})
+            //             .then(findData=>{
+            //                 if(!findData){
+            //                     tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({email:data.email})
+            //                         .then(async findEmail => {
+            //                             if (!findEmail) {
+            //                                 let transporter = nodemailer.createTransport({
+            //                                     service: NODEMAILER_SERVICE,
+            //                                     host: NODEMAILER_HOST,
+            //                                     port: 587,
+            //                                     secure: false,
+            //                                     auth: {
+            //                                         user: NODEMAILER_USER,
+            //                                         pass: NODEMAILER_PASS
+            //                                     }
+            //                                 });
+            //                                 //인증번호 생성 및 토큰생성
+            //                                 let authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+            //                                 const curr = new Date();
+            //                                 const kr_curr = new Date(curr.getTime() + (9 * 60 * 60 * 1000)); // UTC 시간에 9시간을 더함
+            //
+            //                                 const mailOptions = {
+            //                                     from: `MyRucell`,
+            //                                     to: data.email,
+            //                                     subject: `[MyRucell] 이메일 인증번호 서비스 입니다.`,
+            //                                     text: `안녕하세요 아래의 인증번호를 확인하여 이메일 주소 인증을 완료해 주세요.\n인증번호: ${authNum} \n해당 인증번호는 3분간 유효합니다.`
+            //                                 };
+            //
+            //                                 await Promise.all([
+            //                                     new AuthNumDB({
+            //                                         email: data.email,
+            //                                         user_id: data.user_id,
+            //                                         num: authNum,
+            //                                         expires: new Date(new Date().getTime() + 3 * 60 * 1000)
+            //                                     }).save()
+            //                                 ])
+            //                                 res.send('이메일이 전송되었습니다. 인증번호 유효시간은 3분입니다.')
+            //
+            //             //                     transporter.sendMail({
+            //             //                         from: `MyRucell`,
+            //             //                         to: data.email,
+            //             //                         subject: `[MyRucell] 이메일 인증번호 서비스 입니다.`,
+            //             //                         text: `안녕하세요 아래의 인증번호를 확인하여 이메일 주소 인증을 완료해 주세요.\n
+            //             // 인증번호: ${authNum} \n
+            //             // 해당 인증번호는 3분간 유효합니다.`
+            //             //
+            //             //                     }, function (error, info) {
+            //             //                         if (error) {
+            //             //                             console.log(error)
+            //             //                             res.status(500).send(error)
+            //             //                         } else {
+            //             //                             new AuthNumDB({
+            //             //                                 email: data.email,
+            //             //                                 user_id: data.user_id,
+            //             //                                 num: authNum,
+            //             //                                 expires: new Date(new Date().getTime() + 3 * 60 * 1000)
+            //             //                             })
+            //             //                                 .save()
+            //             //                                 .then(r => {
+            //             //                                     console.log('save Token')
+            //             //                                     res.send('이메일이 전송되었습니다. 인증번호 유효시간은 3분입니다.');
+            //             //                                 })
+            //             //                                 .catch(err => {
+            //             //                                     res.status(500).send(err)
+            //             //                                 })
+            //             //                         }
+            //             //                     })
+            //                                 transporter.close()
+            //                             } else {
+            //                                 res.status(400).send('Duplicate email address')
+            //                             }
+            //                         })
+            //
+            //                 }else{
+            //                     res.status(400).send('Duplicate user_id')
+            //                 }
+            //             })
+            //     })
 
         },
 
