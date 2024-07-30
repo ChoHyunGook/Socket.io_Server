@@ -966,13 +966,13 @@ const api = function () {
 
                 const findData = await db.collection("tables").findOne({id: data.user_id});
                 if (findData) {
-                    res.status(400).send('Duplicate user_id');
+                    res.status(200).send('Duplicate user_id');
                     return;
                 }
 
                 const findEmail = await db.collection("tables").findOne({email: data.email});
                 if (findEmail) {
-                    res.status(400).send('Duplicate email address');
+                    res.status(200).send('Duplicate email address');
                     return;
                 }
 
@@ -1007,7 +1007,7 @@ const api = function () {
                     }).save()
                 ]);
 
-                res.send('이메일이 전송되었습니다. 인증번호 유효시간은 3분입니다.');
+                res.send('ok');
             } catch (error) {
                 console.error('Error:', error);
                 res.status(500).send(error);
