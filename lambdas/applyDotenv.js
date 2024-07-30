@@ -31,6 +31,10 @@ const applyDotenv = dotenv => {
         AWS_LAMBDA_SIGNUP:process.env.AWS_LAMBDA_SIGNUP,
         AWS_CLOUD_FRONT:process.env.AWS_CLOUD_FRONT,
         AWS_TOKEN:process.env.AWS_TOKEN,
+        NODEMAILER_USER:process.env.NODEMAILER_USER,
+        NODEMAILER_PASS:process.env.NODEMAILER_PASS,
+        NODEMAILER_SERVICE:process.env.NODEMAILER_SERVICE,
+        NODEMAILER_HOST:process.env.NODEMAILER_HOST,
     }
 }
 

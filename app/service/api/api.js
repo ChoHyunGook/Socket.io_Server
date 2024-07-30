@@ -8,6 +8,7 @@ const qs = require('qs')
 const jwt = require("jsonwebtoken")
 const fs = require("fs")
 const AWS = require("aws-sdk")
+const nodemailer = require("nodemailer");
 
 
 
@@ -22,6 +23,7 @@ const Info = db.Info
 const History = db.history
 const Face = db.face
 const AwsLogin = db.AWSLogin
+const AuthNumDB = db.authNum
 
 
 let count = 0;
@@ -36,7 +38,7 @@ const {
     AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, MONGO_URI, ADMIN_DB_NAME, SMS_service_id,
     SMS_secret_key, SMS_access_key, SMS_PHONE, NICE_CLIENT_ID, NICE_CLIENT_SECRET, NICE_PRODUCT_CODE,
     NICE_ACCESS_TOKEN, DEV_DEVICE_ADMIN, DEV_APP_ADMIN, DEV_SEVER_ADMIN, DEV_CEO_ADMIN,AWS_LAMBDA_SIGNUP,
-    AWS_TOKEN
+    AWS_TOKEN,NODEMAILER_USER, NODEMAILER_PASS, NODEMAILER_SERVICE, NODEMAILER_HOST,
 } = applyDotenv(dotenv)
 
 const ClientId = AWS_SECRET
@@ -104,140 +106,149 @@ const api = function () {
         },
 
         deleteDeviceId(req,res){
-          const data = req.body
+            const data = req.body
             const lowerDeviceId = data.device_id.toLowerCase()
-            console.log(data)
-            console.log(lowerDeviceId)
+            const token = req.headers['token']
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
-                    tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ device_id: new RegExp(lowerDeviceId, 'i') })
-                        .then(contract=>{
-                            if (contract) {
-                                // device_id에서 sendData 제거
-                                let updatedDeviceIds = contract.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
+                    if(token === undefined){
+                        res.status(400).send('Token not found.');
+                    }else{
+                        const verify = jwt.verify(token, process.env.AWS_TOKEN);
+                        tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({user_key:verify.user_key})
+                            .then(findUser=>{
+                                console.log(findUser)
+                            })
+                    }
 
-                                // // device_id가 빈 문자열이면 null로 설정
-                                if (updatedDeviceIds === '') {
-                                    updatedDeviceIds = null;
-                                }
-                                tableFind.db(ADMIN_DB_NAME).collection('tables')
-                                    .updateOne({ _id: contract._id },{ $set: { device_id: updatedDeviceIds }})
-                                    .then(succ=>{
-                                        tableFind.db(ADMIN_DB_NAME).collection('tables')
-                                            .findOne({ _id: contract._id })
-                                            .then(lastData=>{
-                                                const DEVICE_TABLE = 'DEVICE_TABLE';
-                                                const scanParams = {
-                                                    TableName: DEVICE_TABLE,
-                                                    FilterExpression: 'device_id = :device_id',
-                                                    ExpressionAttributeValues: { ':device_id': lowerDeviceId }
-                                                };
-                                                dynamoDB.scan(scanParams).promise()
-                                                    .then(scanResults => {
-                                                        const itemsToDelete = scanResults.Items;
-
-                                                        if (itemsToDelete.length !== 0) {
-                                                            // 각 항목을 삭제
-                                                            const deletePromises = itemsToDelete.map(item => {
-                                                                const deleteParams = {
-                                                                    TableName: DEVICE_TABLE,
-                                                                    Key: {
-                                                                        device_id: item.device_id,
-                                                                        user_key : item.user_key,
-                                                                        // 필요에 따라 다른 키 속성 추가
-                                                                        // 예: sort_key: item.sort_key
-                                                                    }
-                                                                };
-                                                                return dynamoDB.delete(deleteParams).promise();
-                                                            });
-                                                            return Promise.all(deletePromises);
-                                                        }
-
-                                                    })
-                                                    .then(() => {
-                                                        const s3 = new AWS.S3();
-                                                        const BUCKET_NAME = 'doorbell-video';
-                                                        // device_ids 변형
-                                                        const transformedDeviceId = lowerDeviceId.split(':').join('_');
-                                                        //const folderPath = `${BUCKET_NAME}/${transformedDeviceId}`;
-
-                                                        // 폴더 내의 객체 나열
-                                                        const listObjectsParams = {
-                                                            Bucket: BUCKET_NAME,
-                                                            Prefix: `${transformedDeviceId}/`
-                                                        };
-
-                                                        s3.listObjectsV2(listObjectsParams).promise()
-                                                            .then(s3Data => {
-                                                                if (s3Data.Contents.length === 0) {
-                                                                    // 폴더가 없는 경우
-                                                                    return Promise.resolve(); // 빈 Promise 반환
-                                                                }
-                                                                // 객체 삭제 요청
-                                                                const deleteParams = {
-                                                                    Bucket: BUCKET_NAME,
-                                                                    Delete: { Objects: [] }
-                                                                };
-
-                                                                s3Data.Contents.forEach(({ Key }) => {
-                                                                    deleteParams.Delete.Objects.push({ Key });
-                                                                });
-
-                                                                return s3.deleteObjects(deleteParams).promise();
-
-                                                                // if (s3Data.Contents.length !== 0) {
-                                                                //     // 객체 삭제 요청
-                                                                //     const deleteParams = {
-                                                                //         Bucket: BUCKET_NAME,
-                                                                //         Delete: { Objects: [] }
-                                                                //     };
-                                                                //
-                                                                //     s3Data.Contents.forEach(({ Key }) => {
-                                                                //         deleteParams.Delete.Objects.push({ Key });
-                                                                //     });
-                                                                //
-                                                                //     return s3.deleteObjects(deleteParams).promise();
-                                                                // }
-                                                            })
-                                                            .then(() => {
-                                                                console.log(`Successfully deleted folder ${BUCKET_NAME}/${transformedDeviceId}`);
-                                                                console.log(`Deleted device_id: ${contract.id}-${contract.name}-${data.device_id}`);
-                                                                res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${contract.id}-${contract.name} `,
-                                                                    changeData:lastData})
-                                                                tableFind.close()
-                                                                // if (deleteData) {
-                                                                //
-                                                                // }else{
-                                                                //
-                                                                // }
-                                                            })
-                                                            .catch(error => {
-                                                                console.error('Error deleting folder:', error);
-                                                                res.status(400).send(error);
-                                                                tableFind.close()
-                                                            });
-
-
-                                                    })
-                                                    .catch(error => {
-                                                        console.error('Error deleting devices:', error);
-                                                        res.status(400).send(error);
-                                                        tableFind.close()
-                                                    });
-
-
-                                            })
-
-                                    })
-                                    .catch(err=>{
-                                        res.status(400).send(err)
-                                        tableFind.close()
-                                    })
-                            } else {
-                                console.log('No document found with the given device_id');
-                                res.status(400).send('No document found with the given device_id')
-                            }
-                        })
+                    // tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ device_id: new RegExp(lowerDeviceId, 'i') })
+                    //     .then(contract=>{
+                    //         if (contract) {
+                    //             // device_id에서 sendData 제거
+                    //             let updatedDeviceIds = contract.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
+                    //
+                    //             // // device_id가 빈 문자열이면 null로 설정
+                    //             if (updatedDeviceIds === '') {
+                    //                 updatedDeviceIds = null;
+                    //             }
+                    //             tableFind.db(ADMIN_DB_NAME).collection('tables')
+                    //                 .updateOne({ _id: contract._id },{ $set: { device_id: updatedDeviceIds }})
+                    //                 .then(succ=>{
+                    //                     tableFind.db(ADMIN_DB_NAME).collection('tables')
+                    //                         .findOne({ _id: contract._id })
+                    //                         .then(lastData=>{
+                    //                             const DEVICE_TABLE = 'DEVICE_TABLE';
+                    //                             const scanParams = {
+                    //                                 TableName: DEVICE_TABLE,
+                    //                                 FilterExpression: 'device_id = :device_id',
+                    //                                 ExpressionAttributeValues: { ':device_id': lowerDeviceId }
+                    //                             };
+                    //                             dynamoDB.scan(scanParams).promise()
+                    //                                 .then(scanResults => {
+                    //                                     const itemsToDelete = scanResults.Items;
+                    //
+                    //                                     if (itemsToDelete.length !== 0) {
+                    //                                         // 각 항목을 삭제
+                    //                                         const deletePromises = itemsToDelete.map(item => {
+                    //                                             const deleteParams = {
+                    //                                                 TableName: DEVICE_TABLE,
+                    //                                                 Key: {
+                    //                                                     device_id: item.device_id,
+                    //                                                     user_key : item.user_key,
+                    //                                                     // 필요에 따라 다른 키 속성 추가
+                    //                                                     // 예: sort_key: item.sort_key
+                    //                                                 }
+                    //                                             };
+                    //                                             return dynamoDB.delete(deleteParams).promise();
+                    //                                         });
+                    //                                         return Promise.all(deletePromises);
+                    //                                     }
+                    //
+                    //                                 })
+                    //                                 .then(() => {
+                    //                                     const s3 = new AWS.S3();
+                    //                                     const BUCKET_NAME = 'doorbell-video';
+                    //                                     // device_ids 변형
+                    //                                     const transformedDeviceId = lowerDeviceId.split(':').join('_');
+                    //                                     //const folderPath = `${BUCKET_NAME}/${transformedDeviceId}`;
+                    //
+                    //                                     // 폴더 내의 객체 나열
+                    //                                     const listObjectsParams = {
+                    //                                         Bucket: BUCKET_NAME,
+                    //                                         Prefix: `${transformedDeviceId}/`
+                    //                                     };
+                    //
+                    //                                     s3.listObjectsV2(listObjectsParams).promise()
+                    //                                         .then(s3Data => {
+                    //                                             if (s3Data.Contents.length === 0) {
+                    //                                                 // 폴더가 없는 경우
+                    //                                                 return Promise.resolve(); // 빈 Promise 반환
+                    //                                             }
+                    //                                             // 객체 삭제 요청
+                    //                                             const deleteParams = {
+                    //                                                 Bucket: BUCKET_NAME,
+                    //                                                 Delete: { Objects: [] }
+                    //                                             };
+                    //
+                    //                                             s3Data.Contents.forEach(({ Key }) => {
+                    //                                                 deleteParams.Delete.Objects.push({ Key });
+                    //                                             });
+                    //
+                    //                                             return s3.deleteObjects(deleteParams).promise();
+                    //
+                    //                                             // if (s3Data.Contents.length !== 0) {
+                    //                                             //     // 객체 삭제 요청
+                    //                                             //     const deleteParams = {
+                    //                                             //         Bucket: BUCKET_NAME,
+                    //                                             //         Delete: { Objects: [] }
+                    //                                             //     };
+                    //                                             //
+                    //                                             //     s3Data.Contents.forEach(({ Key }) => {
+                    //                                             //         deleteParams.Delete.Objects.push({ Key });
+                    //                                             //     });
+                    //                                             //
+                    //                                             //     return s3.deleteObjects(deleteParams).promise();
+                    //                                             // }
+                    //                                         })
+                    //                                         .then(() => {
+                    //                                             console.log(`Successfully deleted folder ${BUCKET_NAME}/${transformedDeviceId}`);
+                    //                                             console.log(`Deleted device_id: ${contract.id}-${contract.name}-${data.device_id}`);
+                    //                                             res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${contract.id}-${contract.name} `,
+                    //                                                 changeData:lastData})
+                    //                                             tableFind.close()
+                    //                                             // if (deleteData) {
+                    //                                             //
+                    //                                             // }else{
+                    //                                             //
+                    //                                             // }
+                    //                                         })
+                    //                                         .catch(error => {
+                    //                                             console.error('Error deleting folder:', error);
+                    //                                             res.status(400).send(error);
+                    //                                             tableFind.close()
+                    //                                         });
+                    //
+                    //
+                    //                                 })
+                    //                                 .catch(error => {
+                    //                                     console.error('Error deleting devices:', error);
+                    //                                     res.status(400).send(error);
+                    //                                     tableFind.close()
+                    //                                 });
+                    //
+                    //
+                    //                         })
+                    //
+                    //                 })
+                    //                 .catch(err=>{
+                    //                     res.status(400).send(err)
+                    //                     tableFind.close()
+                    //                 })
+                    //         } else {
+                    //             console.log('No document found with the given device_id');
+                    //             res.status(400).send('No document found with the given device_id')
+                    //         }
+                    //     })
                 })
 
 
@@ -273,98 +284,98 @@ const api = function () {
             console.log(data)
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
-
                     tableFind.db(ADMIN_DB_NAME).collection('tables').find({company:"Sunil"}).toArray()
                         .then(allData=>{
-                            tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
-                                .then(contracts=>{
-                                    const exists = contracts.some(contract => {
-                                        // device_id가 null일 경우 빈 배열로 처리
-                                        const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
-                                        return deviceIds.includes(data.device_id.toLowerCase());
-                                    });
-                                    if(exists){
-                                        //디바이스 아이디중복 확인
-                                        console.log('Duplicate device_id')
-                                        res.status(400).send('Duplicate device_id')
+                            let maxContractNumObj = allData
+                                .filter(item => item.contract_num.startsWith('Sunil-overseas-'))
+                                .reduce((max, item) => {
+                                    const num = parseInt(item.contract_num.split('Sunil-overseas-')[1], 10);
+                                    return (num > parseInt(max.contract_num.split('Sunil-overseas-')[1], 10)) ? item : max;
+                                });
+                            const maxContractNum = parseInt(maxContractNumObj.contract_num.split('Sunil-overseas-')[1], 10);
+                            //user_id,user_pw,name,tel,addr(국가),company(회사)
+                            let saveAwsData = {
+                                user_id:data.user_id,
+                                user_pw:data.user_pw,
+                                name:data.name,
+                                tel:data.tel,
+                                addr:data.addr,
+                                company: "Sunil",
+                            }
+                            let mongoData = {
+                                name:data.name,
+                                tel:data.tel,
+                                addr:data.addr,
+                                contract_num: `Sunil-overseas-${Number(maxContractNum)+1}`,//데이터 조회 후 +1씩증가
+                                device_id: null,
+                                company: "Sunil",
+                                contract_service: '주계약자',
+                                id:data.user_id,
+                                communication: 'O',
+                                service_name:"SunilService",
+                                service_start: saveTime.format('YYYY-MM-DD'),
+                                service_end: "9999-12-30",
+                                start_up: 'O',
+                                user_key:null,
+                            }
+
+                            tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
+                                .then(findData=>{
+                                    if(findData.length !== 0){
+                                        console.log('Duplicate UserId')
+                                        res.status(400).send('Duplicate UserId')
+                                        tableFind.close()
                                     }else{
-                                        let maxContractNumObj = allData
-                                            .filter(item => item.contract_num.startsWith('Sunil-overseas-'))
-                                            .reduce((max, item) => {
-                                                const num = parseInt(item.contract_num.split('Sunil-overseas-')[1], 10);
-                                                return (num > parseInt(max.contract_num.split('Sunil-overseas-')[1], 10)) ? item : max;
-                                            });
-                                        const maxContractNum = parseInt(maxContractNumObj.contract_num.split('Sunil-overseas-')[1], 10);
-                                        //user_id,user_pw,name,tel,addr(국가),company(회사)
-                                        let saveAwsData = {
-                                            user_id:data.user_id,
-                                            user_pw:data.user_pw,
-                                            name:data.name,
-                                            tel:data.tel,
-                                            addr:data.addr,
-                                            company: "Sunil",
-                                        }
-                                        let mongoData = {
-                                            name:data.name,
-                                            tel:data.tel,
-                                            addr:data.addr,
-                                            contract_num: `Sunil-overseas-${Number(maxContractNum)+1}`,//데이터 조회 후 +1씩증가
-                                            device_id: data.device_id.trim().toLowerCase(),
-                                            company: "Sunil",
-                                            contract_service: '주계약자',
-                                            id:data.user_id,
-                                            communication: 'O',
-                                            service_name:"SunilService",
-                                            service_start: saveTime.format('YYYY-MM-DD'),
-                                            service_end: "9999-12-30",
-                                            start_up: 'O',
-                                            user_key:null,
-                                        }
+                                        tableFind.db(ADMIN_DB_NAME).collection('tables').insertOne(mongoData)
+                                            .then(suc=>{
+                                                console.log(suc)
+                                                console.log("saveSuccess")
+                                                tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
+                                                    .then(sendData=>{
+                                                        axios.post(AWS_LAMBDA_SIGNUP,saveAwsData)
+                                                            .then(awsResponse=>{
+                                                                console.log('success SignUp')
+                                                                res.status(200).json({msg:'Success Signup',checkData:sendData[0],awsResponse:awsResponse.data})
+                                                                tableFind.close()
+                                                            })
+                                                            .catch(err=>{
+                                                                console.log(err)
+                                                                res.status(400).send(err)
+                                                                tableFind.close()
+                                                            })
 
-                                        tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
-                                            .then(findData=>{
-                                                if(findData.length !== 0){
-                                                    console.log('Duplicate UserId')
-                                                    res.status(400).send('Duplicate UserId')
-                                                    tableFind.close()
-                                                }else{
-                                                    tableFind.db(ADMIN_DB_NAME).collection('tables').insertOne(mongoData)
-                                                        .then(suc=>{
-                                                            console.log(suc)
-                                                            console.log("saveSuccess")
-                                                            tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
-                                                                .then(sendData=>{
-                                                                    axios.post(AWS_LAMBDA_SIGNUP,saveAwsData)
-                                                                        .then(awsResponse=>{
-                                                                            console.log('success SignUp')
-                                                                            res.status(200).json({msg:'Success Signup',checkData:sendData[0],awsResponse:awsResponse.data})
-                                                                            tableFind.close()
-                                                                        })
-                                                                        .catch(err=>{
-                                                                            console.log(err)
-                                                                            res.status(400).send(err)
-                                                                            tableFind.close()
-                                                                        })
-
-                                                                })
-                                                        })
-                                                        .catch(err=>{
-                                                            console.log('save Fail')
-                                                            console.log(err)
-                                                            tableFind.close()
-                                                        })
-                                                }
+                                                    })
+                                            })
+                                            .catch(err=>{
+                                                console.log('save Fail')
+                                                console.log(err)
+                                                tableFind.close()
                                             })
                                     }
                                 })
-                                .catch(err=>{
-                                    console.log(err)
-                                    tableFind.close()
-                                })
+
+
+                            // tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
+                            //     .then(contracts=>{
+                            //         const exists = contracts.some(contract => {
+                            //             // device_id가 null일 경우 빈 배열로 처리
+                            //             const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
+                            //             return deviceIds.includes(data.device_id.toLowerCase());
+                            //         });
+                            //         if(exists){
+                            //             //디바이스 아이디중복 확인
+                            //             console.log('Duplicate device_id')
+                            //             res.status(400).send('Duplicate device_id')
+                            //         }else{
+                            //
+                            //         }
+                            //     })
+                            //     .catch(err=>{
+                            //         console.log(err)
+                            //         tableFind.close()
+                            //     })
 
                             //console.log(allData)
-
-
                         })
                         .catch(err=>{
                             console.log(err)
@@ -386,7 +397,6 @@ const api = function () {
                         tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
                             .then(contracts=>{
                                 const tokenVerify = jwt.verify(token,AWS_TOKEN)
-
                                 const exists = contracts.some(contract => {
                                     // device_id가 null일 경우 빈 배열로 처리
                                     const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
@@ -947,6 +957,123 @@ const api = function () {
 
         },
 
+        sendEmail(req,res){
+            const data = req.body
+            Client.connect(MONGO_URI)
+                .then(tableFind=> {
+                    tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({id:data.user_id})
+                        .then(findData=>{
+                            if(!findData){
+                                tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({email:data.email})
+                                    .then(findEmail=>{
+                                        if(!findEmail){
+                                            let transporter = nodemailer.createTransport({
+                                                service: NODEMAILER_SERVICE,
+                                                host: NODEMAILER_HOST,
+                                                port: 587,
+                                                secure: false,
+                                                auth: {
+                                                    user: NODEMAILER_USER,
+                                                    pass: NODEMAILER_PASS
+                                                }
+                                            });
+                                            //인증번호 생성 및 토큰생성
+                                            let authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+                                            const curr = new Date();
+                                            const kr_curr = new Date(curr.getTime() + (9 * 60 * 60 * 1000)); // UTC 시간에 9시간을 더함
+                                            transporter.sendMail({
+                                                from: `MyRucell`,
+                                                to: data.email,
+                                                subject: `[MyRucell] 이메일 인증번호 서비스 입니다.`,
+                                                text: `안녕하세요 아래의 인증번호를 확인하여 이메일 주소 인증을 완료해 주세요.\n 
+                        인증번호: ${authNum} \n
+                        해당 인증번호는 3분간 유효합니다.`
+
+                                            }, function (error, info) {
+                                                if (error) {
+                                                    console.log(error)
+                                                    res.status(500).send(error)
+                                                }else{
+                                                    new AuthNumDB({
+                                                        email:data.email,
+                                                        user_id:data.user_id,
+                                                        num:authNum,
+                                                        expires: new Date(new Date().getTime() + 3 * 60 * 1000)
+                                                    })
+                                                        .save()
+                                                        .then(r=>{
+                                                            console.log('save Token')
+                                                            res.send('이메일이 전송되었습니다. 인증번호 유효시간은 3분입니다.');
+                                                        })
+                                                }
+                                            })
+                                            transporter.close()
+                                        }else{
+                                            res.status(400).send('Duplicate email address')
+                                        }
+                                    })
+
+                            }else{
+                                res.status(400).send('Duplicate user_id')
+                            }
+                        })
+                })
+
+        },
+
+        checkAuthNum(req,res){
+            const data = req.body
+            AuthNumDB.findOne({user_id:data.user_id.trim(),email:data.email.trim()})
+                .then(findData=>{
+                    if(findData){
+                        if(String(data.auth).trim() === findData.num){
+                            res.status(200).send(true)
+                        }else{
+                            res.status(400).send("Authentication number mismatch")
+                        }
+                    }else{
+                        res.status(400).send(false)
+                    }
+                })
+
+            // AuthNumDB.findOne({user_id:data.user_id.trim(),email:data.email.trim()})
+            //     .then(findId=>{
+            //         if(findId){
+            //             AuthNumDB.findOne({email:data.email.trim()})
+            //                 .then(findEmail=>{
+            //                     if(findEmail){
+            //                         if(String(data.auth).trim() === findEmail.num){
+            //                             // 현재 시간
+            //                             const curr = new Date();
+            //                             const kr_curr = new Date(curr.getTime() + (9 * 60 * 60 * 1000)); // UTC 시간에 9시간을 더함
+            //                             const timeDifference = kr_curr - findEmail.expires;
+            //                             // 3분(밀리초)
+            //                             const threeMinutes = 3 * 60 * 1000;
+            //                             AuthNumDB.deleteOne({user_id:data.user_id,email:data.email})
+            //                                 .then(suc2=>{
+            //                                     // 3분이 지났는지 확인
+            //                                     if (timeDifference > threeMinutes) {
+            //                                         console.log("expires 값에서 3분이 지났습니다.(재인증)");
+            //                                         res.status(400).send(false)
+            //                                     } else {
+            //                                         console.log("expires 값에서 3분이 지나지 않았습니다.");
+            //                                         res.status(200).send(true)
+            //                                     }
+            //                                 })
+            //                         }else{
+            //                             res.status(400).send('Authentication number mismatch')
+            //                         }
+            //                     }else{
+            //                         res.status(400).send('The Email requested for authentication does not exist.')
+            //                     }
+            //                 })
+            //         }else{
+            //             res.status(400).send('The user_id requested for authentication does not exist.')
+            //         }
+            //     })
+        },
+
+
         sendSms(req, res) {
             const phoneNumber = req.body.phone
             const phoneSubject = req.body.subject
@@ -979,7 +1106,6 @@ const api = function () {
 
             //인증번호 생성 및 토큰생성
             let authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
-
 
             axios({
                 method: method,

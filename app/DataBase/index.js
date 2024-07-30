@@ -6,6 +6,7 @@ const history = require('./history')
 const version = require('./Version')
 const FaceRegister = require('./FaceRegister')
 const AWSLogin = require('./AWSLogin')
+const AuthNum = require("./AuthNum")
 const db = {}
 db.mongoose = mongoose
 db.url = dotenv.MONGO_URI
@@ -15,6 +16,7 @@ db.history = new history(mongoose)
 db.version = new version(mongoose)
 db.face = new FaceRegister(mongoose)
 db.AWSLogin = new AWSLogin(mongoose)
+db.authNum = new AuthNum(mongoose)
 
 
 module.exports = db
