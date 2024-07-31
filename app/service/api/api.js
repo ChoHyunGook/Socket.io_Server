@@ -296,7 +296,7 @@ const api = function () {
                             const maxContractNum = parseInt(maxContractNumObj.contract_num.split('Sunil-overseas-')[1], 10);
                             //user_id,user_pw,name,tel,addr(국가),company(회사)
                             let key = data.user_id
-                            let tel = "01000000000"
+                            let tel = "00000000000"
                             let addr = "sunilOverseas"
                             let saveAwsData = {
                                 user_id:key,
