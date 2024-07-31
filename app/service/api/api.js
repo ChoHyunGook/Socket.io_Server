@@ -478,6 +478,7 @@ const api = function () {
         saveUserKey(req,res){
 
             const data = req.body
+            console.log(data)
             //데이터 유저키,아이디 등등 없을때 에러 저장 로직 추가하기
             const bodyData = data.bodyData
             const userData = data.userData
@@ -907,6 +908,50 @@ const api = function () {
 
         saveHistory(req, res) {
             history().saveHistory(req, res)
+        },
+
+
+        async saveDeviceInfo(req, res) {
+            const data = req.body
+            // 기본 UpdateExpression 및 ExpressionAttributeValues 설정
+            let updateExpression = `set wifi_quality = :wifi_quality, privacy = :privacy`;
+            let expressionAttributeValues = {
+                ':wifi_quality': data.wifi_quality,
+                ':privacy': data.privacy,
+            };
+            // 만약 키가 존재하면 UpdateExpression 및 ExpressionAttributeValues에 추가
+            if (data.ac !== undefined) {
+                updateExpression += ', ac = :ac';
+                expressionAttributeValues[':ac'] = data.ac;
+            }
+            if (data.pir !== undefined) {
+                updateExpression += ', pir = :pir';
+                expressionAttributeValues[':pir'] = Number(data.pir);
+            }
+            if (data.bat !== undefined) {
+                updateExpression += ', battery_status = :battery_status';
+                expressionAttributeValues[':battery_status'] = Number(data.bat);
+            }
+            const params = {
+                TableName: 'DEVICE_TABLE', // 테이블 이름을 적절히 변경하세요
+                Key: {
+                    device_id: data.device_id,
+                    user_key: data.user_key
+                },
+                UpdateExpression: updateExpression,
+                ExpressionAttributeValues: expressionAttributeValues,
+                ReturnValues: 'ALL_NEW'
+            };
+            try {
+                const result = await dynamoDB.update(params).promise();
+                res.json({
+                    message: 'Device data updated successfully',
+                    data: result.Attributes
+                });
+            } catch (error) {
+                console.error('Error updating device data:', error);
+                res.status(500).json({error: 'Could not update device data'});
+            }
         },
 
 

@@ -112,6 +112,9 @@ app.post('/send/email',(req,res)=>{
 app.post('/check/auth',(req,res)=>{
     Api().checkAuthNum(req,res)
 })
+app.post('/update/deviceInfo',(req,res)=>{
+    Api().saveDeviceInfo(req,res)
+})
 
 // app.post('/saveHistory',(req,res)=>{
 //     Api().saveHistory(req,res)
