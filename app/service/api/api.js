@@ -295,18 +295,21 @@ const api = function () {
                                 });
                             const maxContractNum = parseInt(maxContractNumObj.contract_num.split('Sunil-overseas-')[1], 10);
                             //user_id,user_pw,name,tel,addr(국가),company(회사)
+                            let key = data.user_id
+                            let tel = "01000000000"
+                            let addr = "sunilOverseas"
                             let saveAwsData = {
-                                user_id:data.user_id,
+                                user_id:key,
                                 user_pw:data.user_pw,
-                                name:data.name,
-                                tel:data.tel,
-                                addr:data.addr,
+                                name:key,
+                                tel:tel,
+                                addr:addr,
                                 company: "Sunil",
                             }
                             let mongoData = {
-                                name:data.name,
-                                tel:data.tel,
-                                addr:data.addr,
+                                name:key,
+                                tel:tel,
+                                addr:addr,
                                 contract_num: `Sunil-overseas-${Number(maxContractNum)+1}`,//데이터 조회 후 +1씩증가
                                 device_id: null,
                                 company: "Sunil",
