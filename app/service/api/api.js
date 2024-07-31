@@ -295,9 +295,9 @@ const api = function () {
                         .then(findData=>{
                             if(findData){
                                 if(data.user_id !== undefined){
-                                    res.status(200).send(findData.id)
-                                }else{
                                     res.status(200).send('ok')
+                                }else{
+                                    res.status(200).send(findData.id)
                                 }
                             }else{
                                 res.status(404).send('User not found')
