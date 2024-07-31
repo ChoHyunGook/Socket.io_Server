@@ -115,6 +115,9 @@ app.post('/check/auth',(req,res)=>{
 app.post('/update/deviceInfo',(req,res)=>{
     Api().saveDeviceInfo(req,res)
 })
+app.get('/find/deviceInfo',(req,res)=>{
+    Api().findDeviceInfo(req,res)
+})
 
 // app.post('/saveHistory',(req,res)=>{
 //     Api().saveHistory(req,res)
@@ -126,6 +129,13 @@ app.get('/', (req,res)=>{
 
 app.get('/date',(req,res)=>{
     Api().userKeyTest(req,res)
+})
+
+app.post('/find/user',(req,res)=>{
+    Api().findOverseasUser(req,res)
+})
+app.post('/update/pw',(req,res)=>{
+    Api().updateOverseasUser(req,res)
 })
 
 // app.post('/dynamoUserKey',(req,res)=>{

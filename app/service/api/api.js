@@ -6,6 +6,7 @@ const dotenv = require("dotenv");
 const {DynamoDB} = require("@aws-sdk/client-dynamodb")
 const qs = require('qs')
 const jwt = require("jsonwebtoken")
+const bcrypt = require('bcrypt')
 const fs = require("fs")
 const AWS = require("aws-sdk")
 const nodemailer = require("nodemailer");
@@ -278,6 +279,98 @@ const api = function () {
 
               })
         },
+
+        findOverseasUser(req,res){
+            const data = req.body
+
+            let params = {email: data.user_email}
+
+            if(data.user_id !== undefined){
+                params['user_id'] = data.user_id
+            }
+
+            Client.connect(MONGO_URI)
+                .then(tableFind=> {
+                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne(params)
+                        .then(findData=>{
+                            if(findData){
+                                if(data.user_id !== undefined){
+                                    res.status(200).send(findData.id)
+                                }else{
+                                    res.status(200).send('ok')
+                                }
+                            }else{
+                                res.status(404).send('User not found')
+                            }
+                        })
+                        .catch(err=>{
+                            res.status(400).send(err)
+                        })
+                })
+        },
+
+        updateOverseasUser(req,res){
+            const data = req.body
+
+            Client.connect(MONGO_URI)
+                .then(tableFind=> {
+                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne(data)
+                        .then(findData=>{
+                            if(findData){
+                                const tableName = 'DEVICE_TABLE'
+                                const scanParams = {
+                                    TableName: tableName, // 테이블 이름을 적절히 변경하세요
+                                    FilterExpression: 'user_id = :user_id',
+                                    ExpressionAttributeValues: {
+                                        ':user_id': data.user_id
+                                    }
+                                };
+                                // id를 기반으로 user_key 검색
+                                dynamoDB.scan(scanParams, (err, scanResult) => {
+                                    if (err) {
+                                        console.error('Error scanning table:', err);
+                                        return res.status(500).json({ error: 'Could not scan table' });
+                                    }
+
+                                    if (scanResult.Items.length === 0) {
+                                        return res.status(404).json({ error: 'User not found' });
+                                    }
+
+                                    const userKey = scanResult.Items[0].user_key;
+
+                                    // UpdateExpression 및 ExpressionAttributeValues 설정
+                                    const updateParams = {
+                                        TableName: tableName, // 테이블 이름을 적절히 변경하세요
+                                        Key: {
+                                            user_key: userKey
+                                        },
+                                        UpdateExpression: 'set user_pw = :user_pw',
+                                        ExpressionAttributeValues: {
+                                            ':user_pw': data.user_pw
+                                        },
+                                        ReturnValues: 'ALL_NEW'
+                                    };
+
+                                    dynamoDB.update(updateParams, (err, result) => {
+                                        if (err) {
+                                            console.error('Error updating password:', err);
+                                            return res.status(500).json({ error: 'Could not update password' });
+                                        }
+
+                                        res.status(200).json({message:'Password updated successfully'})
+                                        // res.json({
+                                        //     message: 'Password updated successfully',
+                                        //     data: result.Attributes
+                                        // });
+                                    });
+                                });
+                            }else{
+                                res.status(404).send('User not found')
+                            }
+                        })
+                })
+        },
+
 
         overseasSignup(req,res){
           const data = req.body
@@ -914,6 +1007,32 @@ const api = function () {
             history().saveHistory(req, res)
         },
 
+        findDeviceInfo(req, res) {
+            const device_id = req.query.device_id
+            const token = req.headers['token']
+            const tokenVerify = jwt.verify(token,AWS_TOKEN)
+            const getParams = {
+                TableName: 'DEVICE_TABLE', // 테이블 이름을 적절히 변경하세요
+                Key: {
+                    device_id: device_id,
+                    user_key: tokenVerify.user_key
+                }
+            };
+            // 데이터 조회
+            dynamoDB.get(getParams, (err, result) => {
+                if (err) {
+                    console.error('Error getting item:', err);
+                    return res.status(500).json({ error: 'Could not get item', data: err });
+                }
+
+                if (!result.Item) {
+                    return res.status(404).json({ error: 'Item not found' });
+                }
+
+                res.status(200).json(result.Item);
+            });
+        },
+
 
         async saveDeviceInfo(req, res) {
             const data = req.body
@@ -932,9 +1051,9 @@ const api = function () {
                 updateExpression += ', pir = :pir';
                 expressionAttributeValues[':pir'] = Number(data.pir);
             }
-            if (data.bat !== undefined) {
+            if (data.battery_status !== undefined) {
                 updateExpression += ', battery_status = :battery_status';
-                expressionAttributeValues[':battery_status'] = Number(data.bat);
+                expressionAttributeValues[':battery_status'] = Number(data.battery_status);
             }
             const params = {
                 TableName: 'DEVICE_TABLE', // 테이블 이름을 적절히 변경하세요
