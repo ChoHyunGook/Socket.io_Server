@@ -316,7 +316,7 @@ const api = function () {
 
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
-                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne(data)
+                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({id:data.user_id,email:data.user_email})
                         .then(findData=>{
                             if(findData){
                                 const tableName = 'DEVICE_TABLE'
