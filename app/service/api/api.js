@@ -1007,15 +1007,14 @@ const api = function () {
             history().saveHistory(req, res)
         },
 
+
         findDeviceInfo(req, res) {
-            const device_id = req.query.device_id
-            const token = req.headers['token']
-            const tokenVerify = jwt.verify(token,AWS_TOKEN)
+            let device_id = req.query.device_id;
             const getParams = {
                 TableName: 'DEVICE_TABLE', // 테이블 이름을 적절히 변경하세요
                 Key: {
                     device_id: device_id,
-                    user_key: tokenVerify.user_key
+                    user_key: req.headers['token'] !== undefined ? jwt.verify(req.headers['token'],AWS_TOKEN).user_key:req.headers['user_key']
                 }
             };
             // 데이터 조회
@@ -1037,10 +1036,11 @@ const api = function () {
         async saveDeviceInfo(req, res) {
             const data = req.body
             // 기본 UpdateExpression 및 ExpressionAttributeValues 설정
-            let updateExpression = `set wifi_quality = :wifi_quality, privacy = :privacy`;
+            let updateExpression = `set wifi_quality = :wifi_quality, privacy = :privacy, firmware = :firmware`;
             let expressionAttributeValues = {
                 ':wifi_quality': data.wifi_quality,
                 ':privacy': data.privacy,
+                ':firmware': data.firmware,
             };
             // 만약 키가 존재하면 UpdateExpression 및 ExpressionAttributeValues에 추가
             if (data.ac !== undefined) {
