@@ -280,13 +280,15 @@ const api = function () {
               })
         },
 
+
+
         findOverseasUser(req,res){
             const data = req.body
 
             let params = {email: data.user_email}
 
             if(data.user_id !== undefined){
-                params['user_id'] = data.user_id
+                params['id'] = data.user_id
             }
 
             Client.connect(MONGO_URI)
