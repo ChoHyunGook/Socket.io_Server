@@ -303,16 +303,6 @@ const api = function () {
                             })
                     }
 
-                    // tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ device_id: new RegExp(lowerDeviceId, 'i') })
-                    //     .then(contract=>{
-                    //         if (contract) {
-                    //             // device_id에서 sendData 제거
-                    //
-                    //         } else {
-                    //             console.log('No document found with the given device_id');
-                    //             res.status(400).send('No document found with the given device_id')
-                    //         }
-                    //     })
                 })
 
 
@@ -1104,6 +1094,7 @@ const api = function () {
 
         async saveDeviceInfo(req, res) {
             const data = req.body
+            console.log(data)
             // 기본 UpdateExpression 및 ExpressionAttributeValues 설정
             let updateExpression = `set wifi_quality = :wifi_quality, privacy = :privacy, firmware = :firmware`;
             let expressionAttributeValues = {
