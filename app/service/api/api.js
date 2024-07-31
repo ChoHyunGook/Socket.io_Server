@@ -109,7 +109,7 @@ const api = function () {
 
         deleteDeviceId(req,res){
             const data = req.body
-            const lowerDeviceId = data.device_id.toLowerCase()
+            //const lowerDeviceId = data.device_id.toLowerCase()
             const token = req.headers['token']
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
@@ -119,7 +119,11 @@ const api = function () {
                         const verify = jwt.verify(token, process.env.AWS_TOKEN);
                         tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({user_key:verify.user_key})
                             .then(findUser=>{
-                                console.log(findUser)
+                                if(findUser){
+                                    res.status(200).send(findUser)
+                                }else{
+                                    res.status(400).send('User not found.');
+                                }
                             })
                     }
 
@@ -1020,6 +1024,10 @@ const api = function () {
                     user_key: req.headers['token'] !== undefined ? jwt.verify(req.headers['token'],AWS_TOKEN).user_key:req.headers['user_key']
                 }
             };
+            console.log({
+                device_id:device_id,
+                user_key: req.headers['token'] !== undefined ? jwt.verify(req.headers['token'],AWS_TOKEN).user_key:req.headers['user_key']
+            })
             // 데이터 조회
             dynamoDB.get(getParams, (err, result) => {
                 if (err) {
