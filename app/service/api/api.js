@@ -359,7 +359,7 @@ const api = function () {
                                             return res.status(500).json({ error: 'Could not update password' });
                                         }
 
-                                        res.status(200).json({message:'Password updated successfully'})
+                                        res.status(200).send('Password updated successfully')
                                         // res.json({
                                         //     message: 'Password updated successfully',
                                         //     data: result.Attributes
