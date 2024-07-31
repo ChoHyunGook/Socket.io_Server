@@ -337,6 +337,7 @@ const api = function () {
                                     if (scanResult.Items.length === 0) {
                                         return res.status(404).json({ error: 'User not found' });
                                     }
+                                    const encryptedPassword = bcrypt.hashSync(data.user_pw, 5);
 
                                     const userKey = scanResult.Items[0].user_key;
 
@@ -348,7 +349,7 @@ const api = function () {
                                         },
                                         UpdateExpression: 'set user_pw = :user_pw',
                                         ExpressionAttributeValues: {
-                                            ':user_pw': data.user_pw
+                                            ':user_pw': encryptedPassword
                                         },
                                         ReturnValues: 'ALL_NEW'
                                     };
