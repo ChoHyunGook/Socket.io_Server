@@ -319,7 +319,7 @@ const api = function () {
                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({id:data.user_id,email:data.user_email})
                         .then(findData=>{
                             if(findData){
-                                const tableName = 'DEVICE_TABLE'
+                                const tableName = 'USER_TABLE'
                                 const scanParams = {
                                     TableName: tableName, // 테이블 이름을 적절히 변경하세요
                                     FilterExpression: 'user_id = :user_id',
