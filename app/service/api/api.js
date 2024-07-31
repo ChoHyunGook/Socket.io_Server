@@ -310,6 +310,7 @@ const api = function () {
                                 name:key,
                                 tel:tel,
                                 addr:addr,
+                                email:data.user_email,
                                 contract_num: `Sunil-overseas-${Number(maxContractNum)+1}`,//데이터 조회 후 +1씩증가
                                 device_id: null,
                                 company: "Sunil",
