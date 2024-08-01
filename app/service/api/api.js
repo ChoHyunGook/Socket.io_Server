@@ -1108,12 +1108,24 @@ const api = function () {
                 expressionAttributeValues[':ac'] = data.ac;
             }
             if (data.pir !== undefined) {
-                updateExpression += ', pir = :pir';
-                expressionAttributeValues[':pir'] = Number(data.pir);
+                if(data.pir === null){
+                    updateExpression += ', pir = :pir';
+                    expressionAttributeValues[':pir'] = data.pir
+                }else{
+                    updateExpression += ', pir = :pir';
+                    expressionAttributeValues[':pir'] = Number(data.pir);
+                }
+
             }
             if (data.battery_status !== undefined) {
-                updateExpression += ', battery_status = :battery_status';
-                expressionAttributeValues[':battery_status'] = Number(data.battery_status);
+                if(data.battery_status === null){
+                    updateExpression += ', battery_status = :battery_status';
+                    expressionAttributeValues[':battery_status'] = data.battery_status;
+                }else{
+                    updateExpression += ', battery_status = :battery_status';
+                    expressionAttributeValues[':battery_status'] = Number(data.battery_status);
+                }
+
             }
             const params = {
                 TableName: 'DEVICE_TABLE', // 테이블 이름을 적절히 변경하세요
