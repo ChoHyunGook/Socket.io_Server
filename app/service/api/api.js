@@ -117,6 +117,8 @@ const api = function () {
                         res.status(400).send('Token not found.');
                     }else{
                         const verify = jwt.verify(token, process.env.AWS_TOKEN);
+                        console.log(token)
+                        console.log(verify.user_key)
                         tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({user_key:verify.user_key})
                             .then(findUser=>{
                                 if(findUser){
@@ -155,11 +157,14 @@ const api = function () {
                                                     dynamoDB.delete(deleteParams,(err)=>{
                                                         if(err){
                                                             console.error('Error deleting item from DynamoDB:', err);
+                                                            tableFind.close()
+                                                            return;
                                                         }
                                                         s3.listObjectsV2(listObjectsParams).promise()
                                                             .then(s3Data => {
+                                                                console.log('S3 Data:', s3Data);
                                                                 if (s3Data.Contents.length === 0) {
-                                                                    // 폴더가 없는 경우
+                                                                    console.log(`No objects found in folder ${BUCKET_NAME}/${transformedDeviceId}`);
                                                                     return Promise.resolve(); // 빈 Promise 반환
                                                                 }
                                                                 // 객체 삭제 요청
@@ -175,120 +180,33 @@ const api = function () {
                                                                 return s3.deleteObjects(deleteParams).promise();
 
                                                             })
-                                                            .then(() => {
-                                                                console.log(`Successfully deleted folder ${BUCKET_NAME}/${transformedDeviceId}`);
+                                                            .then(deleteResponse => {
+                                                                console.log('S3 delete response:', deleteResponse); // 삭제 응답 확인
+                                                                if (deleteResponse.Deleted.length > 0) {
+                                                                    console.log(`Successfully deleted objects from ${BUCKET_NAME}/${transformedDeviceId}`);
+                                                                } else {
+                                                                    console.log(`No objects were deleted from ${BUCKET_NAME}/${transformedDeviceId}`);
+                                                                }
                                                                 console.log(`Deleted device_id: ${lastData.id}-${lastData.name}-${data.device_id}`);
-                                                                res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${lastData.id}-${lastData.name} `,
-                                                                    changeData:lastData})
-                                                                tableFind.close()
+                                                                res.status(200).json({
+                                                                    msg: `Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${lastData.id}-${lastData.name}`,
+                                                                    changeData: lastData
+                                                                });
+                                                                tableFind.close();
                                                             })
+                                                            // .then(() => {
+                                                            //     console.log(`Successfully deleted folder ${BUCKET_NAME}/${transformedDeviceId}`);
+                                                            //     console.log(`Deleted device_id: ${lastData.id}-${lastData.name}-${data.device_id}`);
+                                                            //     res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${lastData.id}-${lastData.name} `,
+                                                            //         changeData:lastData})
+                                                            //     tableFind.close()
+                                                            // })
                                                             .catch(error => {
                                                                 console.error('Error deleting folder:', error);
                                                                 res.status(400).send(error);
                                                                 tableFind.close()
                                                             });
                                                     })
-
-                                                    //
-                                                    //
-                                                    // const scanParams = {
-                                                    //     TableName: DEVICE_TABLE,
-                                                    //     FilterExpression: 'device_id = :device_id',
-                                                    //     ExpressionAttributeValues: { ':device_id': lowerDeviceId }
-                                                    // };
-                                                    // dynamoDB.scan(scanParams).promise()
-                                                    //     .then(scanResults => {
-                                                    //         const itemsToDelete = scanResults.Items;
-                                                    //
-                                                    //         if (itemsToDelete.length !== 0) {
-                                                    //             // 각 항목을 삭제
-                                                    //             const deletePromises = itemsToDelete.map(item => {
-                                                    //                 const deleteParams = {
-                                                    //                     TableName: DEVICE_TABLE,
-                                                    //                     Key: {
-                                                    //                         device_id: item.device_id,
-                                                    //                         user_key : item.user_key,
-                                                    //                         // 필요에 따라 다른 키 속성 추가
-                                                    //                         // 예: sort_key: item.sort_key
-                                                    //                     }
-                                                    //                 };
-                                                    //                 return dynamoDB.delete(deleteParams).promise();
-                                                    //             });
-                                                    //             return Promise.all(deletePromises);
-                                                    //         }
-                                                    //
-                                                    //     })
-                                                    //     .then(() => {
-                                                    //         const s3 = new AWS.S3();
-                                                    //         const BUCKET_NAME = 'doorbell-video';
-                                                    //         // device_ids 변형
-                                                    //         const transformedDeviceId = lowerDeviceId.split(':').join('_');
-                                                    //         //const folderPath = `${BUCKET_NAME}/${transformedDeviceId}`;
-                                                    //
-                                                    //         // 폴더 내의 객체 나열
-                                                    //         const listObjectsParams = {
-                                                    //             Bucket: BUCKET_NAME,
-                                                    //             Prefix: `${transformedDeviceId}/`
-                                                    //         };
-                                                    //
-                                                    //         s3.listObjectsV2(listObjectsParams).promise()
-                                                    //             .then(s3Data => {
-                                                    //                 if (s3Data.Contents.length === 0) {
-                                                    //                     // 폴더가 없는 경우
-                                                    //                     return Promise.resolve(); // 빈 Promise 반환
-                                                    //                 }
-                                                    //                 // 객체 삭제 요청
-                                                    //                 const deleteParams = {
-                                                    //                     Bucket: BUCKET_NAME,
-                                                    //                     Delete: { Objects: [] }
-                                                    //                 };
-                                                    //
-                                                    //                 s3Data.Contents.forEach(({ Key }) => {
-                                                    //                     deleteParams.Delete.Objects.push({ Key });
-                                                    //                 });
-                                                    //
-                                                    //                 return s3.deleteObjects(deleteParams).promise();
-                                                    //
-                                                    //                 // if (s3Data.Contents.length !== 0) {
-                                                    //                 //     // 객체 삭제 요청
-                                                    //                 //     const deleteParams = {
-                                                    //                 //         Bucket: BUCKET_NAME,
-                                                    //                 //         Delete: { Objects: [] }
-                                                    //                 //     };
-                                                    //                 //
-                                                    //                 //     s3Data.Contents.forEach(({ Key }) => {
-                                                    //                 //         deleteParams.Delete.Objects.push({ Key });
-                                                    //                 //     });
-                                                    //                 //
-                                                    //                 //     return s3.deleteObjects(deleteParams).promise();
-                                                    //                 // }
-                                                    //             })
-                                                    //             .then(() => {
-                                                    //                 console.log(`Successfully deleted folder ${BUCKET_NAME}/${transformedDeviceId}`);
-                                                    //                 console.log(`Deleted device_id: ${contract.id}-${contract.name}-${data.device_id}`);
-                                                    //                 res.status(200).json({msg:`Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${contract.id}-${contract.name} `,
-                                                    //                     changeData:lastData})
-                                                    //                 tableFind.close()
-                                                    //                 // if (deleteData) {
-                                                    //                 //
-                                                    //                 // }else{
-                                                    //                 //
-                                                    //                 // }
-                                                    //             })
-                                                    //             .catch(error => {
-                                                    //                 console.error('Error deleting folder:', error);
-                                                    //                 res.status(400).send(error);
-                                                    //                 tableFind.close()
-                                                    //             });
-                                                    //
-                                                    //
-                                                    //     })
-                                                    //     .catch(error => {
-                                                    //         console.error('Error deleting devices:', error);
-                                                    //         res.status(400).send(error);
-                                                    //         tableFind.close()
-                                                    //     });
-
 
                                                 })
 
@@ -688,6 +606,7 @@ const api = function () {
           res.status(200).send(token)
         },
 
+        //a4:da:22:12:34:57
         userKeyTest(req, res) {
             //let data = "dmitc1IsSUmM2vBRxG49Ev:APA91bFzGHhczyTlAXxaB7C7p78m5Fut4F2re08KmZP5hhcvgrQJ67GuDptf-SVImWS_8ODB5d-EW_P2t8CSyrKnRUeI-kfpSrvtJ0LYFiyxkwCVlF3LvaYLdJCzDpf2hCZj309VPwCe+QP1A.190711.020+eg3kjvx9QT2bxJOvakrlZT:APA91bFS8Xa6eyDsGW6qBSdiQS--Wf9rCtfGTCijRK698r3e1YA8B6Oanlo61EvJ0PsgBTQFrJnDVyxuBagSM2A1iVxlrOWoXqPZEOxRz5WxdvgTy_p48wkUxii_okpTwKAtiGHMSFSe+PPR1.180610.011+cVg26F6_RbGAuMtOj_6B2o:APA91bH-8hy8hyifq2deB6QOIIWqUWjE481ldAvzY4hHFvOH_3BbZYNpX-UvuCpdPOI00ue6rMLL3tLXWrK7mC3V3qLEUh4O3daAqxRzvM5eTBMgl3cSbYvOtkn2xTEjxaZ2BqUvURhG+TP1A.220624.014+"
 
