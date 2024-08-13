@@ -147,6 +147,9 @@ app.post('/add/deviceId',(req,res)=>{
 app.post('/signOut',(req,res)=>{
     Api().signOut(req,res)
 })
+app.post('/record',(req,res)=>{
+    Api().record(req,res)
+})
 
 app.post('/delete/deviceId',(req,res)=>{
     Api().deleteDeviceId(req,res)
