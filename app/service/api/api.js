@@ -137,6 +137,20 @@ const api = function () {
 
         },
 
+        deleteRecord(deviceInfo){
+
+        },
+        deleteDevice(deviceInfo){
+            const DEVICE_TABLE = 'DEVICE_TABLE';
+            const params = {
+                TableName: DEVICE_TABLE,
+                Key: {
+                    device_id: deviceInfo.lowerDeviceId,
+                    user_key : deviceInfo.user_key,
+                }
+            };
+        },
+
         deleteDeviceId(req,res){
             const data = req.body
             const lowerDeviceId = data.device_id.toLowerCase()
@@ -150,6 +164,7 @@ const api = function () {
                         tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({user_key:verify.user_key})
                             .then(findUser=>{
                                 if(findUser){
+                                    console.log(findUser)
                                     let updatedDeviceIds = findUser.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
 
                                     // // device_id가 빈 문자열이면 null로 설정
@@ -256,11 +271,6 @@ const api = function () {
                                                                         })
                                                                         .then(deleteResponse => {
                                                                             console.log('S3 delete response:', deleteResponse);
-                                                                            if (deleteResponse.Deleted.length > 0) {
-                                                                                console.log(`Successfully deleted objects from ${BUCKET_NAME}/${transformedDeviceId}`);
-                                                                            } else {
-                                                                                console.log(`No objects were deleted from ${BUCKET_NAME}/${transformedDeviceId}`);
-                                                                            }
 
                                                                             // 최종 응답 처리
                                                                             res.status(200).json({
@@ -834,11 +844,13 @@ const api = function () {
                         .then(tableFind=> {
                             tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key:tokenVerify.user_key})
                                 .then(findData=>{
+                                    console.log(items)
                                     console.log(findData)
                                     let check = []
                                     items.map(e=>{
                                         check.push(e.device_id)
                                     })
+                                    console.log(check)
                                     let excludedDeviceIds = []
                                     if(findData.device_id !== null){
                                         let splitData = findData.device_id.split(',')
