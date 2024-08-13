@@ -910,6 +910,18 @@ const api = function () {
 
         },
 
+        findDeviceId(req,res){
+          let data ={device_id:"a4:da:22:11:9d:9d"}
+            Client.connect(MONGO_URI)
+                .then(tableFind=>{
+                    tableFind.db(ADMIN_DB_NAME).collection("tables").find({device_id: { $regex: new RegExp(data.device_id)}}).toArray()
+                        .then(contract=>{
+                            console.log(contract)
+                        })
+                })
+
+        },
+
         addDeviceId(req,res){
           const data  = req.body
             const token = req.headers['token']
