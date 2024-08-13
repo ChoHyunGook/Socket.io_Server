@@ -190,7 +190,7 @@ const api = function () {
                                     let findData = {
                                         user_key:findUser.user_key,
                                         device_id:data.device_id,
-                                        fcm_token:data.fcm_token
+                                        // fcm_token:data.fcm_token
                                     }
                                     let updatedDeviceIds = findUser.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
 
@@ -272,55 +272,55 @@ const api = function () {
                                                                 console.error(`RECORD_TABLE: 삭제 실패`, error);
                                                             }
 
-                                                            // 3. USER_TABLE에서 fcm_token 조회
-                                                            const userScanParams = {
-                                                                TableName: USER_TABLE,
-                                                                Key: {
-                                                                    user_key: user_key
-                                                                }
-                                                            };
-
-                                                            try {
-                                                                const userScanResult = await dynamoDB.get(userScanParams).promise();
-                                                                if (userScanResult.Item) {
-                                                                    const basicToken = userScanResult.Item.fcm_token
-                                                                    let check = basicToken.split('+')
-
-                                                                    let index = check.indexOf(data.fcm_token);
-                                                                    if (index !== -1) {
-                                                                        // 인덱스가 유효한 경우에만 삭제
-                                                                        check.splice(index, 1); // fcm_token 삭제
-                                                                        if (index < check.length) {
-                                                                            check.splice(index, 1); // 다음 요소도 삭제
-                                                                        }
-                                                                    }
-                                                                    const updateFcm = check.join('+')
-                                                                    const UserParams = {
-                                                                        TableName: 'USER_TABLE',
-                                                                        Key: {
-                                                                            user_key: user_key // 파티션 키
-                                                                        },
-                                                                        UpdateExpression: 'set fcm_token = :fcm_token',
-                                                                        ExpressionAttributeValues: {
-                                                                            ':fcm_token': updateFcm
-                                                                        },
-                                                                        ReturnValues: 'UPDATED_NEW' // 업데이트된 값을 반환
-                                                                    };
-                                                                    try {
-                                                                        const result = await dynamoDB.update(UserParams).promise();
-                                                                        console.log('Update succeeded:', result);
-                                                                        responseMsg.USER_TABLE.complete = updateFcm;
-                                                                    } catch (error) {
-                                                                        console.error('Unable to update item. Error:', error);
-                                                                    }
-
-                                                                    console.log(`USER_TABLE: fcm_token: ${userScanResult.Item.fcm_token}`);
-                                                                } else {
-                                                                    console.log(`USER_TABLE: 해당 user_key에 대한 데이터 없음 userKey: ${user_key}`);
-                                                                }
-                                                            } catch (error) {
-                                                                console.error(`USER_TABLE: 조회 실패`, error);
-                                                            }
+                                                            // // 3. USER_TABLE에서 fcm_token 조회
+                                                            // const userScanParams = {
+                                                            //     TableName: USER_TABLE,
+                                                            //     Key: {
+                                                            //         user_key: user_key
+                                                            //     }
+                                                            // };
+                                                            //
+                                                            // try {
+                                                            //     const userScanResult = await dynamoDB.get(userScanParams).promise();
+                                                            //     if (userScanResult.Item) {
+                                                            //         const basicToken = userScanResult.Item.fcm_token
+                                                            //         let check = basicToken.split('+')
+                                                            //
+                                                            //         let index = check.indexOf(data.fcm_token);
+                                                            //         if (index !== -1) {
+                                                            //             // 인덱스가 유효한 경우에만 삭제
+                                                            //             check.splice(index, 1); // fcm_token 삭제
+                                                            //             if (index < check.length) {
+                                                            //                 check.splice(index, 1); // 다음 요소도 삭제
+                                                            //             }
+                                                            //         }
+                                                            //         const updateFcm = check.join('+')
+                                                            //         const UserParams = {
+                                                            //             TableName: 'USER_TABLE',
+                                                            //             Key: {
+                                                            //                 user_key: user_key // 파티션 키
+                                                            //             },
+                                                            //             UpdateExpression: 'set fcm_token = :fcm_token',
+                                                            //             ExpressionAttributeValues: {
+                                                            //                 ':fcm_token': updateFcm
+                                                            //             },
+                                                            //             ReturnValues: 'UPDATED_NEW' // 업데이트된 값을 반환
+                                                            //         };
+                                                            //         try {
+                                                            //             const result = await dynamoDB.update(UserParams).promise();
+                                                            //             console.log('Update succeeded:', result);
+                                                            //             responseMsg.USER_TABLE.complete = updateFcm;
+                                                            //         } catch (error) {
+                                                            //             console.error('Unable to update item. Error:', error);
+                                                            //         }
+                                                            //
+                                                            //         console.log(`USER_TABLE: fcm_token: ${userScanResult.Item.fcm_token}`);
+                                                            //     } else {
+                                                            //         console.log(`USER_TABLE: 해당 user_key에 대한 데이터 없음 userKey: ${user_key}`);
+                                                            //     }
+                                                            // } catch (error) {
+                                                            //     console.error(`USER_TABLE: 조회 실패`, error);
+                                                            // }
 
                                                             // 4. S3에서 객체 삭제
                                                             const s3ObjectPrefix = device_id.split(':').join('_') + '/'; // device_id를 변형
