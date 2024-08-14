@@ -362,8 +362,9 @@ const api = function () {
                                                                     console.error(`S3: 삭제 실패`, error);
                                                                 }
 
+                                                                console.log(responseMsg)
                                                                 res.status(200).json({
-                                                                    msg: responseMsg,
+                                                                    msg: `Deleted (MongoDB,DynamoDB,S3 Video-Data) device_id: ${lastData.id}-${lastData.name}`,
                                                                     changeData: lastData
                                                                 });
 
