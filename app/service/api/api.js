@@ -953,7 +953,6 @@ const api = function () {
                                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify.user_key,
                                         company: "Sunil"})
                                         .then(findData=>{
-                                            console.log(findData)
                                             tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: tokenVerify.user_key,
                                                 company: "Sunil"},{
                                                 $set:{
@@ -965,7 +964,7 @@ const api = function () {
                                                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify.user_key,
                                                         company: "Sunil"})
                                                         .then(sendData=>{
-                                                            console.log(`${findData.id}-${findData.name}-${data.device_id.toLowerCase()} saved`)
+                                                            //console.log(`${findData.id}-${findData.name}-${data.device_id.toLowerCase()} saved`)
                                                             res.status(200).json({msg:`Add a device_id saved Success`,
                                                                 target:{
                                                                 id:findData.id,
