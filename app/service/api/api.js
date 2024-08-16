@@ -1085,6 +1085,137 @@ const api = function () {
 
 
         },
+        inquTest(req,res){
+            let testData ={
+                types:"repair",//repair,other
+                id:"01059592929",
+                name:"서성민",
+                communication:[{
+                    index:0,
+                    product:{
+                        classification:"model",//model(금고),jewelBox(보석함)
+                        name:"MC-20AL(VW,CloverWhite)",//모델명 - 기타문의에선 필요없음
+                        serial:"1234567",//시리얼번호 - 기타문의에선 필요없음
+                        device_id:"aa:22:33:44:66:ba",//디바이스 아이디 - 기타문의에서 필요없음
+                    },
+                    title:"제목 테스트입니다.",
+                    content:"문의내용 테스트 입니다.",
+                    date:moment().tz('Asia/Seoul')._d
+                }],
+                answer: []
+            }
+            Client.connect(SUNIL_MONGO_URI)
+                .then(tableFind=>{
+                    tableFind.db("Sunil-Doorbell").collection('inquiries').findOne({id:"01059592929"})
+                        .then(suc=>{
+                            if(suc === null){
+                                res.status(404).send('Not Found')
+                            }else{
+                                res.status(200).send(suc)
+                            }
+
+                        })
+                        .catch(err=>{
+                            res.status(400).send(err)
+                        })
+                })
+        },
+
+        //문의하기 조회
+        getInquiries(req,res){
+            const token = req.headers['token']
+            const tokenVerify = jwt.verify(token,AWS_TOKEN)
+            Client.connect(SUNIL_MONGO_URI)
+                .then(tableFind=>{
+                        tableFind.db("Sunil-Doorbell").collection('users').findOne({user_key:tokenVerify.user_key})
+                            .then(findData=>{
+                                tableFind.db("Sunil-Doorbell").collection('inquiries').findOne({id:findData.id,name:findData.name})
+                                    .then(findsData=>{
+                                        if(findsData !== null){
+                                            res.status(200).send(findsData)
+                                        }else{
+                                            res.status(404).send('Not Found')
+                                        }
+                                    })
+                                    .catch(err=>{
+                                        res.status(400).send(err)
+                                    })
+                            })
+                            .catch(err=>{
+                                res.status(400).send(err)
+                            })
+                })
+                .catch(err=>{
+                    res.status(400).send(err)
+                })
+        },
+
+        //앱 문의하기
+        //types:repair/other,title:제목,content:문의내용,classifi
+        eaglesSafesInquiries(req,res){
+            // {
+            //     types:"repair",//repair,other
+            //     communication:{
+            //         product:{
+            //             classification:"금고",//금고,보석함
+            //             name:"메타셀",//모델명 - 기타문의에선 필요없음
+            //             serial:"1234567",//시리얼번호 - 기타문의에선 필요없음
+            //             device_id:"aa:22:33:44:66:ba",//디바이스 아이디 - 기타문의에서 필요없음
+            //         },
+            //         title:"제목",
+            //         content:"문의내용"
+            //     }
+            // }
+            const data = req.body
+            const token = req.headers['token']
+            const tokenVerify = jwt.verify(token,AWS_TOKEN)
+
+            Client.connect(SUNIL_MONGO_URI)
+                .then(tableFind=>{
+                    tableFind.db("Sunil-Doorbell").collection('users').findOne({user_key:tokenVerify.user_key})
+                        .then(findData=>{
+                            let saveData = {
+                                types:data.types,
+                                id:findData.id,
+                                name:findData.name,
+                                comunication:[
+                                    {
+                                        index:findData.communication[0].index + 1,
+                                        ...data.communication,
+                                        date:moment().tz('Asia/Seoul')._d
+                                    },
+                                    ...findData.communication,
+                                ],
+                                answer:[
+                                    ...findData.answer,
+                                ]
+                            }
+                            tableFind.db("Sunil-Doorbell").collection('inquiries').findOne({id:findData.id})
+                                .then(findsData=>{
+                                    if(findsData === null){
+                                        tableFind.db("Sunil-Doorbell").collection('inquiries').insertOne(saveData)
+                                            .then(suc=>{
+                                                res.status(200).json({msg:'Your inquiry has been registered'})
+                                            })
+                                            .catch(err=>{
+                                                res.status(400).send(err)
+                                            })
+                                    }else{
+                                        tableFind.db("Sunil-Doorbell").collection('inquiries').findOneAndUpdate({id:findsData.id},
+                                            {$set:saveData})
+                                            .then(suc=>{
+                                                res.status(200).json({msg:'Your inquiry has been registered'})
+                                            })
+                                            .catch(err=>{
+                                                res.status(400).send(err)
+                                            })
+                                    }
+                                })
+                        })
+                })
+
+
+        },
 
         findDeviceId(req,res){
           let data ={device_id:"a4:da:22:11:9d:9d"}

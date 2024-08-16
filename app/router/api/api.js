@@ -137,13 +137,21 @@ app.post('/find/user',(req,res)=>{
 app.post('/update/pw',(req,res)=>{
     Api().updateOverseasUser(req,res)
 })
-
+app.get('/testInquiries',(req,res)=>{
+    Api().inquTest(req,res)
+})
+app.get('/get/inquiries',(req,res)=>{
+    Api().getInquiries(req,res)
+})
+app.post('/update/inquiries',(req,res)=>{
+    Api().eaglesSafesInquiries(req,res)
+})
 // app.post('/dynamoUserKey',(req,res)=>{
 //     Api().dynamoUserKey(req,res)
 // })
-app.get('/connect/doorbell',(req,res)=>{
-    Api().saveUsersKey(req,res)
-})
+// app.get('/connect/doorbell',(req,res)=>{
+//     Api().saveUsersKey(req,res)
+// })
 app.get('/cut',(req, res) => {
     Api().cutToken(req,res)
 })
