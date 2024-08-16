@@ -141,6 +141,9 @@ app.post('/update/pw',(req,res)=>{
 // app.post('/dynamoUserKey',(req,res)=>{
 //     Api().dynamoUserKey(req,res)
 // })
+app.get('/connect/doorbell',(req,res)=>{
+    Api().saveUsersKey(req,res)
+})
 app.get('/cut',(req, res) => {
     Api().cutToken(req,res)
 })

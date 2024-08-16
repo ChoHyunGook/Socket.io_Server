@@ -40,7 +40,7 @@ const {
     AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, MONGO_URI, ADMIN_DB_NAME, SMS_service_id,
     SMS_secret_key, SMS_access_key, SMS_PHONE, NICE_CLIENT_ID, NICE_CLIENT_SECRET, NICE_PRODUCT_CODE,
     NICE_ACCESS_TOKEN, DEV_DEVICE_ADMIN, DEV_APP_ADMIN, DEV_SEVER_ADMIN, DEV_CEO_ADMIN,AWS_LAMBDA_SIGNUP,
-    AWS_TOKEN,NODEMAILER_USER, NODEMAILER_PASS, NODEMAILER_SERVICE, NODEMAILER_HOST,
+    AWS_TOKEN,NODEMAILER_USER, NODEMAILER_PASS, NODEMAILER_SERVICE, NODEMAILER_HOST,SUNIL_MONGO_URI,
 } = applyDotenv(dotenv)
 
 const ClientId = AWS_SECRET
@@ -740,6 +740,103 @@ const api = function () {
                         })
                 })
         },
+        // saveUsersKey(req,res){
+        //     Client.connect(MONGO_URI)
+        //         .then(tableFind=> {
+        //             tableFind.db(ADMIN_DB_NAME).collection('tables').find({company:"Sunil"}).toArray()
+        //                 .then(findData=>{
+        //                     findData.map(item=>{
+        //                         if(item.user_key !== undefined){
+        //                             Client.connect(SUNIL_MONGO_URI)
+        //                                 .then(tablesFind=> {
+        //                                     tablesFind.db("Sunil-Doorbell").collection('users').findOneAndUpdate({id:item.id,name:item.name},
+        //                                         {$set:{user_key:item.user_key}})
+        //                                         .then(suc=>{
+        //                                             console.log(suc)
+        //                                         })
+        //                                         .catch(err=>{
+        //                                             console.log(err)
+        //                                         })
+        //                                 })
+        //                         }
+        //                     })
+        //                 })
+        //         })
+        // },
+
+        // eagelsTest(req,res){
+        //   Client.connect(MONGO_URI)
+        //       .then(tableFind=> {
+        //           tableFind.db(ADMIN_DB_NAME).collection('tables').find({company:"Sunil"}).toArray()
+        //               .then(findData=>{
+        //                   findData.map(e=>{
+        //                       const splitDeviceId = e.device_id !== null ? e.device_id.split(","):[]
+        //                       let saveItems = []
+        //
+        //                       if(splitDeviceId.length !== 0){
+        //                           splitDeviceId.map(item=>{
+        //                               let pushData = {
+        //                                   classification:"overseas",
+        //                                   name:"overseas",
+        //                                   koType:{
+        //                                       category:"해외전용",
+        //                                       detail:"해외판",
+        //                                       name:"금고"
+        //                                   },
+        //                                   serial:"overseas",
+        //                                   device_id:item,
+        //                                   productNum:"overseas",
+        //                                   orderDate:e.service_start+" 00:00:00",
+        //                                   saleNote:"해외전용 가입",
+        //                                   discountType:"None",
+        //                                   discountPrice:"0",
+        //                               }
+        //                               saveItems.push(pushData)
+        //                           })
+        //
+        //                       }
+        //
+        //                       const saveData = {
+        //                           overseas:true,
+        //                           id:e.id,
+        //                           addr:{
+        //                               location:{
+        //                                   x:"",
+        //                                   y:""
+        //                               },
+        //                               address:"overseas",
+        //                               road_address:"overseas",
+        //                               zone_code:"overseas",
+        //                               detail:"overseas",
+        //                               full_address:"overseas"
+        //                           },
+        //                           email:e.email,
+        //                           name:e.name,
+        //                           open:e.start_up,
+        //                           serviceDate:e.service_start+" 00:00:00",
+        //                           items:saveItems,
+        //                           discount:{
+        //                               point:0,
+        //                               coupon:[]
+        //                           },
+        //                           bookmark:[]
+        //                       }
+        //                       Client.connect(SUNIL_MONGO_URI)
+        //                           .then(tablesFind=> {
+        //                               tablesFind.db("Sunil-Doorbell").collection('users').insertOne(saveData)
+        //                                   .then(suc=>{
+        //                                       console.log(suc)
+        //                                   })
+        //                                   .catch(err=>{
+        //                                       console.log(err)
+        //                                   })
+        //                           })
+        //                   })
+        //
+        //               })
+        //       })
+        // },
+
 
         updateOverseasUser(req,res){
             const data = req.body
@@ -804,6 +901,75 @@ const api = function () {
                 })
         },
 
+        eaglesSafesOverseasSave(target,data){
+            const saveTime = moment().tz('Asia/Seoul')
+            if(target === "signUp"){
+                const saveData = {
+                    overseas:true,
+                    id:data.id,
+                    addr:{
+                        location:{},
+                        address:"overseas",
+                        road_address:"overseas",
+                        zone_code:"overseas",
+                        detail:"overseas",
+                        full_address:"overseas"
+                    },
+                    email:data.email,
+                    name:data.name,
+                    open:"O",
+                    serviceDate:saveTime.format('YYYY-MM-DD kk:mm:ss'),
+                    items:[],
+                    discount:{
+                        point:0,
+                        coupon:[]
+                    },
+                    bookmark:[]
+                }
+
+                Client.connect(SUNIL_MONGO_URI)
+                    .then(tableFind=>{
+                        tableFind.db("Sunil-Doorbell").collection('users').insertOne(saveData)
+                            .then(suc=>{
+                                tableFind.db("Sunil-Doorbell").collection('users').findOne({id:data.id})
+                                    .then(findData=>{
+                                        console.log(suc)
+                                        console.log(findData)
+                                    })
+                                    .catch(err=>{
+                                        console.log(err)
+                                    })
+                            })
+                            .catch(err=>{
+                                console.log(err)
+                            })
+                    })
+                    .catch(err=>{
+                        console.log(err)
+                    })
+            }
+
+            if(target === "saveUserKey"){
+                Client.connect(SUNIL_MONGO_URI)
+                    .then(tableFind => {
+                        tableFind.db("Sunil-Doorbell").collection('users').findOneAndUpdate({id:data.user_id},
+                            {$set:{
+                                    user_key:data.user_key
+                                }})
+                            .then(suc => {
+                                console.log(suc)
+                            })
+                            .catch(err => {
+                                console.log(err)
+                            })
+                    })
+                    .catch(err => {
+                        console.log(err)
+                    })
+            }
+
+        },
+
 
         overseasSignup(req,res){
           const data = req.body
@@ -860,12 +1026,12 @@ const api = function () {
                                         tableFind.db(ADMIN_DB_NAME).collection('tables').insertOne(mongoData)
                                             .then(suc=>{
                                                 console.log(suc)
-                                                console.log("saveSuccess")
                                                 tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
                                                     .then(sendData=>{
                                                         axios.post(AWS_LAMBDA_SIGNUP,saveAwsData)
                                                             .then(awsResponse=>{
                                                                 console.log('success SignUp')
+                                                                this.eaglesSafesOverseasSave("signUp",mongoData)
                                                                 res.status(200).json({msg:'Success Signup',checkData:sendData[0],awsResponse:awsResponse.data})
                                                                 tableFind.close()
                                                             })
@@ -1017,9 +1183,7 @@ const api = function () {
 
 
         saveUserKey(req,res){
-
             const data = req.body
-            console.log(data)
             //데이터 유저키,아이디 등등 없을때 에러 저장 로직 추가하기
             const bodyData = data.bodyData
             const userData = data.userData
@@ -1043,6 +1207,7 @@ const api = function () {
                                                 user_key:userData.user_key
                                             }})
                                         .then(findsData=>{
+                                            this.eaglesSafesOverseasSave("saveUserKey",bodyData)
                                             console.log(`Login-id:${bodyData.user_id}- user_key Save Success`)
                                             res.status(200).send('success')
                                             tableFind.close()
