@@ -1514,7 +1514,7 @@ const api = function () {
                     })
                         .then(findData => {
                             // findData.device_id가 null인 경우 처리
-                            if (!findData.device_id) {
+                            if (!findData.device_id || findData.device_id === "") {
                                 // device_id가 null이면 새 device_id를 저장
                                 tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate(
                                     { user_key: data.user_key, company: "Sunil" },
