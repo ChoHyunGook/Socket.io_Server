@@ -129,7 +129,6 @@ const api = function () {
                     const sortKeys = data.Items.map(item => item); // 정렬 키 이름에 맞게 수정
 
 
-
                     res.status(200).send(sortKeys)
                     console.log("Sorted Keys:", sortKeys);
                 }
@@ -137,19 +136,6 @@ const api = function () {
 
         },
 
-        deleteRecord(deviceInfo){
-
-        },
-        deleteDevice(deviceInfo){
-            const DEVICE_TABLE = 'DEVICE_TABLE';
-            const params = {
-                TableName: DEVICE_TABLE,
-                Key: {
-                    device_id: deviceInfo.lowerDeviceId,
-                    user_key : deviceInfo.user_key,
-                }
-            };
-        },
 
         cutToken(req,res){
             let basicToken = "faapkBxtRPaV4s-3Uy_mkp:APA91bGg2L7ppqfhCg4qiUGIuuvkz1MJ5wS_7wKprf-UnV8qYV2WUoszUsNAcm4POZ97SqArrCX7U2n_6U3PBUo7-Gj-AS9BDJkD-m1GMPEsmOcBnEDS9oytWSqVA9l8jfLWNO89XDO_+UP1A.231005.007+ekAxG03CSc6j8nz1qe6kRp:APA91bGg2L7ppqfhCg4qiUGIuuvkz1MJ5wS_7wKprf-UnV8qYV2WUoszUsNAcm4POZ97SqArrCX7U2n_6U3PBUo7-Gj-AS9BDJkD-m1GMPEsmOcBnEDS9oytWSqVA9l8jfLWNO89XDO_+TP1A.220624.014+e0OHQkYfS8a8ivFcEh12IU:APA91bFsf7BcwUy-SF2rTStX0y42kkeaUVWD9_FmSX6ZnNyGxyf1r3r11uu80YPW7i7IA0ZQjymW55WrDfRXxIISgpsKXy0cGqxgVTN73qBs33jUgNWXGsAO-p9y-XL2gwdrmyGcR-_3+QP1A.190711.020+";
@@ -167,6 +153,241 @@ const api = function () {
             }
 
             res.status(200).send(check.join('+'))
+        },
+
+        allDeleteDevices(req,res){
+            //요건 몽고할때만
+            let data = [
+                'a4:da:22:11:85:e8',
+                'a4:da:22:11:92:e2',
+                'a4:da:22:11:83:4f',
+                'a4:da:22:11:83:ff',
+                'a4:da:22:11:99:ca'
+            ]
+            //도어벨 data - tables
+            Client.connect(MONGO_URI)
+                .then(tableFind=> {
+                    tableFind.db(ADMIN_DB_NAME).collection("tables").updateMany({
+                        id:{$ne:'kes'}
+                    },
+                        {$set:{device_id:null}})
+                        .then(suc=>{
+                            console.log(suc)
+                        })
+                })
+            // //히스토리 삭제
+            // History.deleteMany({
+            //     device_id:{$nin:data}
+            // })
+            //     .then(suc=>{
+            //         console.log(suc)
+            //     })
+            //선일 도어벨
+            // Client.connect(SUNIL_MONGO_URI)
+            //     .then(tableFind=> {
+            //         tableFind.db("Sunil-Doorbell").collection("users").updateMany(
+            //             { overseas: true }, // overseas가 true인 조건
+            //             { $pull: { items: { device_id: { $nin: data } } } } // 해당 items 삭제
+            //         )
+            //             .then(suc=>{
+            //                 console.log(suc)
+            //             })
+            //     })
+            // let dynamoKey = [
+            //     {
+            //         "device_id": [
+            //             "a4:da:22:11:92:9d",
+            //             "a4:da:22:11:a0:f1"
+            //         ],
+            //         "user_key": "47736eaf-a18d-4594-8ee9-2846a41905df"
+            //     },
+            //     {
+            //         "device_id": [
+            //             "a4:da:22:12:34:55"
+            //         ],
+            //         "user_key": "3c433a53-d87b-4d5e-9be0-18a818d17706"
+            //     },
+            //     {
+            //         "device_id": [
+            //             "a4:da:22:11:11:11"
+            //         ],
+            //         "user_key": "50b9e930-2ae0-4dd8-b9b1-9c99dbc89ac2"
+            //     },
+            //     {
+            //         "device_id": [
+            //             "a4:da:22:11:a8:4b",
+            //             "a4:da:22:11:9c:df",
+            //             "a4:da:22:11:9b:9c",
+            //             "a4:da:22:11:9d:88",
+            //             "a4:da:22:11:9e:78"
+            //         ],
+            //         "user_key": "5f550b0e-0b6d-4390-a8ad-2290293f83ea"
+            //     },
+            //     {
+            //         "device_id": [
+            //             "a4:da:22:11:11:13"
+            //         ],
+            //         "user_key": "3f27e2a7-0e31-4210-88c4-daac4406f5d8"
+            //     },
+            //     {
+            //         "device_id": [
+            //             "11:22:33:44:55:66"
+            //         ],
+            //         "user_key": "1c7973eb-e6c3-4d5b-9099-b09c44c269f9"
+            //     }
+            // ]
+
+            //이게 다이나모 디비 ㄷㅣ바이스테이블 삭제
+            // async function deleteItems() {
+            //     for (const item of dynamoKey) {
+            //         for (const deviceId of item.device_id) {
+            //             const params = {
+            //                 TableName: "DEVICE_TABLE",
+            //                 Key: {
+            //                     "device_id": deviceId, // 파티션 키
+            //                     "user_key": item.user_key // 정렬 키
+            //                 }
+            //             };
+            //
+            //             try {
+            //                 await dynamoDB.delete(params).promise();
+            //                 console.log(`Deleted item with device_id: ${deviceId}, user_key: ${item.user_key}`);
+            //             } catch (error) {
+            //                 console.error(`Failed to delete item with device_id: ${deviceId}, user_key: ${item.user_key}`, error);
+            //             }
+            //         }
+            //     }
+            // }
+            //
+            // // 실행
+            // deleteItems().then(() => {
+            //     console.log("All delete operations completed.");
+            // }).catch(error => {
+            //     console.error("Error during delete operations:", error);
+            // });
+
+
+
+            // // DynamoDB에서 항목 삭제 함수
+            // async function deleteItems() {
+            //     for (const item of dynamoKey) {
+            //         for (const deviceId of item.device_id) {
+            //             // device_id에 대한 모든 항목 조회
+            //             const queryParams = {
+            //                 TableName: "RECORD_TABLE",
+            //                 KeyConditionExpression: "device_id = :device_id",
+            //                 ExpressionAttributeValues: {
+            //                     ":device_id": deviceId
+            //                 }
+            //             };
+            //
+            //             try {
+            //                 const data = await dynamoDB.query(queryParams).promise();
+            //
+            //                 // 조회된 항목이 없으면 넘어감
+            //                 if (!data.Items || data.Items.length === 0) {
+            //                     console.log(`No items found for device_id: ${deviceId}`);
+            //                     continue;
+            //                 }
+            //
+            //                 // 조회된 항목을 삭제
+            //                 for (const record of data.Items) {
+            //                     const deleteParams = {
+            //                         TableName: "RECORD_TABLE",
+            //                         Key: {
+            //                             "device_id": record.device_id,
+            //                             "file_location": record.file_location // 정렬키
+            //                         }
+            //                     };
+            //
+            //                     await dynamoDB.delete(deleteParams).promise();
+            //                     console.log(`Deleted item with device_id: ${deviceId}, file_location: ${record.file_location}`);
+            //                 }
+            //             } catch (error) {
+            //                 console.error(`Failed to delete items for device_id: ${deviceId}`, error);
+            //             }
+            //         }
+            //     }
+            // }
+            //
+            // // 실행
+            // deleteItems().then(() => {
+            //     console.log("All delete operations completed.");
+            // }).catch(error => {
+            //     console.error("Error during delete operations:", error);
+            // });
+
+//             const s3 = new AWS.S3();
+//
+//             // S3에서 객체 삭제 함수
+//             async function deleteS3Objects() {
+//                 for (const item of dynamoKey) {
+//                     for (const deviceId of item.device_id) {
+//                         // device_id에서 ':'를 '_'로 변경
+//                         const s3ObjectKey = deviceId.replace(/:/g, '_');
+//
+//                         const params = {
+//                             Bucket: "doorbell-video", // S3 버킷 이름
+//                             Key: s3ObjectKey // 삭제할 객체의 키
+//                         };
+//
+//                         try {
+//                             // 객체 삭제 시도
+//                             await s3.deleteObject(params).promise();
+//                             console.log(`Deleted object with key: ${s3ObjectKey} from S3 bucket "doorbell-video"`);
+//                         } catch (error) {
+//                             // 객체가 존재하지 않을 수 있으므로 오류 메시지 출력하지 않음
+//                             if (error.code !== 'NoSuchKey') {
+//                                 console.error(`Failed to delete object with key: ${s3ObjectKey}`, error);
+//                             } else {
+//                                 console.log(`Object with key: ${s3ObjectKey} does not exist, skipping.`);
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//
+// // 실행
+//             deleteS3Objects().then(() => {
+//                 console.log("All delete operations completed.");
+//             }).catch(error => {
+//                 console.error("Error during delete operations:", error);
+//             });
+
+
+
+            //데이터 추출완료 -주석 풀지마셈
+            // Client.connect(MONGO_URI)
+            //     .then(tableFind=> {
+            //         tableFind.db(ADMIN_DB_NAME).collection("tables").find({
+            //             contract_num: { $regex: /Sunil-overseas/ } // contract_num에 "Sunil-overseas"가 포함된 경우
+            //         }).toArray()
+            //             .then(findData=>{
+            //                 const result = findData.map(user => {
+            //                     const { device_id, user_key } = user;
+            //                     if (device_id) {
+            //                         // device_id가 있을 경우, ","로 분리하여 배열로 변환
+            //                         return {
+            //                             device_id: device_id.split(','),
+            //                             user_key: user_key
+            //                         };
+            //                     } else {
+            //                         // device_id가 null인 경우
+            //                         return {
+            //                             device_id: null,
+            //                             user_key: user_key
+            //                         };
+            //                     }
+            //                 });
+            //                 // device_id 또는 user_key가 null인 객체 삭제
+            //                 const filteredResult = result.filter(item => item.device_id !== null && item.user_key !== null);
+            //                 res.status(200).send(filteredResult)
+            //             })
+            //     })
+
+
+
+
         },
 
         deleteDeviceId(req,res){
@@ -1283,32 +1504,61 @@ const api = function () {
         },
 
 
-        saveDeivceId(req,res){
-            const data = req.body
+        saveDeivceId(req, res) {
+            const data = req.body;
             Client.connect(MONGO_URI)
-                .then(tableFind=> {
-                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: data.user_key,
-                            company: "Sunil"})
-                        .then(findData=>{
-                            const dataArray = findData.device_id.toLowerCase().split(',')
-                            if(dataArray.includes(data.device_id.toLowerCase())){
-                                res.status(200).send(`device_id:${data.device_id.toLowerCase()}- This is already saved device_id`)
-                            }else{
-                                tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: data.user_key,
-                                    company: "Sunil"},{
-                                    $set:{
-                                        device_id:findData.device_id+","+data.device_id.toLowerCase()
-                                    }
-                                })
-                                    .then(suc=>{
-                                        console.log(`${findData.id}-${findData.name}-${data.device_id.toLowerCase()} saved`)
-                                        res.status(200).send('success')
-                                        tableFind.close()
+                .then(tableFind => {
+                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({
+                        user_key: data.user_key,
+                        company: "Sunil"
+                    })
+                        .then(findData => {
+                            // findData.device_id가 null인 경우 처리
+                            if (!findData.device_id) {
+                                // device_id가 null이면 새 device_id를 저장
+                                tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate(
+                                    { user_key: data.user_key, company: "Sunil" },
+                                    { $set: { device_id: data.device_id.toLowerCase() } }
+                                )
+                                    .then(suc => {
+                                        console.log(`${findData.id}-${findData.name}-${data.device_id.toLowerCase()} saved`);
+                                        res.status(200).send('success');
+                                        tableFind.close();
                                     })
+                                    .catch(err => {
+                                        console.error('Error updating device_id:', err);
+                                        res.status(500).send('Error updating device_id');
+                                    });
+                            } else {
+                                const dataArray = findData.device_id.toLowerCase().split(',');
+                                if (dataArray.includes(data.device_id.toLowerCase())) {
+                                    res.status(200).send(`device_id:${data.device_id.toLowerCase()} - This is already saved device_id`);
+                                } else {
+                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate(
+                                        { user_key: data.user_key, company: "Sunil" },
+                                        { $set: { device_id: findData.device_id + "," + data.device_id.toLowerCase() } }
+                                    )
+                                        .then(suc => {
+                                            console.log(`${findData.id}-${findData.name}-${data.device_id.toLowerCase()} saved`);
+                                            res.status(200).send('success');
+                                            tableFind.close();
+                                        })
+                                        .catch(err => {
+                                            console.error('Error updating device_id:', err);
+                                            res.status(500).send('Error updating device_id');
+                                        });
+                                }
                             }
-
                         })
+                        .catch(err => {
+                            console.error('Error finding data:', err);
+                            res.status(500).send('Error finding data');
+                        });
                 })
+                .catch(err => {
+                    console.error('Error connecting to MongoDB:', err);
+                    res.status(500).send('Error connecting to MongoDB');
+                });
         },
 
 
