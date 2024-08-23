@@ -417,7 +417,7 @@ const api = function () {
                                     if(findUser){
                                         let findData = {
                                             user_key:findUser.user_key,
-                                            device_id:data.device_id,
+                                            device_id:lowerDeviceId,
                                             // fcm_token:data.fcm_token
                                         }
                                         let updatedDeviceIds = findUser.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
@@ -1451,7 +1451,7 @@ const api = function () {
         },
 
         addDeviceId(req,res){
-          const data  = req.body
+            const data  = req.body
             const token = req.headers['token']
             Client.connect(MONGO_URI)
                 .then(tableFind=> {
