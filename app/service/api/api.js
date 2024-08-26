@@ -1123,116 +1123,97 @@ const api = function () {
 
 
         overseasSignup(req,res){
-          const data = req.body
-            const saveTime = moment().tz('Asia/Seoul')
-            console.log(data)
+            const data = req.body;
+            const saveTime = moment().tz('Asia/Seoul');
+            console.log(data);
+
             Client.connect(MONGO_URI)
-                .then(tableFind=> {
-                    tableFind.db(ADMIN_DB_NAME).collection('tables').find({company:"Sunil"}).toArray()
-                        .then(allData=>{
+                .then(tableFind => {
+                    tableFind.db(ADMIN_DB_NAME).collection('tables').find({ company: "Sunil" }).toArray()
+                        .then(allData => {
                             let maxContractNumObj = allData
-                                .filter(item => item.contract_num.startsWith('Sunil-overseas-'))
+                                .filter(item => item.contract_num && item.contract_num.startsWith('Sunil-overseas-')) // contract_num이 존재하는지 확인
                                 .reduce((max, item) => {
                                     const num = parseInt(item.contract_num.split('Sunil-overseas-')[1], 10);
                                     return (num > parseInt(max.contract_num.split('Sunil-overseas-')[1], 10)) ? item : max;
                                 });
-                            const maxContractNum = parseInt(maxContractNumObj.contract_num.split('Sunil-overseas-')[1], 10);
-                            //user_id,user_pw,name,tel,addr(국가),company(회사)
-                            let key = data.user_id
-                            let tel = "00000000000"
-                            let addr = "sunilOverseas"
+
+                            // maxContractNumObj가 존재하는지 확인
+                            const maxContractNum = maxContractNumObj ? parseInt(maxContractNumObj.contract_num.split('Sunil-overseas-')[1], 10) : 0;
+
+                            // user_id, user_pw, name, tel, addr(국가), company(회사)
+                            let key = data.user_id;
+                            let tel = "00000000000";
+                            let addr = "sunilOverseas";
                             let saveAwsData = {
-                                user_id:key,
-                                user_pw:data.user_pw,
-                                name:key,
-                                tel:tel,
-                                addr:addr,
+                                user_id: key,
+                                user_pw: data.user_pw,
+                                name: key,
+                                tel: tel,
+                                addr: addr,
                                 company: "Sunil",
-                            }
+                            };
+
                             let mongoData = {
-                                name:key,
-                                tel:tel,
-                                addr:addr,
-                                email:data.user_email,
-                                contract_num: `Sunil-overseas-${Number(maxContractNum)+1}`,//데이터 조회 후 +1씩증가
+                                name: key,
+                                tel: tel,
+                                addr: addr,
+                                email: data.user_email,
+                                contract_num: `Sunil-overseas-${Number(maxContractNum) + 1}`, // 데이터 조회 후 +1씩 증가
                                 device_id: null,
                                 company: "Sunil",
                                 contract_service: '주계약자',
-                                id:data.user_id,
+                                id: data.user_id,
                                 communication: 'O',
-                                service_name:"SunilService",
+                                service_name: "SunilService",
                                 service_start: saveTime.format('YYYY-MM-DD'),
                                 service_end: "9999-12-30",
                                 start_up: 'O',
-                                user_key:null,
-                            }
+                                user_key: null,
+                            };
 
-                            tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
-                                .then(findData=>{
-                                    if(findData.length !== 0){
-                                        console.log('Duplicate UserId')
-                                        res.status(400).send('Duplicate UserId')
-                                        tableFind.close()
-                                    }else{
+                            tableFind.db(ADMIN_DB_NAME).collection('tables').find({ id: data.user_id }).toArray()
+                                .then(findData => {
+                                    if (findData.length !== 0) {
+                                        console.log('Duplicate UserId');
+                                        res.status(400).send('Duplicate UserId');
+                                        tableFind.close();
+                                    } else {
                                         tableFind.db(ADMIN_DB_NAME).collection('tables').insertOne(mongoData)
-                                            .then(suc=>{
-                                                console.log(suc)
-                                                tableFind.db(ADMIN_DB_NAME).collection('tables').find({id:data.user_id}).toArray()
-                                                    .then(sendData=>{
-                                                        axios.post(AWS_LAMBDA_SIGNUP,saveAwsData)
-                                                            .then(awsResponse=>{
-                                                                console.log('success SignUp')
-                                                                this.eaglesSafesOverseasSave("signUp",mongoData)
-                                                                res.status(200).json({msg:'Success Signup',checkData:sendData[0],awsResponse:awsResponse.data})
-                                                                tableFind.close()
+                                            .then(suc => {
+                                                console.log(suc);
+                                                tableFind.db(ADMIN_DB_NAME).collection('tables').find({ id: data.user_id }).toArray()
+                                                    .then(sendData => {
+                                                        axios.post(AWS_LAMBDA_SIGNUP, saveAwsData)
+                                                            .then(awsResponse => {
+                                                                console.log('success SignUp');
+                                                                this.eaglesSafesOverseasSave("signUp", mongoData);
+                                                                res.status(200).json({ msg: 'Success Signup', checkData: sendData[0], awsResponse: awsResponse.data });
+                                                                tableFind.close();
                                                             })
-                                                            .catch(err=>{
-                                                                console.log(err)
-                                                                res.status(400).send(err)
-                                                                tableFind.close()
-                                                            })
-
-                                                    })
+                                                            .catch(err => {
+                                                                console.log(err);
+                                                                res.status(400).send(err);
+                                                                tableFind.close();
+                                                            });
+                                                    });
                                             })
-                                            .catch(err=>{
-                                                console.log('save Fail')
-                                                console.log(err)
-                                                tableFind.close()
-                                            })
+                                            .catch(err => {
+                                                console.log('save Fail');
+                                                console.log(err);
+                                                tableFind.close();
+                                            });
                                     }
-                                })
-
-
-                            // tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
-                            //     .then(contracts=>{
-                            //         const exists = contracts.some(contract => {
-                            //             // device_id가 null일 경우 빈 배열로 처리
-                            //             const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
-                            //             return deviceIds.includes(data.device_id.toLowerCase());
-                            //         });
-                            //         if(exists){
-                            //             //디바이스 아이디중복 확인
-                            //             console.log('Duplicate device_id')
-                            //             res.status(400).send('Duplicate device_id')
-                            //         }else{
-                            //
-                            //         }
-                            //     })
-                            //     .catch(err=>{
-                            //         console.log(err)
-                            //         tableFind.close()
-                            //     })
-
-                            //console.log(allData)
+                                });
                         })
-                        .catch(err=>{
-                            console.log(err)
-                            tableFind.close()
-                        })
+                        .catch(err => {
+                            console.log(err);
+                            tableFind.close();
+                        });
                 })
-                .catch(err=>{
-                    console.log(err)
-                })
+                .catch(err => {
+                    console.log(err);
+                });
 
 
         },
