@@ -1384,58 +1384,67 @@ const api = function () {
             const data  = req.body
             const token = req.headers['token']
 
-            console.log(data)
-            console.log(token)
-
             Client.connect(MONGO_URI)
-                .then(tableFind=> {
-                        tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
-                            .then(contracts=>{
-                                const tokenVerify = jwt.verify(token,AWS_TOKEN)
-                                console.log(tokenVerify)
-                                const exists = contracts.some(contract => {
-                                    // device_id가 null일 경우 빈 배열로 처리
-                                    const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
-                                    return deviceIds.includes(data.device_id.toLowerCase());
+                .then(tableFind => {
+                    return tableFind.db(ADMIN_DB_NAME).collection("tables").find().toArray()
+                        .then(contracts => {
+                            const tokenVerify = jwt.verify(token, AWS_TOKEN);
+
+                            const exists = contracts.some(contract => {
+                                const deviceIds = contract.device_id ? contract.device_id.split(',') : [];
+                                return deviceIds.includes(data.device_id.toLowerCase());
+                            });
+
+                            if (exists) {
+                                console.log('Duplicate device_id');
+                                res.status(400).send('Duplicate device_id');
+                                return; // early return
+                            }
+
+                            return tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ user_key: tokenVerify.user_key })
+                                .then(findData => {
+                                    if (!findData) {
+                                        console.log('No data found for user_key');
+                                        res.status(404).send('User data not found');
+                                        return; // early return
+                                    }
+
+                                    return tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate(
+                                        { user_key: tokenVerify.user_key, company: "Sunil" },
+                                        {
+                                            $set: {
+                                                device_id: findData.device_id ? findData.device_id + "," + data.device_id.toLowerCase() :
+                                                    data.device_id.toLowerCase()
+                                            }
+                                        },
+                                        { returnDocument: 'after' } // 업데이트 후의 문서를 반환하도록 설정
+                                    ).then(updatedData => {
+                                        // 업데이트된 데이터가 없으면 처리
+                                        if (!updatedData.value) {
+                                            res.status(404).json({ msg: 'Data not found after update' });
+                                            return;
+                                        }
+
+                                        res.status(200).json({
+                                            msg: `Add a device_id saved Success`,
+                                            target: {
+                                                id: updatedData.value.id, // 업데이트된 데이터에서 id 가져오기
+                                                name: updatedData.value.name, // 업데이트된 데이터에서 name 가져오기
+                                                device_id: data.device_id.toLowerCase(),
+                                            },
+                                            checkData: updatedData.value // 업데이트된 데이터를 바로 사용
+                                        });
+                                    });
                                 });
-                                if(exists){
-                                    console.log('Duplicate device_id')
-                                    res.status(400).send('Duplicate device_id')
-                                    tableFind.close()
-                                }else{
-                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify.user_key,
-                                        company: "Sunil"})
-                                        .then(findData=>{
-                                            tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({user_key: tokenVerify.user_key,
-                                                company: "Sunil"},{
-                                                $set:{
-                                                    device_id:findData.device_id !== null ? findData.device_id+","+data.device_id.toLowerCase():
-                                                        data.device_id.toLowerCase()
-                                                }
-                                            })
-                                                .then(suc=>{
-                                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({user_key: tokenVerify.user_key,
-                                                        company: "Sunil"})
-                                                        .then(sendData=>{
-                                                            //console.log(`${findData.id}-${findData.name}-${data.device_id.toLowerCase()} saved`)
-                                                            res.status(200).json({msg:`Add a device_id saved Success`,
-                                                                target:{
-                                                                id:findData.id,
-                                                                    name:findData.name,
-                                                                    device_id:data.device_id.toLowerCase(),
-                                                                },
-                                                                checkData:sendData})
-                                                            tableFind.close()
-                                                        })
-
-                                                })
-
-                                        })
-                                }
-                            })
-
-
+                        })
+                        .finally(() => {
+                            tableFind.close(); // 모든 작업 완료 후 연결 종료
+                        });
                 })
+                .catch(error => {
+                    console.error('Error occurred:', error);
+                    res.status(500).send('Internal Server Error');
+                });
         },
 
 
