@@ -1183,10 +1183,9 @@ const api = function () {
             if(target === "saveUserKey"){
                 Client.connect(SUNIL_MONGO_URI)
                     .then(tableFind => {
-                        console.log(data)
-                        tableFind.db("Sunil-Doorbell").collection('users').findOneAndUpdate({id:data.user_id},
+                        tableFind.db("Sunil-Doorbell").collection('users').findOneAndUpdate({id:data.id},
                             {$set:{
-                                    user_key:data.userData.user_key
+                                    user_key:data.user_key
                                 }})
                             .then(suc => {
                                 console.log(suc)
@@ -1594,7 +1593,12 @@ const api = function () {
                                                 user_key:userData.user_key
                                             }})
                                         .then(findsData=>{
-                                            this.eaglesSafesOverseasSave("saveUserKey",bodyData)
+                                            let eaglesSave= {
+                                                id:bodyData.user_id,
+                                                user_key:userData.user_key
+                                            }
+
+                                            this.eaglesSafesOverseasSave("saveUserKey",eaglesSave)
                                             console.log(`Login-id:${bodyData.user_id}- user_key Save Success`)
                                             res.status(200).send('success')
                                             tableFind.close()
