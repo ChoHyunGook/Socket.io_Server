@@ -282,24 +282,38 @@ const api = function () {
             // S3에서 객체 삭제 함수
             async function deleteFromS3(lowerDeviceId) {
                 const s3 = new AWS.S3();
-                const s3ObjectKey = lowerDeviceId.replace(/:/g, '_');
+                const bucketName = "doorbell-video"
+                const directoryKey = lowerDeviceId.replace(/:/g, '_')+"/";
+                console.log(directoryKey);
 
-                const s3Params = {
-                    Bucket: "doorbell-video",
-                    Key: s3ObjectKey
+                // 디렉토리 내 객체 목록 가져오기
+                const listParams = {
+                    Bucket: bucketName,
+                    Prefix: directoryKey // 삭제할 디렉토리의 Prefix
                 };
 
                 try {
-                    await s3.deleteObject(s3Params).promise();
-                    console.log(`Deleted object from S3 with key: ${s3ObjectKey}`);
-                    return true; // 삭제 성공
-                } catch (error) {
-                    if (error.code !== 'NoSuchKey') {
-                        console.error(`Failed to delete object from S3:`, error);
-                    } else {
-                        console.log(`Object with key: ${s3ObjectKey} does not exist, skipping.`);
+                    const listData = await s3.listObjectsV2(listParams).promise();
+
+                    // 삭제할 객체가 있는지 확인
+                    if (listData.Contents.length === 0) {
+                        console.log(`No objects found in directory: ${directoryKey}`);
+                        return; // 삭제할 객체가 없음
                     }
-                    return false; // 삭제할 데이터 없음
+
+                    // 객체 삭제
+                    const deleteParams = {
+                        Bucket: bucketName,
+                        Delete: {
+                            Objects: listData.Contents.map(obj => ({ Key: obj.Key }))
+                        }
+                    };
+
+                    await s3.deleteObjects(deleteParams).promise();
+                    console.log(`Deleted all objects in directory: ${directoryKey}`);
+
+                } catch (error) {
+                    console.error(`Failed to delete objects from S3:`, error);
                 }
             }
 
