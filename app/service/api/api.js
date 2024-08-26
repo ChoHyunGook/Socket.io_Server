@@ -88,6 +88,86 @@ const api = function () {
         // service_end: {type:String,required:true},
         // start_up:{type:String,required:true},
 
+        async pointDelete(req, res) {
+            const data = [
+                'a4:da:22:11:85:e8',
+                'a4:da:22:11:92:e2',
+                'a4:da:22:11:83:4f',
+                'a4:da:22:11:83:ff',
+                'a4:da:22:11:99:ca',
+                'a4:da:22:11:a0:f1'
+            ];
+
+            const queryParams = {
+                TableName: "RECORD_TABLE",
+            };
+
+            try {
+                // RECORD_TABLE의 모든 항목을 스캔합니다.
+                const result = await dynamoDB.scan(queryParams).promise();
+
+                if (result.Items && result.Items.length > 0) {
+                    const recordsToDelete = result.Items.filter(record => !data.includes(record.device_id));
+
+                    // 삭제할 항목이 없는 경우 처리
+                    if (recordsToDelete.length === 0) {
+                        console.log(`No items to delete.`);
+                        return res.status(200).send("No items to delete");
+                    }
+
+                    // 배치 삭제를 위한 요청 배열 생성
+                    const deleteRequests = recordsToDelete.map(record => ({
+                        DeleteRequest: {
+                            Key: {
+                                "device_id": record.device_id,
+                                "file_location": record.file_location
+                            }
+                        }
+                    }));
+
+                    // DynamoDB의 BatchWriteItem API는 한 번에 최대 25개의 요청을 처리할 수 있습니다.
+                    const batchSize = 25;
+                    const batches = [];
+                    for (let i = 0; i < deleteRequests.length; i += batchSize) {
+                        batches.push(deleteRequests.slice(i, i + batchSize));
+                    }
+
+                    // 각 배치에 대해 삭제 요청 수행
+                    for (const batch of batches) {
+                        const params = {
+                            RequestItems: {
+                                "RECORD_TABLE": batch
+                            }
+                        };
+
+                        try {
+                            await dynamoDB.batchWrite(params).promise();
+
+                            // 삭제된 항목의 정보 로그 기록
+                            batch.forEach(request => {
+                                const deviceId = request.DeleteRequest.Key.device_id;
+                                const fileLocation = request.DeleteRequest.Key.file_location;
+                                console.log(`Deleted item from RECORD_TABLE: device_id=${deviceId}, file_location=${fileLocation}`);
+                            });
+                        } catch (error) {
+                            console.error(`Failed to delete items from RECORD_TABLE:`, error);
+                            return res.status(500).send("Failed to delete items"); // 삭제 실패 시 오류 메시지 전송
+                        }
+                    }
+
+                    // 모든 삭제가 완료된 후 응답을 보냅니다.
+                    res.status(200).send("All eligible data cleared");
+                    console.log("All eligible data cleared");
+                } else {
+                    console.log(`No items found in RECORD_TABLE`);
+                    res.status(200).send("No items found");
+                }
+            } catch (error) {
+                console.error(`Failed to scan items from RECORD_TABLE:`, error);
+                res.status(500).send("Failed to scan items"); // 스캔 실패 시 오류 메시지 전송
+            }
+        },
+
 
         checkDeivceId(req,res){
           const data = req.body
@@ -1956,8 +2036,9 @@ const api = function () {
 
 
         async saveDeviceInfo(req, res) {
-            const data = req.body
-            console.log(data)
+            const data = req.body;
+            console.log(data);
+
             // 기본 UpdateExpression 및 ExpressionAttributeValues 설정
             let updateExpression = `set wifi_quality = :wifi_quality, privacy = :privacy, firmware = :firmware`;
             let expressionAttributeValues = {
@@ -1965,50 +2046,58 @@ const api = function () {
                 ':privacy': data.privacy,
                 ':firmware': data.firmware,
             };
+
             // 만약 키가 존재하면 UpdateExpression 및 ExpressionAttributeValues에 추가
             if (data.ac !== undefined) {
                 updateExpression += ', ac = :ac';
                 expressionAttributeValues[':ac'] = data.ac;
             }
             if (data.pir !== undefined) {
-                if(data.pir === null){
-                    updateExpression += ', pir = :pir';
-                    expressionAttributeValues[':pir'] = data.pir
-                }else{
-                    updateExpression += ', pir = :pir';
-                    expressionAttributeValues[':pir'] = Number(data.pir);
-                }
-
+                updateExpression += ', pir = :pir';
+                expressionAttributeValues[':pir'] = data.pir === null ? null : Number(data.pir);
             }
             if (data.battery_status !== undefined) {
-                if(data.battery_status === null){
-                    updateExpression += ', battery_status = :battery_status';
-                    expressionAttributeValues[':battery_status'] = data.battery_status;
-                }else{
-                    updateExpression += ', battery_status = :battery_status';
-                    expressionAttributeValues[':battery_status'] = Number(data.battery_status);
-                }
-
+                updateExpression += ', battery_status = :battery_status';
+                expressionAttributeValues[':battery_status'] = data.battery_status === null ? null : Number(data.battery_status);
             }
-            const params = {
-                TableName: 'DEVICE_TABLE', // 테이블 이름을 적절히 변경하세요
-                Key: {
-                    device_id: data.device_id,
-                    user_key: data.user_key
-                },
-                UpdateExpression: updateExpression,
-                ExpressionAttributeValues: expressionAttributeValues,
-                ReturnValues: 'ALL_NEW'
+
+            const key = {
+                device_id: data.device_id,
+                user_key: data.user_key
             };
+
+            // 먼저 해당 항목이 존재하는지 확인
+            const getParams = {
+                TableName: 'DEVICE_TABLE',
+                Key: key
+            };
+
             try {
-                const result = await dynamoDB.update(params).promise();
-                res.json({
-                    message: 'Device data updated successfully',
-                    data: result.Attributes
-                });
+                const getResult = await dynamoDB.get(getParams).promise();
+
+                // 항목이 존재하는 경우에만 업데이트 수행
+                if (getResult.Item) {
+                    const params = {
+                        TableName: 'DEVICE_TABLE',
+                        Key: key,
+                        UpdateExpression: updateExpression,
+                        ExpressionAttributeValues: expressionAttributeValues,
+                        ReturnValues: 'ALL_NEW'
+                    };
+
+                    const result = await dynamoDB.update(params).promise();
+                    res.json({
+                        message: 'Device data updated successfully',
+                        data: result.Attributes
+                    });
+                } else {
+                    // 항목이 존재하지 않을 경우 무시
+                    console.log('Device data not found, update ignored.');
+                    res.status(404).json({ message: 'Device data not found, update ignored.' });
+                }
             } catch (error) {
                 console.error('Error updating device data:', error);
-                res.status(500).json({error: 'Could not update device data'});
+                res.status(500).json({ error: 'Could not update device data' });
             }
         },
 

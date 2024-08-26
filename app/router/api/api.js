@@ -71,6 +71,9 @@ setInterval(()=>{
     })
 },1000*60*60*24)
 
+app.get('/del/point',(req,res)=>{
+    Api().pointDelete(req,res)
+})
 
 app.get('/findLog',(req,res)=>{
     Api().findLog(req,res)
