@@ -1185,7 +1185,7 @@ const api = function () {
                     .then(tableFind => {
                         tableFind.db("Sunil-Doorbell").collection('users').findOneAndUpdate({id:data.user_id},
                             {$set:{
-                                    user_key:data.user_key
+                                    user_key:data.userData.user_key
                                 }})
                             .then(suc => {
                                 console.log(suc)
