@@ -1183,6 +1183,7 @@ const api = function () {
             if(target === "saveUserKey"){
                 Client.connect(SUNIL_MONGO_URI)
                     .then(tableFind => {
+                        console.log(data)
                         tableFind.db("Sunil-Doorbell").collection('users').findOneAndUpdate({id:data.user_id},
                             {$set:{
                                     user_key:data.userData.user_key
