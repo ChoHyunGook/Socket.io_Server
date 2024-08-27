@@ -181,7 +181,7 @@ const api = function () {
                 res.status(200).json({
                     recordLength:allRecordData.length,
                     s3Length:s3Data.length,
-                    deviceData: allDeviceDataResult || [],
+                    deviceData: allDeviceDataResult.Items[0] || [],
                     recordData: allRecordData || [],
                     s3Data: s3Data // S3 데이터
                 });
