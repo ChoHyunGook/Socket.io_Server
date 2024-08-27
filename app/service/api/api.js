@@ -1533,7 +1533,10 @@ const api = function () {
 
 
         async deleteHistory(req, res) {
+
             const data = req.body;
+            console.log(`:::::::::::페어링 시작 ::::::::::::`)
+            console.log(data)
             const s3 = new AWS.S3();
             const lowerDeviceId = data.device_id.toLowerCase();
             const trimmedDeviceId = lowerDeviceId.trim();
