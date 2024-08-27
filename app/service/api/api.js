@@ -1663,6 +1663,8 @@ const api = function () {
 
             try {
                 const userScanResult = await dynamoDB.get(userScanParams).promise();
+
+                // userScanResult.Item이 존재하는지 확인
                 if (userScanResult.Item) {
                     // fcm_token이 비어 있을 경우 saveFcmToken을 사용
                     const basicToken = userScanResult.Item.fcm_token ? userScanResult.Item.fcm_token + saveFcmToken : saveFcmToken;
@@ -1688,6 +1690,9 @@ const api = function () {
                     }
 
                     console.log(`USER_TABLE: fcm_token: ${userScanResult.Item.fcm_token}`);
+                } else {
+                    console.log(`USER_TABLE: 해당 user_key에 대한 데이터가 없습니다: ${data.user_key}`);
+                    userTableResults.push(`USER_TABLE: 해당 user_key에 대한 데이터가 없습니다: ${data.user_key}`);
                 }
             } catch (error) {
                 console.error(`USER_TABLE: 조회 실패`, error);
