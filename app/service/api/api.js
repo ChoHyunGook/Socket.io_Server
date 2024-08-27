@@ -89,82 +89,108 @@ const api = function () {
         // start_up:{type:String,required:true},
 
         async awsFindData(req, res) {
-            const data = req.body
-            const s3 = new AWS.S3();
+            const data = req.body;
             const deviceId = data.device_id.toLowerCase(); // 소문자로 변환
-            const userKey = await this.findUserKey(deviceId); // user_key 조회 함수 호출
-
-            if (!userKey) {
-                return res.status(404).json({message: 'User not found'});
-            }
-
-            // DEVICE_TABLE에서 데이터 조회
-            const getDeviceTableParams = {
-                TableName: "DEVICE_TABLE",
-                Key: {
-                    device_id: deviceId,
-                    user_key: userKey // 정렬키
-                }
-            };
-
-            // RECORD_TABLE에서 데이터 조회
-            const getRecordTableParams = {
-                TableName: "RECORD_TABLE",
-                KeyConditionExpression: 'device_id = :device_id',
-                ExpressionAttributeValues: {
-                    ':device_id': deviceId
-                }
-            };
-
-            // S3에서 데이터 조회
-            const s3ObjectPrefix = deviceId.split(':').join('_') + '/'; // "aa:ss:dd:ff:cc:zz" -> "aa_ss_dd_ff_cc_zz"
-            const getS3Params = {
-                Bucket: "doorbell-video",
-                Prefix: s3ObjectPrefix
-            };
 
             try {
-                // DEVICE_TABLE에서 데이터 조회
-                const deviceResult = await dynamoDB.get(getDeviceTableParams).promise();
+                // DEVICE_TABLE에서 device_id에 따른 모든 user_key 조회
+                const getDeviceTableParams = {
+                    TableName: "DEVICE_TABLE",
+                    KeyConditionExpression: 'device_id = :device_id',
+                    ExpressionAttributeValues: {
+                        ':device_id': deviceId // 파티션 키
+                    }
+                };
 
-                // RECORD_TABLE에서 데이터 조회
-                const recordResult = await dynamoDB.query(getRecordTableParams).promise();
+                const deviceResult = await dynamoDB.query(getDeviceTableParams).promise();
+
+                // user_key가 있는지 확인
+                const userKey = deviceResult.Items.length > 0 ? deviceResult.Items[0].user_key : null;
+
+                if (!userKey) {
+                    return res.status(404).json({ message: 'User key not found' });
+                }
+
+                const getAllDeviceDataParams = {
+                    TableName: "DEVICE_TABLE",
+                    KeyConditionExpression: 'device_id = :device_id and user_key = :user_key',
+                    ExpressionAttributeValues: {
+                        ':device_id': deviceId,
+                        ':user_key': userKey // user_key는 정렬 키로 필요
+                    }
+                };
+
+                const allDeviceDataResult = await dynamoDB.query(getAllDeviceDataParams).promise();
+
+
+
+                // RECORD_TABLE에서 device_id에 따른 모든 file_location 조회
+                const getFileLocationsParams = {
+                    TableName: "RECORD_TABLE",
+                    KeyConditionExpression: 'device_id = :device_id',
+                    ExpressionAttributeValues: {
+                        ':device_id': deviceId
+                    }
+                };
+
+                // RECORD_TABLE에서 file_location들 조회
+                const fileLocationResult = await dynamoDB.query(getFileLocationsParams).promise();
+
+                // 각 file_location에 대해 데이터 조회
+                const allRecordData = [];
+                for (const item of fileLocationResult.Items) {
+                    const fileLocation = item.file_location; // file_location 가져오기
+
+                    const getRecordDataParams = {
+                        TableName: "RECORD_TABLE",
+                        KeyConditionExpression: 'device_id = :device_id and file_location = :file_location',
+                        ExpressionAttributeValues: {
+                            ':device_id': deviceId,
+                            ':file_location': fileLocation // file_location은 정렬 키로 필요
+                        }
+                    };
+
+                    const recordDataResult = await dynamoDB.query(getRecordDataParams).promise();
+                    allRecordData.push(...recordDataResult.Items);
+                }
+                // date 기준으로 최신 순으로 정렬
+                allRecordData.sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 // S3에서 객체 목록 조회
-                const listedObjects = await s3.listObjectsV2(getS3Params).promise();
+                const s3ObjectPrefix = deviceId.split(':').join('_') + '/'; // "aa:bb:cc:dd:ff:ee" -> "aa_bb_cc_dd_ff_ee/"
+                const getS3Params = {
+                    Bucket: 'doorbell-video',
+                    Prefix: s3ObjectPrefix
+                };
+
+                let s3Data;
+                try {
+                    // S3에서 객체 목록 조회
+                    const listedObjects = await s3.listObjectsV2(getS3Params).promise();
+                    s3Data = listedObjects.Contents.length > 0 ? listedObjects.Contents : "데이터없음"; // 데이터가 없을 경우 메시지
+                    // S3 데이터도 최신 저장 시간 기준으로 정렬
+                    if (Array.isArray(s3Data)) {
+                        s3Data.sort((a, b) => new Date(b.LastModified) - new Date(a.LastModified));
+                    }
+                } catch (error) {
+                    // S3 조회 중 오류 발생 시 "데이터없음"으로 설정
+                    s3Data = [];
+                }
 
                 // 결과를 클라이언트에 전송
                 res.status(200).json({
-                    deviceData: deviceResult.Item || null,
-                    recordData: recordResult.Items || [],
-                    s3Data: listedObjects.Contents || []
+                    recordLength:allRecordData.length,
+                    s3Length:s3Data.length,
+                    deviceData: allDeviceDataResult || [],
+                    recordData: allRecordData || [],
+                    s3Data: s3Data // S3 데이터
                 });
 
             } catch (error) {
                 console.error("Error fetching data:", error);
-                res.status(500).json({message: 'Error fetching data', error: error.message});
+                res.status(500).json({ message: 'Error fetching data', error: error.message });
             }
 
-
-        },
-
-        // user_key를 조회하는 함수 (예시)
-        async findUserKey(deviceId) {
-            // 예시: DEVICE_TABLE에서 user_key를 조회하는 로직 작성
-            const params = {
-                TableName: "DEVICE_TABLE",
-                Key: {
-                    device_id: deviceId
-                }
-            };
-
-            try {
-                const result = await dynamoDB.get(params).promise();
-                return result.Item ? result.Item.user_key : null;
-            } catch (error) {
-                console.error("Error fetching user_key:", error);
-                return null;
-            }
         },
 
         readDoorbell(req,res){
