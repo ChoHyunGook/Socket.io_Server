@@ -1537,6 +1537,7 @@ const api = function () {
             const s3 = new AWS.S3();
             const lowerDeviceId = data.device_id.toLowerCase();
             const trimmedDeviceId = lowerDeviceId.trim();
+            let userTableResults = []
             let deviceTableResults = []
             let historyTableResults = []
             let recordTableResults = [];
@@ -1647,15 +1648,79 @@ const api = function () {
                 s3Results.push(`S3: 삭제 실패 deviceId: ${trimmedDeviceId}`);
             }
 
+
+            //User_Table 업데이트
+            const saveFcmToken = data.body.fcm_token + "+" + data.body.upKey + "+";
+            const userScanParams = {
+                TableName: "USER_TABLE",
+                Key: {
+                    user_key: data.user_key
+                }
+            };
+
+            try {
+                const userScanResult = await dynamoDB.get(userScanParams).promise();
+                if (userScanResult.Item) {
+                    // fcm_token이 비어 있을 경우 saveFcmToken을 사용
+                    const basicToken = userScanResult.Item.fcm_token ? userScanResult.Item.fcm_token + saveFcmToken : saveFcmToken;
+
+                    const UserParams = {
+                        TableName: 'USER_TABLE',
+                        Key: {
+                            user_key: data.user_key // 파티션 키
+                        },
+                        UpdateExpression: 'set fcm_token = :fcm_token',
+                        ExpressionAttributeValues: {
+                            ':fcm_token': basicToken
+                        },
+                        ReturnValues: 'UPDATED_NEW' // 업데이트된 값을 반환
+                    };
+
+                    try {
+                        const result = await dynamoDB.update(UserParams).promise();
+                        console.log('Update succeeded:', result);
+                        userTableResults.push(`USER_TABLE: 저장 : ${saveFcmToken}`);
+                    } catch (error) {
+                        console.error('Unable to update item. Error:', error);
+                    }
+
+                    console.log(`USER_TABLE: fcm_token: ${userScanResult.Item.fcm_token}`);
+                }
+            } catch (error) {
+                console.error(`USER_TABLE: 조회 실패`, error);
+            }
+
+            // const params = {
+            //     TableName: 'USER_TABLE',
+            //     Key: data.user_key,
+            //     UpdateExpression: "set device_name = :dn",
+            //     ExpressionAttributeValues: expressionAttributeValues,
+            //     ReturnValues: 'ALL_NEW'
+            // };
+            //
+            // const result = await dynamoDB.update(params).promise();
+
+
             console.log({
                 mongo_db: historyTableResults,
-                dynamo_db: recordTableResults,
+                dynamo_db: {
+                    user:userTableResults,
+                    record:recordTableResults,
+                    device:deviceTableResults
+                },
                 s3_bucket: s3Results
             })
+
+
+
             // 결과 응답
             res.status(200).json({
                 mongo_db: historyTableResults,
-                dynamo_db: recordTableResults,
+                dynamo_db: {
+                    user:userTableResults,
+                    record:recordTableResults,
+                    device:deviceTableResults
+                },
                 s3_bucket: s3Results
             });
 
