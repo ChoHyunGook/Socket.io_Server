@@ -1653,7 +1653,7 @@ const api = function () {
 
 
             //User_Table 업데이트
-            const saveFcmToken = data.body.fcm_token + "+" + data.body.upKey + "+";
+            const saveFcmToken = data.fcm_token + "+" + data.upKey + "+";
             const userScanParams = {
                 TableName: "USER_TABLE",
                 Key: {
