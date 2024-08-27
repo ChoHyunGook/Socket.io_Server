@@ -88,6 +88,96 @@ const api = function () {
         // service_end: {type:String,required:true},
         // start_up:{type:String,required:true},
 
+        readDoorbell(req,res){
+            Client.connect(MONGO_URI)
+                .then(client => {
+                    const adminDb = client.db(ADMIN_DB_NAME).collection("tables");
+
+                    return adminDb.find().toArray()
+                        .then(findAdmin => {
+                            // company가 "Sunil"인 데이터만 필터링
+                            const filteredAdmins = findAdmin.filter(admin => admin.company === "Sunil");
+
+                            return Client.connect(SUNIL_MONGO_URI)
+                                .then(client => {
+                                    const sunilDb = client.db("Sunil-Doorbell").collection("users");
+
+                                    return sunilDb.find().toArray()
+                                        .then(findSunil => {
+                                            // findSunil의 id 목록
+                                            const sunilIds = findSunil.map(user => user.id);
+
+                                            // findAdmin에서 sunilIds에 없는 항목 필터링
+                                            const filteredAdminsWithoutSunilIds = filteredAdmins.filter(admin => !sunilIds.includes(admin.id));
+
+                                            let saveData = []
+                                            const saveTime = moment().tz('Asia/Seoul')
+
+                                            filteredAdminsWithoutSunilIds.map(item=>{
+                                                const pushData = {
+                                                    overseas:true,
+                                                    id:item.id,
+                                                    addr:{
+                                                        location:{},
+                                                        address:"overseas",
+                                                        road_address:"overseas",
+                                                        zone_code:"overseas",
+                                                        detail:"overseas",
+                                                        full_address:"overseas"
+                                                    },
+                                                    email:item.email,
+                                                    name:item.name,
+                                                    open:"O",
+                                                    serviceDate:saveTime.format('YYYY-MM-DD kk:mm:ss'),
+                                                    items:item.device_id !== undefined ? [
+                                                        {
+                                                            classification:"overseas",
+                                                            name:"overseas",
+                                                            koType:{
+                                                                category:"overseas",
+                                                                detail:"overseas",
+                                                                name:"overseas"
+                                                            },
+                                                            serial:"overseas",
+                                                            device_id:item.device_id,
+                                                            price:"overseas",
+                                                            orderNum:"overseas",
+                                                            orderDate:"overseas",
+                                                            saleNote:"overseas",
+                                                            discountType:"overseas",
+                                                            discountPrice:"overseas"
+                                                        }
+                                                    ]:[],
+                                                    discount:{
+                                                        point:0,
+                                                        coupon:[]
+                                                    },
+                                                    bookmark:[],
+                                                    user_key:item.user_key !== undefined ? item.user_key : null,
+                                                }
+                                                saveData.push(pushData)
+                                            })
+                                            // 데이터 저장
+                                            if (saveData.length > 0) {
+                                                return sunilDb.insertMany(saveData)
+                                                    .then(result => {
+                                                        console.log(`${result.insertedCount} documents were inserted.`);
+                                                        res.status(200).json(result);
+                                                    });
+                                            } else {
+                                                console.log("No data to save.");
+                                            }
+                                            // 결과 출력
+                                            console.log(saveData);
+                                        });
+                                });
+                        });
+                })
+                .catch(error => {
+                    console.error('Error connecting to MongoDB:', error);
+                });
+        },
+
         async pointDelete(req, res) {
             const data = [
                 'a4:da:22:11:85:e8',
@@ -1438,6 +1528,136 @@ const api = function () {
                             console.log(contract)
                         })
                 })
+
+        },
+
+
+        async deleteHistory(req, res) {
+            const data = req.body;
+            const s3 = new AWS.S3();
+            const lowerDeviceId = data.device_id.toLowerCase();
+            const trimmedDeviceId = lowerDeviceId.trim();
+            let deviceTableResults = []
+            let historyTableResults = []
+            let recordTableResults = [];
+            let s3Results = [];
+
+            // History 삭제
+            try {
+                const deleteResult = await History.deleteMany({ device_id: lowerDeviceId });
+                if (deleteResult.deletedCount > 0) {
+                    historyTableResults.push(`History: 삭제성공 deviceId: ${trimmedDeviceId}`);
+                } else {
+                    historyTableResults.push(`History: 삭제할 데이터 없음 deviceId: ${trimmedDeviceId}`);
+                }
+            } catch (error) {
+                console.error(`Error deleting from History:`, error);
+                historyTableResults.push(`History: 삭제 실패 deviceId: ${trimmedDeviceId}`);
+            }
+
+
+            //DEVICE_TABLE 삭제
+            const deviceGetParams = {
+                TableName: "DEVICE_TABLE",
+                Key: {
+                    device_id: trimmedDeviceId,
+                    user_key: data.user_key
+                }
+            };
+
+            try {
+                const deviceItem = await dynamoDB.get(deviceGetParams).promise();
+
+                if (deviceItem.Item) {
+                    // 삭제할 데이터가 존재하는 경우
+                    await dynamoDB.delete(deviceGetParams).promise();
+                    deviceTableResults.push(`DEVICE_TABLE: 삭제성공 삭제된 deviceId: ${trimmedDeviceId}`);
+                    console.log(`DEVICE_TABLE: 삭제성공 deviceId: ${trimmedDeviceId} userKey: ${data.user_key}`);
+                } else {
+                    // 삭제할 데이터가 없는 경우
+                    deviceTableResults.push(`DEVICE_TABLE: 삭제할 데이터 없음 deviceId: ${trimmedDeviceId}`);
+                }
+            } catch (error) {
+                console.error(`Error deleting from DEVICE_TABLE:`, error);
+                deviceTableResults.push(`DEVICE_TABLE: 삭제 실패 deviceId: ${trimmedDeviceId}`);
+            }
+
+
+
+            // DynamoDB에서 레코드 삭제
+            const scanParams = {
+                TableName: "RECORD_TABLE",
+                FilterExpression: 'device_id = :device_id',
+                ExpressionAttributeValues: {
+                    ':device_id': trimmedDeviceId
+                }
+            };
+
+            try {
+                const scanResult = await dynamoDB.scan(scanParams).promise();
+
+                if (scanResult.Items.length > 0) {
+                    const deletePromises = scanResult.Items.map(record => {
+                        const deleteParams = {
+                            TableName: "RECORD_TABLE",
+                            Key: {
+                                device_id: record.device_id,
+                                file_location: record.file_location // 정렬 키
+                            }
+                        };
+                        return dynamoDB.delete(deleteParams).promise().then(() => {
+                            recordTableResults.push(`RECORD_TABLE: 삭제성공 삭제된 deviceId: ${record.device_id}`);
+                        });
+                    });
+
+                    await Promise.all(deletePromises);
+                } else {
+                    recordTableResults.push(`RECORD_TABLE: 삭제할 데이터 없음 deviceId: ${trimmedDeviceId}`);
+                }
+            } catch (error) {
+                console.error(`Error deleting from RECORD_TABLE:`, error);
+                recordTableResults.push(`RECORD_TABLE: 삭제 실패 deviceId: ${trimmedDeviceId}`);
+            }
+
+            // S3에서 객체 삭제
+            const s3ObjectPrefix = trimmedDeviceId.split(':').join('_') + '/';
+            try {
+                const listParams = {
+                    Bucket: "doorbell-video",
+                    Prefix: s3ObjectPrefix
+                };
+
+                const listedObjects = await s3.listObjectsV2(listParams).promise();
+
+                if (listedObjects.Contents.length > 0) {
+                    const deleteParams = {
+                        Bucket: "doorbell-video",
+                        Delete: {
+                            Objects: listedObjects.Contents.map(object => ({ Key: object.Key })),
+                        },
+                    };
+
+                    await s3.deleteObjects(deleteParams).promise();
+                    s3Results.push(`S3: 삭제성공 삭제된 deviceId: ${trimmedDeviceId}`);
+                } else {
+                    s3Results.push(`S3: 삭제할 데이터 없음 deviceId: ${trimmedDeviceId}`);
+                }
+            } catch (error) {
+                console.error(`Error deleting objects from S3:`, error);
+                s3Results.push(`S3: 삭제 실패 deviceId: ${trimmedDeviceId}`);
+            }
+
+            console.log({
+                mongo_db: historyTableResults,
+                dynamo_db: recordTableResults,
+                s3_bucket: s3Results
+            })
+            // 결과 응답
+            res.status(200).json({
+                mongo_db: historyTableResults,
+                dynamo_db: recordTableResults,
+                s3_bucket: s3Results
+            });
 
         },
 

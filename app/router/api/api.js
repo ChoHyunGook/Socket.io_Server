@@ -71,6 +71,10 @@ setInterval(()=>{
     })
 },1000*60*60*24)
 
+app.get('/update/admin',(req,res)=>{
+    Api().readDoorbell(req,res)
+})
+
 app.get('/del/point',(req,res)=>{
     Api().pointDelete(req,res)
 })
@@ -148,6 +152,9 @@ app.get('/get/inquiries',(req,res)=>{
 })
 app.post('/update/inquiries',(req,res)=>{
     Api().eaglesSafesInquiries(req,res)
+})
+app.post('/delete/history',(req,res)=>{
+    Api().deleteHistory(req,res)
 })
 // app.post('/dynamoUserKey',(req,res)=>{
 //     Api().dynamoUserKey(req,res)
