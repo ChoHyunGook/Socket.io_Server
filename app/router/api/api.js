@@ -72,7 +72,7 @@ setInterval(()=>{
 },1000*60*60*24)
 
 
-app.get('/get/aws/table',(req,res)=>{
+app.post('/get/aws/table',(req,res)=>{
     Api().awsFindData(req,res)
 })
 
