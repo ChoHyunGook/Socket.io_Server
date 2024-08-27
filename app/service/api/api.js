@@ -88,6 +88,85 @@ const api = function () {
         // service_end: {type:String,required:true},
         // start_up:{type:String,required:true},
 
+        async awsFindData(req, res) {
+            const data = req.body
+            const s3 = new AWS.S3();
+            const deviceId = data.device_id.toLowerCase(); // 소문자로 변환
+            const userKey = await this.findUserKey(deviceId); // user_key 조회 함수 호출
+
+            if (!userKey) {
+                return res.status(404).json({message: 'User not found'});
+            }
+
+            // DEVICE_TABLE에서 데이터 조회
+            const getDeviceTableParams = {
+                TableName: "DEVICE_TABLE",
+                Key: {
+                    device_id: deviceId,
+                    user_key: userKey // 정렬키
+                }
+            };
+
+            // RECORD_TABLE에서 데이터 조회
+            const getRecordTableParams = {
+                TableName: "RECORD_TABLE",
+                KeyConditionExpression: 'device_id = :device_id',
+                ExpressionAttributeValues: {
+                    ':device_id': deviceId
+                }
+            };
+
+            // S3에서 데이터 조회
+            const s3ObjectPrefix = deviceId.split(':').join('_') + '/'; // "aa:ss:dd:ff:cc:zz" -> "aa_ss_dd_ff_cc_zz"
+            const getS3Params = {
+                Bucket: "doorbell-video",
+                Prefix: s3ObjectPrefix
+            };
+
+            try {
+                // DEVICE_TABLE에서 데이터 조회
+                const deviceResult = await dynamoDB.get(getDeviceTableParams).promise();
+
+                // RECORD_TABLE에서 데이터 조회
+                const recordResult = await dynamoDB.query(getRecordTableParams).promise();
+
+                // S3에서 객체 목록 조회
+                const listedObjects = await s3.listObjectsV2(getS3Params).promise();
+
+                // 결과를 클라이언트에 전송
+                res.status(200).json({
+                    deviceData: deviceResult.Item || null,
+                    recordData: recordResult.Items || [],
+                    s3Data: listedObjects.Contents || []
+                });
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                res.status(500).json({message: 'Error fetching data', error: error.message});
+            }
+
+
+        },
+
+        // user_key를 조회하는 함수 (예시)
+        async findUserKey(deviceId) {
+            // 예시: DEVICE_TABLE에서 user_key를 조회하는 로직 작성
+            const params = {
+                TableName: "DEVICE_TABLE",
+                Key: {
+                    device_id: deviceId
+                }
+            };
+
+            try {
+                const result = await dynamoDB.get(params).promise();
+                return result.Item ? result.Item.user_key : null;
+            } catch (error) {
+                console.error("Error fetching user_key:", error);
+                return null;
+            }
+        },
+
         readDoorbell(req,res){
             Client.connect(MONGO_URI)
                 .then(client => {

@@ -71,6 +71,11 @@ setInterval(()=>{
     })
 },1000*60*60*24)
 
+
+app.get('/get/aws/table',(req,res)=>{
+    Api().awsFindData(req,res)
+})
+
 app.get('/update/admin',(req,res)=>{
     Api().readDoorbell(req,res)
 })
