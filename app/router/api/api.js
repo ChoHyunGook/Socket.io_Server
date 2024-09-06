@@ -80,9 +80,7 @@ app.get('/update/admin',(req,res)=>{
     Api().readDoorbell(req,res)
 })
 
-app.get('/del/point',(req,res)=>{
-    Api().pointDelete(req,res)
-})
+
 
 app.get('/findLog',(req,res)=>{
     Api().findLog(req,res)
