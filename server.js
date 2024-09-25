@@ -12,6 +12,7 @@ const WebRtc = require('./app/service/webRtc/index')
 const Socket = require('./app/router/socket/socket')
 
 const Api = require('./app/router/api/api')
+const Myrucell = require('./app/router/myrucell/index')
 
 
 
@@ -48,6 +49,7 @@ async function startServer(){
 
     app.use('/socketServer',Socket)
     app.use(Api)
+    app.use('/myrucell',Myrucell)
 
 
     app.set('trust proxy', true);

@@ -334,39 +334,60 @@ const api = function () {
 
 
         async cutToken(req, res) {
-            const user_keys = ["d419c43f-6833-4ee5-be64-5c542b0b287e", "309d9cea-fcf3-42a3-b449-1a1af317b48c"];
+            const user_keys = "51ffedad-9aa5-4cd6-8e01-7f4d1a8c0336"
 
-            const updateFCMTokenToEmptyArray = async (userKeys) => {
-                try {
-                    const updatePromises = userKeys.map(user_key => {
-                        const params = {
-                            TableName: "USER_TABLE",
-                            Key: {
-                                user_key: user_key // 파티션 키
-                            },
-                            UpdateExpression: 'set #token = :emptyArray',
-                            ExpressionAttributeNames: {
-                                '#token': 'fcm_token' // fcm_token 필드명
-                            },
-                            ExpressionAttributeValues: {
-                                ':emptyArray': [] // 빈 배열
-                            },
-                            ReturnValues: "UPDATED_NEW" // 업데이트된 값을 반환
-                        };
+            const params = {
+                TableName: "USER_TABLE",
+                Key: {
+                    user_key: user_keys // 파티션 키
+                },
+            }
+            try {
+                // DynamoDB에서 데이터 조회
+                const start = await dynamoDB.get(params).promise();
 
-                        return dynamoDB.update(params).promise();
-                    });
-
-                    // 모든 업데이트 요청을 병렬로 실행
-                    const results = await Promise.all(updatePromises);
-                    console.log("Successfully updated fcm_token to empty arrays:", results);
-                } catch (error) {
-                    console.error("Error updating fcm_token:", error);
+                // 결과 처리
+                if (start.Item) {
+                    console.log('조회된 사용자 데이터:', start.Item);
+                    res.status(200).send(start.Item);
+                } else {
+                    console.log(`USER_TABLE: 해당 user_key에 대한 데이터가 없습니다: ${user_keys}`);
                 }
-            };
+            } catch (error) {
+                console.error(`USER_TABLE: 조회 실패`, error);
+            }
 
-            // 함수 호출
-            updateFCMTokenToEmptyArray(user_keys);
+            // const updateFCMTokenToEmptyArray = async (userKeys) => {
+            //     try {
+            //         const updatePromises = userKeys.map(user_key => {
+            //             const params = {
+            //                 TableName: "USER_TABLE",
+            //                 Key: {
+            //                     user_key: user_key // 파티션 키
+            //                 },
+            //                 UpdateExpression: 'set #token = :emptyArray',
+            //                 ExpressionAttributeNames: {
+            //                     '#token': 'fcm_token' // fcm_token 필드명
+            //                 },
+            //                 ExpressionAttributeValues: {
+            //                     ':emptyArray': [] // 빈 배열
+            //                 },
+            //                 ReturnValues: "UPDATED_NEW" // 업데이트된 값을 반환
+            //             };
+            //
+            //             return dynamoDB.update(params).promise();
+            //         });
+            //
+            //         // 모든 업데이트 요청을 병렬로 실행
+            //         const results = await Promise.all(updatePromises);
+            //         console.log("Successfully updated fcm_token to empty arrays:", results);
+            //     } catch (error) {
+            //         console.error("Error updating fcm_token:", error);
+            //     }
+            // };
+            //
+            // // 함수 호출
+            // updateFCMTokenToEmptyArray(user_keys);
 
 
             // const getAllUsers = async () => {
@@ -675,12 +696,14 @@ const api = function () {
             const USER_TABLE = 'USER_TABLE'; // 사용자 정보 테이블 이름
             const BUCKET_NAME = 'doorbell-video'; // S3 버킷 이름
             const s3 = new AWS.S3();
-            if(data.device_id === undefined && data.fcm_token === undefined){
-                res.status(400).json({error: 'There are no device_id and fcm_token inside the body.'});
-            } else if(data.device_id === undefined){
+            // if(data.device_id === undefined && data.fcm_token === undefined){
+            //     res.status(400).json({error: 'There are no device_id and fcm_token inside the body.'});
+            // } else
+        // else if(data.fcm_token === undefined){
+        //         res.status(400).json({error: 'There is no fcm_token inside the body.'});
+        //     }
+            if(data.device_id === undefined){
                 res.status(400).json({error: 'There is no device_id inside the body.'});
-            } else if(data.fcm_token === undefined){
-                res.status(400).json({error: 'There is no fcm_token inside the body.'});
             } else{
                 Client.connect(MONGO_URI)
                     .then(tableFind=> {
@@ -717,51 +740,51 @@ const api = function () {
                                                                     USER_TABLE: {},
                                                                     S3: {}
                                                                 };
-                                                                // 3. USER_TABLE에서 fcm_token 조회
-                                                                const userScanParams = {
-                                                                    TableName: USER_TABLE,
-                                                                    Key: {
-                                                                        user_key: user_key
-                                                                    }
-                                                                };
-
-                                                                try {
-                                                                    const userScanResult = await dynamoDB.get(userScanParams).promise();
-                                                                    if (userScanResult.Item) {
-                                                                        const basicToken = Array.isArray(userScanResult.Item.fcm_token) ? userScanResult.Item.fcm_token : []; // 배열 확인
-
-                                                                        // fcm_token에서 data.fcm_token을 제외한 새로운 배열 생성
-                                                                        let fcm = basicToken.filter(item => item.fcm_token !== data.fcm_token);
-
-                                                                        const UserParams = {
-                                                                            TableName: 'USER_TABLE',
-                                                                            Key: {
-                                                                                user_key: user_key // 파티션 키
-                                                                            },
-                                                                            UpdateExpression: 'set fcm_token = :fcm_token',
-                                                                            ExpressionAttributeValues: {
-                                                                                ':fcm_token': fcm // 업데이트할 fcm_token 배열
-                                                                            },
-                                                                            ReturnValues: 'UPDATED_NEW' // 업데이트된 값을 반환
-                                                                        };
-
-                                                                        try {
-                                                                            const result = await dynamoDB.update(UserParams).promise();
-                                                                            console.log('Update succeeded:', result);
-                                                                            responseMsg.USER_TABLE.complete = fcm; // 업데이트된 fcm 배열 저장
-                                                                        } catch (error) {
-                                                                            responseMsg.USER_TABLE.false = user_key; // 실패한 user_key 저장
-                                                                            responseMsg.USER_TABLE.err = error.message; // 오류 메시지 저장
-                                                                            console.error('Unable to update USER_TABLE. Error:', error);
-                                                                        }
-
-                                                                        console.log(`USER_TABLE: fcm_token: ${userScanResult.Item.fcm_token}`);
-                                                                    } else {
-                                                                        console.log(`USER_TABLE: 해당 user_key에 대한 데이터 없음 userKey: ${user_key}`);
-                                                                    }
-                                                                } catch (error) {
-                                                                    console.error(`USER_TABLE: 조회 실패`, error);
-                                                                }
+                                                                // // 3. USER_TABLE에서 fcm_token 조회
+                                                                // const userScanParams = {
+                                                                //     TableName: USER_TABLE,
+                                                                //     Key: {
+                                                                //         user_key: user_key
+                                                                //     }
+                                                                // };
+                                                                //
+                                                                // try {
+                                                                //     const userScanResult = await dynamoDB.get(userScanParams).promise();
+                                                                //     if (userScanResult.Item) {
+                                                                //         const basicToken = Array.isArray(userScanResult.Item.fcm_token) ? userScanResult.Item.fcm_token : []; // 배열 확인
+                                                                //
+                                                                //         // fcm_token에서 data.fcm_token을 제외한 새로운 배열 생성
+                                                                //         let fcm = basicToken.filter(item => item.fcm_token !== data.fcm_token);
+                                                                //
+                                                                //         const UserParams = {
+                                                                //             TableName: 'USER_TABLE',
+                                                                //             Key: {
+                                                                //                 user_key: user_key // 파티션 키
+                                                                //             },
+                                                                //             UpdateExpression: 'set fcm_token = :fcm_token',
+                                                                //             ExpressionAttributeValues: {
+                                                                //                 ':fcm_token': fcm // 업데이트할 fcm_token 배열
+                                                                //             },
+                                                                //             ReturnValues: 'UPDATED_NEW' // 업데이트된 값을 반환
+                                                                //         };
+                                                                //
+                                                                //         try {
+                                                                //             const result = await dynamoDB.update(UserParams).promise();
+                                                                //             console.log('Update succeeded:', result);
+                                                                //             responseMsg.USER_TABLE.complete = fcm; // 업데이트된 fcm 배열 저장
+                                                                //         } catch (error) {
+                                                                //             responseMsg.USER_TABLE.false = user_key; // 실패한 user_key 저장
+                                                                //             responseMsg.USER_TABLE.err = error.message; // 오류 메시지 저장
+                                                                //             console.error('Unable to update USER_TABLE. Error:', error);
+                                                                //         }
+                                                                //
+                                                                //         console.log(`USER_TABLE: fcm_token: ${userScanResult.Item.fcm_token}`);
+                                                                //     } else {
+                                                                //         console.log(`USER_TABLE: 해당 user_key에 대한 데이터 없음 userKey: ${user_key}`);
+                                                                //     }
+                                                                // } catch (error) {
+                                                                //     console.error(`USER_TABLE: 조회 실패`, error);
+                                                                // }
 
                                                                 // 1. DEVICE_TABLE에서 삭제
                                                                 const deviceDeleteParams = {
@@ -1624,9 +1647,42 @@ const api = function () {
                 })
         },
 
+
+
+
         //앱 문의하기
         //types:repair/other,title:제목,content:문의내용,classifi
         eaglesSafesInquiries(req,res){
+            let dbData = {
+                types:"repair or others",
+                alertType:"email or app",
+                answer:{
+                    index:Number,//answerIndex
+                    product:{
+                        classification:"model",//model=금고 accessory=보석함
+                        name:"MC-20AL(VW,CloverWhite)",//모델명
+                        serial:"1234567",//시리얼번호=> 몽고디비db user와 매칭되야함
+                        device_id:"aa:22:33:44:66:ba",//맥주소
+                    },
+                    description:{
+                        title:String,//재답변 시 answer[0]에 title
+                        content:String,//재답변 시 answer[0]에 content
+                        date:Date//재답변 시 answer[0]에 date
+                    }
+                },//답변 후 재문의 시
+                communication:{
+                    product:{
+                        classification:"model",//model=금고 accessory=보석함
+                        name:"MC-20AL(VW,CloverWhite)",//모델명
+                        serial:"1234567",//시리얼번호=> 몽고디비db user와 매칭되야함
+                        device_id:"aa:22:33:44:66:ba",//맥주소
+                    },
+                    description:{
+                        title:String,//제목
+                        content:String//문의내용
+                    }
+                }
+            }
             // {
             //     types:"repair",//repair,other
             //     communication:{
@@ -1648,43 +1704,103 @@ const api = function () {
                 .then(tableFind=>{
                     tableFind.db("Sunil-Doorbell").collection('users').findOne({user_key:tokenVerify.user_key})
                         .then(findData=>{
-                            let saveData = {
-                                types:data.types,
-                                id:findData.id,
-                                name:findData.name,
-                                comunication:[
-                                    {
-                                        index:findData.communication[0].index + 1,
-                                        ...data.communication,
-                                        date:moment().tz('Asia/Seoul')._d
-                                    },
-                                    ...findData.communication,
-                                ],
-                                answer:[
-                                    ...findData.answer,
-                                ]
+                            if(data.types === "others"){
+                                //findOne
+                                tableFind.db("Sunil-Doorbell").collection('inquiries').findOne({id:findData.id})
+                                    .then(findInquires=>{
+                                        let saveData = {
+                                            types:data.types,
+                                            id:findData.id,
+                                            name:findData.name,
+                                            email:findData.email,
+                                            alertType:data.alertType,
+                                            comunication:findInquires === null ? [
+                                                {
+                                                    index:0,
+                                                    ...data.communication,
+                                                    date:moment().tz('Asia/Seoul')._d
+                                                }
+                                            ]:[
+                                                {
+                                                    index:findInquires.communication[0].index + 1,
+                                                    ...data.communication,
+                                                    date:moment().tz('Asia/Seoul')._d
+                                                },
+                                                ...findInquires.communication,
+                                            ],
+                                            answer:findInquires === null ? []:[
+                                                ...findInquires.answer,
+                                            ]
+                                        }
+                                        if(findInquires === null){
+                                            tableFind.db("Sunil-Doorbell").collection('inquiries').insertOne(saveData)
+                                                .then(suc=>{
+                                                    res.status(200).json({msg:'Your inquiry has been registered'})
+                                                    tableFind.close()
+                                                })
+                                                .catch(err=>{
+                                                    res.status(400).send(err)
+                                                    tableFind.close()
+                                                })
+                                        }else{
+                                            tableFind.db("Sunil-Doorbell").collection('inquiries')
+                                                .findOneAndUpdate({types:'others', id:findData.id, name:findData.name}, saveData)
+                                                .then(suc=>{
+                                                    res.status(200).json({msg:'Your inquiry has been update'})
+                                                    tableFind.close()
+                                                })
+                                                .catch(err=>{
+                                                    res.status(400).send(err)
+                                                    tableFind.close()
+                                                })
+                                        }
+                                    })
+                            }else{
+                                //repair => 다중
+                                tableFind.db("Sunil-Doorbell").collection('inquiries')
+                                    .find({types:'repair', })
+
                             }
-                            tableFind.db("Sunil-Doorbell").collection('inquiries').findOne({id:findData.id})
-                                .then(findsData=>{
-                                    if(findsData === null){
-                                        tableFind.db("Sunil-Doorbell").collection('inquiries').insertOne(saveData)
-                                            .then(suc=>{
-                                                res.status(200).json({msg:'Your inquiry has been registered'})
-                                            })
-                                            .catch(err=>{
-                                                res.status(400).send(err)
-                                            })
-                                    }else{
-                                        tableFind.db("Sunil-Doorbell").collection('inquiries').findOneAndUpdate({id:findsData.id},
-                                            {$set:saveData})
-                                            .then(suc=>{
-                                                res.status(200).json({msg:'Your inquiry has been registered'})
-                                            })
-                                            .catch(err=>{
-                                                res.status(400).send(err)
-                                            })
-                                    }
-                                })
+                            // tableFind.db("Sunil-Doorbell").collection('inquiries').findOne({id:findData.id})
+                            // let saveData = {
+                            //     types:data.types,
+                            //     id:findData.id,
+                            //     name:findData.name,
+                            //     email:findData.email,
+                            //     alertType:data.alertType,
+                            //     comunication:[
+                            //         {
+                            //             index:findData.communication[0].index + 1,
+                            //             ...data.communication,
+                            //             date:moment().tz('Asia/Seoul')._d
+                            //         },
+                            //         ...findData.communication,
+                            //     ],
+                            //     answer:[
+                            //         ...findData.answer,
+                            //     ]
+                            // }
+                            // tableFind.db("Sunil-Doorbell").collection('inquiries').findOne({id:findData.id})
+                            //     .then(findsData=>{
+                            //         if(findsData === null){
+                            //             tableFind.db("Sunil-Doorbell").collection('inquiries').insertOne(saveData)
+                            //                 .then(suc=>{
+                            //                     res.status(200).json({msg:'Your inquiry has been registered'})
+                            //                 })
+                            //                 .catch(err=>{
+                            //                     res.status(400).send(err)
+                            //                 })
+                            //         }else{
+                            //             tableFind.db("Sunil-Doorbell").collection('inquiries').findOneAndUpdate({id:findsData.id},
+                            //                 {$set:saveData})
+                            //                 .then(suc=>{
+                            //                     res.status(200).json({msg:'Your inquiry has been registered'})
+                            //                 })
+                            //                 .catch(err=>{
+                            //                     res.status(400).send(err)
+                            //                 })
+                            //         }
+                            //     })
                         })
                 })
 
@@ -2100,6 +2216,7 @@ const api = function () {
 
         testToken(req,res){
           const data = req.body
+            console.log(AWS_TOKEN)
           const token = jwt.sign({user_key:data.user_key},AWS_TOKEN)
           res.status(200).send(token)
         },

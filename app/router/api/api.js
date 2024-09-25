@@ -11,6 +11,7 @@ var upload = multer({storage: storage});
 const moment = require("moment-timezone");
 const db = require("../../DataBase")
 const semiDate = require("../../service/Data/date")
+const EagleSafesInquiries = require("../../service/myrucell");
 
 
 const {
@@ -72,6 +73,9 @@ setInterval(()=>{
 },1000*60*60*24)
 
 
+
+
+
 app.post('/get/aws/table',(req,res)=>{
     Api().awsFindData(req,res)
 })
@@ -79,7 +83,6 @@ app.post('/get/aws/table',(req,res)=>{
 app.get('/update/admin',(req,res)=>{
     Api().readDoorbell(req,res)
 })
-
 
 
 app.get('/findLog',(req,res)=>{
@@ -150,12 +153,12 @@ app.post('/update/pw',(req,res)=>{
 app.get('/testInquiries',(req,res)=>{
     Api().inquTest(req,res)
 })
-app.get('/get/inquiries',(req,res)=>{
-    Api().getInquiries(req,res)
-})
-app.post('/update/inquiries',(req,res)=>{
-    Api().eaglesSafesInquiries(req,res)
-})
+// app.get('/get/inquiries',(req,res)=>{
+//     Api().getInquiries(req,res)
+// })
+// app.post('/update/inquiries',(req,res)=>{
+//     Api().eaglesSafesInquiries(req,res)
+// })
 app.post('/delete/history',(req,res)=>{
     Api().deleteHistory(req,res)
 })
@@ -236,6 +239,29 @@ app.post('/history/logs/deleted',(req,res)=>{
 app.post('/history/search/table',(req,res)=>{
     Management().searchTable(req,res)
 })
+
+
+// //플랫폼 문의 + A/S + user
+// app.get('/myrucell/get',async (req, res) => {
+//     const myRucellService = await EagleSafesInquiries(); // 비동기 호출
+//     myRucellService.getMyrucell(req, res)
+// })
+//
+// //inquiries
+//
+// app.post('/myrucell/create/inquiries',async (req, res) => {
+//     const inquiriesService = await EagleSafesInquiries(); // 비동기 호출
+//     inquiriesService.createInquiries(req, res)
+// })
+// app.post('/myrucell/update/inquiries',async (req, res) => {
+//     const inquiriesService = await EagleSafesInquiries(); // 비동기 호출
+//     inquiriesService.updateInquiries(req, res)
+// })
+// app.post('/myrucell/delete/inquiries',async (req, res) => {
+//     const inquiriesService = await EagleSafesInquiries(); // 비동기 호출
+//     inquiriesService.deleteInquiries(req, res)
+// })
+
 
 
 
