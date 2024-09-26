@@ -302,6 +302,47 @@ const api = function () {
                         })
                 })
         },
+        async allDeleteRecord(req, res) {
+            try {
+                const recordName = "RECORD_TABLE";
+                // 모든 항목 조회
+                const params = {
+                    TableName: recordName,
+                    Limit: 100 // 한 번에 조회할 최대 수
+                };
+
+                let items;
+                do {
+                    const data = await dynamoDB.scan(params).promise();
+                    items = data.Items;
+
+                    // 각 항목 삭제
+                    for (const item of items) {
+                        const deleteParams = {
+                            TableName: recordName,
+                            Key: {
+                                // 항목의 기본 키를 여기에 설정해야 합니다.
+                                // 예: id: item.id
+                                device_id: item.device_id,
+                                file_location: item.file_location
+                            }
+                        };
+                        // 삭제 로그 출력
+                        console.log(`Deleting item with device_id: ${item.device_id}`);
+                        await dynamoDB.delete(deleteParams).promise();
+                    }
+                    // 다음 페이지가 있으면 계속 반복
+                    params.ExclusiveStartKey = data.LastEvaluatedKey;
+                } while (typeof params.ExclusiveStartKey !== "undefined");
+
+                console.log("모든 항목이 성공적으로 삭제되었습니다.");
+                return res.status(200).send('success'); // 성공 응답
+            } catch (error) {
+                console.error("항목 삭제 중 오류 발생:", error);
+                return res.status(500).send('Error deleting items',error); // 오류 응답 추가
+            }
+
+        },
 
         record(req,res){
             const data = req.body
@@ -696,13 +737,11 @@ const api = function () {
             const USER_TABLE = 'USER_TABLE'; // 사용자 정보 테이블 이름
             const BUCKET_NAME = 'doorbell-video'; // S3 버킷 이름
             const s3 = new AWS.S3();
-            // if(data.device_id === undefined && data.fcm_token === undefined){
-            //     res.status(400).json({error: 'There are no device_id and fcm_token inside the body.'});
-            // } else
-        // else if(data.fcm_token === undefined){
-        //         res.status(400).json({error: 'There is no fcm_token inside the body.'});
-        //     }
-            if(data.device_id === undefined){
+            if(data.device_id === undefined && data.fcm_token === undefined){
+                res.status(400).json({error: 'There are no device_id and fcm_token inside the body.'});
+            } else if(data.fcm_token === undefined){
+                res.status(400).json({error: 'There is no fcm_token inside the body.'});
+            } else if(data.device_id === undefined){
                 res.status(400).json({error: 'There is no device_id inside the body.'});
             } else{
                 Client.connect(MONGO_URI)
@@ -740,51 +779,51 @@ const api = function () {
                                                                     USER_TABLE: {},
                                                                     S3: {}
                                                                 };
-                                                                // // 3. USER_TABLE에서 fcm_token 조회
-                                                                // const userScanParams = {
-                                                                //     TableName: USER_TABLE,
-                                                                //     Key: {
-                                                                //         user_key: user_key
-                                                                //     }
-                                                                // };
-                                                                //
-                                                                // try {
-                                                                //     const userScanResult = await dynamoDB.get(userScanParams).promise();
-                                                                //     if (userScanResult.Item) {
-                                                                //         const basicToken = Array.isArray(userScanResult.Item.fcm_token) ? userScanResult.Item.fcm_token : []; // 배열 확인
-                                                                //
-                                                                //         // fcm_token에서 data.fcm_token을 제외한 새로운 배열 생성
-                                                                //         let fcm = basicToken.filter(item => item.fcm_token !== data.fcm_token);
-                                                                //
-                                                                //         const UserParams = {
-                                                                //             TableName: 'USER_TABLE',
-                                                                //             Key: {
-                                                                //                 user_key: user_key // 파티션 키
-                                                                //             },
-                                                                //             UpdateExpression: 'set fcm_token = :fcm_token',
-                                                                //             ExpressionAttributeValues: {
-                                                                //                 ':fcm_token': fcm // 업데이트할 fcm_token 배열
-                                                                //             },
-                                                                //             ReturnValues: 'UPDATED_NEW' // 업데이트된 값을 반환
-                                                                //         };
-                                                                //
-                                                                //         try {
-                                                                //             const result = await dynamoDB.update(UserParams).promise();
-                                                                //             console.log('Update succeeded:', result);
-                                                                //             responseMsg.USER_TABLE.complete = fcm; // 업데이트된 fcm 배열 저장
-                                                                //         } catch (error) {
-                                                                //             responseMsg.USER_TABLE.false = user_key; // 실패한 user_key 저장
-                                                                //             responseMsg.USER_TABLE.err = error.message; // 오류 메시지 저장
-                                                                //             console.error('Unable to update USER_TABLE. Error:', error);
-                                                                //         }
-                                                                //
-                                                                //         console.log(`USER_TABLE: fcm_token: ${userScanResult.Item.fcm_token}`);
-                                                                //     } else {
-                                                                //         console.log(`USER_TABLE: 해당 user_key에 대한 데이터 없음 userKey: ${user_key}`);
-                                                                //     }
-                                                                // } catch (error) {
-                                                                //     console.error(`USER_TABLE: 조회 실패`, error);
-                                                                // }
+                                                                // 3. USER_TABLE에서 fcm_token 조회
+                                                                const userScanParams = {
+                                                                    TableName: USER_TABLE,
+                                                                    Key: {
+                                                                        user_key: user_key
+                                                                    }
+                                                                };
+
+                                                                try {
+                                                                    const userScanResult = await dynamoDB.get(userScanParams).promise();
+                                                                    if (userScanResult.Item) {
+                                                                        const basicToken = Array.isArray(userScanResult.Item.fcm_token) ? userScanResult.Item.fcm_token : []; // 배열 확인
+
+                                                                        // fcm_token에서 data.fcm_token을 제외한 새로운 배열 생성
+                                                                        let fcm = basicToken.filter(item => item.fcm_token !== data.fcm_token);
+
+                                                                        const UserParams = {
+                                                                            TableName: 'USER_TABLE',
+                                                                            Key: {
+                                                                                user_key: user_key // 파티션 키
+                                                                            },
+                                                                            UpdateExpression: 'set fcm_token = :fcm_token',
+                                                                            ExpressionAttributeValues: {
+                                                                                ':fcm_token': fcm // 업데이트할 fcm_token 배열
+                                                                            },
+                                                                            ReturnValues: 'UPDATED_NEW' // 업데이트된 값을 반환
+                                                                        };
+
+                                                                        try {
+                                                                            const result = await dynamoDB.update(UserParams).promise();
+                                                                            console.log('Update succeeded:', result);
+                                                                            responseMsg.USER_TABLE.complete = fcm; // 업데이트된 fcm 배열 저장
+                                                                        } catch (error) {
+                                                                            responseMsg.USER_TABLE.false = user_key; // 실패한 user_key 저장
+                                                                            responseMsg.USER_TABLE.err = error.message; // 오류 메시지 저장
+                                                                            console.error('Unable to update USER_TABLE. Error:', error);
+                                                                        }
+
+                                                                        console.log(`USER_TABLE: fcm_token: ${userScanResult.Item.fcm_token}`);
+                                                                    } else {
+                                                                        console.log(`USER_TABLE: 해당 user_key에 대한 데이터 없음 userKey: ${user_key}`);
+                                                                    }
+                                                                } catch (error) {
+                                                                    console.error(`USER_TABLE: 조회 실패`, error);
+                                                                }
 
                                                                 // 1. DEVICE_TABLE에서 삭제
                                                                 const deviceDeleteParams = {

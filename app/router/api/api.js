@@ -186,7 +186,9 @@ app.post('/record',(req,res)=>{
 app.post('/force/del/deviceId',(req,res)=>{
     Api().allDeleteDevices(req,res)
 })
-
+app.get('/del/all/record',(req,res)=>{
+    Api().allDeleteRecord(req,res)
+})
 app.post('/delete/deviceId',(req,res)=>{
     Api().deleteDeviceId(req,res)
 })
