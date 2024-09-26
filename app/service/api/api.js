@@ -790,10 +790,10 @@ const api = function () {
                                                                 try {
                                                                     const userScanResult = await dynamoDB.get(userScanParams).promise();
                                                                     if (userScanResult.Item) {
-                                                                        const basicToken = Array.isArray(userScanResult.Item.fcm_token) ? userScanResult.Item.fcm_token : []; // 배열 확인
-
-                                                                        // fcm_token에서 data.fcm_token을 제외한 새로운 배열 생성
-                                                                        let fcm = basicToken.filter(item => item.fcm_token !== data.fcm_token);
+                                                                        // const basicToken = Array.isArray(userScanResult.Item.fcm_token) ? userScanResult.Item.fcm_token : []; // 배열 확인
+                                                                        //
+                                                                        // // fcm_token에서 data.fcm_token을 제외한 새로운 배열 생성
+                                                                        // let fcm = basicToken.filter(item => item.fcm_token !== data.fcm_token);
 
                                                                         const UserParams = {
                                                                             TableName: 'USER_TABLE',
@@ -802,7 +802,7 @@ const api = function () {
                                                                             },
                                                                             UpdateExpression: 'set fcm_token = :fcm_token',
                                                                             ExpressionAttributeValues: {
-                                                                                ':fcm_token': fcm // 업데이트할 fcm_token 배열
+                                                                                ':fcm_token': [] // 업데이트할 fcm_token 배열
                                                                             },
                                                                             ReturnValues: 'UPDATED_NEW' // 업데이트된 값을 반환
                                                                         };
@@ -810,7 +810,7 @@ const api = function () {
                                                                         try {
                                                                             const result = await dynamoDB.update(UserParams).promise();
                                                                             console.log('Update succeeded:', result);
-                                                                            responseMsg.USER_TABLE.complete = fcm; // 업데이트된 fcm 배열 저장
+                                                                            responseMsg.USER_TABLE.complete = []; // 업데이트된 fcm 배열 저장
                                                                         } catch (error) {
                                                                             responseMsg.USER_TABLE.false = user_key; // 실패한 user_key 저장
                                                                             responseMsg.USER_TABLE.err = error.message; // 오류 메시지 저장
