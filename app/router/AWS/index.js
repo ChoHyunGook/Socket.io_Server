@@ -1,22 +1,22 @@
-const AWS = require("aws-sdk");
-const {DynamoDB} = require("@aws-sdk/client-dynamodb")
+
 const applyDotenv = require("../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
+const AWS = require("aws-sdk")
 
 
 const {
-    AWS_SECRET, AWS_ACCESS, AWS_REGION
+    AWS_SECRET, AWS_ACCESS, AWS_REGION,
 } = applyDotenv(dotenv)
 
 const ClientId = AWS_SECRET
 const ClientSecret = AWS_ACCESS
 
+
 AWS.config.update({
-    accessKeyId: ClientId,
-    secretAccessKey: ClientSecret,
     region: AWS_REGION
 });
+
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 const AWSAPI  = function (){
     return{
