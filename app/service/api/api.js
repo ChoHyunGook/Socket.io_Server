@@ -18,6 +18,7 @@ const moment = require("moment-timezone");
 const axios = require("axios");
 const CryptoJS = require('crypto-js')
 const {query} = require("express");
+const AWSAPI = require("../../router/AWS");
 var Client = require('mongodb').MongoClient;
 
 
@@ -122,7 +123,6 @@ const api = function () {
                 };
 
                 const allDeviceDataResult = await dynamoDB.query(getAllDeviceDataParams).promise();
-
 
 
                 // RECORD_TABLE에서 device_id에 따른 모든 file_location 조회
@@ -727,6 +727,74 @@ const api = function () {
 
 
         },
+
+
+        async renewalDeleteDeviceId(req, res) {
+            const data = req.body;
+            const lowerDeviceId = data.device_id.toLowerCase();
+            const token = req.headers['token'];
+            const DEVICE_TABLE = 'DEVICE_TABLE'; // 실제 테이블 이름으로 변경
+            const RECORD_TABLE = 'RECORD_TABLE'; // 실제 테이블 이름으로 변경
+            const USER_TABLE = 'USER_TABLE'; // 사용자 정보 테이블 이름
+            const BUCKET_NAME = 'doorbell-video'; // S3 버킷 이름
+
+            if (data.device_id === undefined && data.fcm_token === undefined) {
+                return res.status(400).json({ error: 'There are no device_id and fcm_token inside the body.' });
+            }
+            if (data.fcm_token === undefined) {
+                return res.status(400).json({ error: 'There is no fcm_token inside the body.' });
+            }
+            if (data.device_id === undefined) {
+                return res.status(400).json({ error: 'There is no device_id inside the body.' });
+            }
+            if (token === undefined) {
+                return res.status(400).send('Token not found.');
+            }
+
+            const verify = jwt.verify(token, process.env.AWS_TOKEN);
+            const client = await Client.connect(MONGO_URI);
+            const collection = client.db(ADMIN_DB_NAME).collection("tables");
+            const findUsers = await collection.findOne({ user_key: verify.user_key });
+
+            let updatedDeviceIds = findUsers.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
+            if (updatedDeviceIds === '') {
+                updatedDeviceIds = null;
+            }
+
+            // MongoDB 어드민 서버 테이블 업데이트
+            await collection.updateOne({ _id: findUsers._id }, { $set: { device_id: updatedDeviceIds } });
+
+            // MongoDB 소켓 서버 히스토리 삭제
+            await History.deleteMany({ device_id: lowerDeviceId });
+
+            // 메시지 저장
+            const responseMsg = {
+                DEVICE_TABLE: {},
+                RECORD_TABLE: {},
+                USER_TABLE: {},
+                S3: {}
+            };
+
+            // 비동기 작업을 병렬로 실행
+            await Promise.all([
+                AWSAPI().delDynamoUserFcm(USER_TABLE, verify.user_key, responseMsg),
+                AWSAPI().delDynamoDeviceTable(DEVICE_TABLE, lowerDeviceId, verify.user_key, responseMsg),
+                AWSAPI().delDynamoRecord(RECORD_TABLE, lowerDeviceId, responseMsg),
+                AWSAPI().delS3(BUCKET_NAME, lowerDeviceId, responseMsg)
+            ]);
+
+            console.log(responseMsg);
+
+            const lastData = await collection.findOne({ user_key: verify.user_key });
+
+            res.status(200).json({
+                msg: `Deleted (MongoDB, DynamoDB, S3 Video-Data) device_id: ${lastData.id}-${lastData.name}`,
+                changeData: lastData
+            });
+        }
+        ,
+
+
 
         deleteDeviceId(req,res){
             const data = req.body
@@ -2491,7 +2559,7 @@ const api = function () {
 
         },
 
-        
+
 
         // param=create, bodyData = { device_id: "" ,name: "" ,phone: "" }
         // param=del, bodyData = { device_id: "" }

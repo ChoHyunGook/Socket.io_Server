@@ -190,7 +190,7 @@ app.get('/del/all/record',(req,res)=>{
     Api().allDeleteRecord(req,res)
 })
 app.post('/delete/deviceId',(req,res)=>{
-    Api().deleteDeviceId(req,res)
+    Api().renewalDeleteDeviceId(req,res)
 })
 app.post('/check/deviceId',(req,res)=>{
     Api().checkDeivceId(req,res)
