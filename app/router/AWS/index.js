@@ -13,6 +13,8 @@ const ClientSecret = AWS_ACCESS
 
 
 AWS.config.update({
+    accessKeyId: ClientId,
+    secretAccessKey: ClientSecret,
     region: AWS_REGION
 });
 
