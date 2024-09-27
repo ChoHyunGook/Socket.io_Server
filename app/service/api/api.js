@@ -194,6 +194,8 @@ const api = function () {
 
         },
 
+
+
         readDoorbell(req,res){
             Client.connect(MONGO_URI)
                 .then(client => {
@@ -728,6 +730,51 @@ const api = function () {
 
         },
 
+        deleteTarget: async (req, res) => {
+            const data = req.body
+            const DEVICE_TABLE = 'DEVICE_TABLE'; // 실제 테이블 이름으로 변경
+            const RECORD_TABLE = 'RECORD_TABLE'; // 실제 테이블 이름으로 변경
+            const USER_TABLE = 'USER_TABLE'; // 사용자 정보 테이블 이름
+            const BUCKET_NAME = 'doorbell-video'; // S3 버킷 이름
+            // 메시지 저장
+            const responseMsg = {
+                DEVICE_TABLE: {},
+                RECORD_TABLE: {},
+                USER_TABLE: {},
+                S3: {},
+                MongoAdmin:{},
+                MongoHistory:{}
+            };
+            const lowerDeviceId = data.device_id.toLowerCase();
+            const client = await Client.connect(MONGO_URI);
+            const collection = client.db(ADMIN_DB_NAME).collection("tables");
+            const findUsers = await collection.findOne({ user_key: data.user_key });
+            responseMsg.MongoHistory.complete = findUsers.device_id
+            let updatedDeviceIds = findUsers.device_id !== null ? findUsers.device_id.split(',').filter(id => id !== lowerDeviceId).join(','):null;
+            if (updatedDeviceIds === '') {
+                updatedDeviceIds = null;
+            }
+            // MongoDB 어드민 서버 테이블 업데이트
+            await collection.updateOne({ _id: findUsers._id }, { $set: { device_id: updatedDeviceIds } });
+
+            // MongoDB 소켓 서버 히스토리 삭제
+            const delHistory = await History.deleteMany({ device_id: lowerDeviceId });
+            responseMsg.MongoHistory.complete = delHistory.deletedCount
+
+            // 비동기 작업을 병렬로 실행
+            await Promise.all([
+                AWSAPI().delDynamoUserFcm(USER_TABLE, data.user_key, responseMsg),
+                AWSAPI().delDynamoDeviceTable(DEVICE_TABLE, lowerDeviceId, data.user_key, responseMsg),
+                AWSAPI().delDynamoRecord(RECORD_TABLE, lowerDeviceId, responseMsg),
+                AWSAPI().delS3(BUCKET_NAME, lowerDeviceId, responseMsg)
+            ]);
+            const lastData = await collection.findOne({ user_key: data.user_key });
+
+            res.status(200).json({
+                msg: `Deleted (MongoDB, DynamoDB, S3 Video-Data) device_id: id:${lastData.id} - name:${lastData.name}`,
+                responseMsg: responseMsg
+            });
+        },
 
         async renewalDeleteDeviceId(req, res) {
             const data = req.body;
@@ -756,7 +803,7 @@ const api = function () {
             const collection = client.db(ADMIN_DB_NAME).collection("tables");
             const findUsers = await collection.findOne({ user_key: verify.user_key });
 
-            let updatedDeviceIds = findUsers.device_id.split(',').filter(id => id !== lowerDeviceId).join(',');
+            let updatedDeviceIds = findUsers.device_id !== null ? findUsers.device_id.split(',').filter(id => id !== lowerDeviceId).join(','):null;
             if (updatedDeviceIds === '') {
                 updatedDeviceIds = null;
             }
@@ -791,8 +838,7 @@ const api = function () {
                 msg: `Deleted (MongoDB, DynamoDB, S3 Video-Data) device_id: ${lastData.id}-${lastData.name}`,
                 changeData: lastData
             });
-        }
-        ,
+        },
 
 
 

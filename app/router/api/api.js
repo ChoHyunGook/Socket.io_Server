@@ -192,6 +192,9 @@ app.get('/del/all/record',(req,res)=>{
 app.post('/delete/deviceId',(req,res)=>{
     Api().renewalDeleteDeviceId(req,res)
 })
+app.post('/del/target/deviceId',(req,res)=>{
+    Api().deleteTarget(req,res)
+})
 app.post('/check/deviceId',(req,res)=>{
     Api().checkDeivceId(req,res)
 })
