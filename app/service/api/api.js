@@ -785,12 +785,12 @@ const api = function () {
             const USER_TABLE = 'USER_TABLE'; // 사용자 정보 테이블 이름
             const BUCKET_NAME = 'doorbell-video'; // S3 버킷 이름
 
-            if (data.device_id === undefined && data.fcm_token === undefined) {
-                return res.status(400).json({ error: 'There are no device_id and fcm_token inside the body.' });
-            }
-            if (data.fcm_token === undefined) {
-                return res.status(400).json({ error: 'There is no fcm_token inside the body.' });
-            }
+            // if (data.device_id === undefined && data.fcm_token === undefined) {
+            //     return res.status(400).json({ error: 'There are no device_id and fcm_token inside the body.' });
+            // }
+            // if (data.fcm_token === undefined) {
+            //     return res.status(400).json({ error: 'There is no fcm_token inside the body.' });
+            // }
             if (data.device_id === undefined) {
                 return res.status(400).json({ error: 'There is no device_id inside the body.' });
             }
