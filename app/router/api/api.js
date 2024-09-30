@@ -168,6 +168,9 @@ app.post('/delete/history',(req,res)=>{
 // app.get('/connect/doorbell',(req,res)=>{
 //     Api().saveUsersKey(req,res)
 // })
+app.get('/check/pairing',(req,res)=>{
+    Api().checkPairing(req,res)
+})
 app.get('/cut',(req, res) => {
     Api().cutToken(req,res)
 })

@@ -90,6 +90,32 @@ const api = function () {
         // service_end: {type:String,required:true},
         // start_up:{type:String,required:true},
 
+
+        async checkPairing(req, res) {
+            const deviceId = req.query.device_id.toLowerCase()
+
+            try {
+                const getDeviceTableParams = {
+                    TableName: "DEVICE_TABLE",
+                    KeyConditionExpression: 'device_id = :device_id',
+                    ExpressionAttributeValues: {
+                        ':device_id': deviceId// 파티션 키
+                    }
+                }
+                const deviceResult = await dynamoDB.query(getDeviceTableParams).promise();
+                if(deviceResult.Items.length > 0) {
+                    res.status(200).send('Pairing')
+                    console.log(deviceResult.Items)
+                }else{
+                    res.status(404).send('Not found')
+                    console.log(deviceResult.Items)
+                }
+            } catch (err) {
+                res.status(400).send(err)
+            }
+        },
+
+
         async awsFindData(req, res) {
             const data = req.body;
             const deviceId = data.device_id.toLowerCase(); // 소문자로 변환
@@ -797,7 +823,7 @@ const api = function () {
             if (token === undefined) {
                 return res.status(400).send('Token not found.');
             }
-
+        
             const verify = jwt.verify(token, process.env.AWS_TOKEN);
             const client = await Client.connect(MONGO_URI);
             const collection = client.db(ADMIN_DB_NAME).collection("tables");
