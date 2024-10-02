@@ -869,6 +869,7 @@ const api = function () {
             if(sendFcmMessage.data.resultcode !== "00"){
                 return res.status(400).send('sendFcmMessage failed');
             }
+            console.log(sendFcmMessage.data)
 
             const client = await Client.connect(MONGO_URI);
             const collection = client.db(ADMIN_DB_NAME).collection("tables");
