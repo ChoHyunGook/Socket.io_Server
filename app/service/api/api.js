@@ -843,12 +843,6 @@ const api = function () {
             if (token === undefined) {
                 return res.status(400).send('Token not found.');
             }
-            if(data.title === undefined){
-                return res.status(400).send('Title is required');
-            }
-            if(data.message = undefined){
-                return res.status(400).send('Message is required');
-            }
 
 
             const verify = jwt.verify(token, process.env.AWS_TOKEN);
