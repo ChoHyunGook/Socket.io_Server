@@ -823,6 +823,7 @@ const api = function () {
 
         async renewalDeleteDeviceId(req, res) {
             const data = req.body;
+            console.log(data)
             const lowerDeviceId = data.device_id.toLowerCase();
             const token = req.headers['token'];
             const DEVICE_TABLE = 'DEVICE_TABLE'; // 실제 테이블 이름으로 변경
@@ -851,7 +852,7 @@ const api = function () {
 
 
             const verify = jwt.verify(token, process.env.AWS_TOKEN);
-            console.log(data)
+
             const sendFcmMessage = await axios.post(
                 "https://l122dwssje.execute-api.ap-northeast-2.amazonaws.com/Prod/push/others",
                 {
