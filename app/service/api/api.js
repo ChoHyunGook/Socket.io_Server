@@ -590,7 +590,7 @@ const api = function () {
             // })
 
         },
-
+//a4:d4:22:11:11:14
 
         //토큰없이 강제삭제
         allDeleteDevices(req,res){
@@ -852,8 +852,8 @@ const api = function () {
                 {
                     user_key: verify.user_key,
                     fcm_token: data.fcm_token,
-                    title:"[재로그인 요청] 유저정보 변경",
-                    message:"유저정보가 변경되었습니다. 재로그인 부탁드립니다.",
+                    title:"[Re-login Request] Change User Information",
+                    message:"Your user information has been changed. Please log in again.",
                 },{
                     headers: {
                         'x-access-token': token // x-access-token 헤더 추가
