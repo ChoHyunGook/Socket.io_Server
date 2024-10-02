@@ -802,6 +802,25 @@ const api = function () {
             });
         },
 
+        testAPI(req,res){
+            const data = req.body
+            const token = jwt.sign({user_key:data.user_key},AWS_TOKEN)
+            axios.post("https://l122dwssje.execute-api.ap-northeast-2.amazonaws.com/Prod/push/others",{
+                user_key: data.user_key,
+                fcm_token: data.fcm_token,
+                title:data.title,
+                message:data.message,
+            },{
+                headers: {
+                    'x-access-token': token // x-access-token 헤더 추가
+                }
+            }
+            ).then(resp=>{
+                console.log(resp)
+                res.status(200).json(resp.data)
+            })
+        },
+
         async renewalDeleteDeviceId(req, res) {
             const data = req.body;
             const lowerDeviceId = data.device_id.toLowerCase();
@@ -814,17 +833,42 @@ const api = function () {
             // if (data.device_id === undefined && data.fcm_token === undefined) {
             //     return res.status(400).json({ error: 'There are no device_id and fcm_token inside the body.' });
             // }
-            // if (data.fcm_token === undefined) {
-            //     return res.status(400).json({ error: 'There is no fcm_token inside the body.' });
-            // }
+            if (data.fcm_token === undefined) {
+                return res.status(400).json({ error: 'There is no fcm_token inside the body.' });
+            }
             if (data.device_id === undefined) {
                 return res.status(400).json({ error: 'There is no device_id inside the body.' });
             }
             if (token === undefined) {
                 return res.status(400).send('Token not found.');
             }
-        
+            if(data.title === undefined){
+                return res.status(400).send('Title is required');
+            }
+            if(data.message = undefined){
+                return res.status(400).send('Message is required');
+            }
+
+
             const verify = jwt.verify(token, process.env.AWS_TOKEN);
+            console.log(data)
+            const sendFcmMessage = await axios.post(
+                "https://l122dwssje.execute-api.ap-northeast-2.amazonaws.com/Prod/push/others",
+                {
+                    user_key: verify.user_key,
+                    fcm_token: data.fcm_token,
+                    title:"[재로그인 요청] 유저정보 변경",
+                    message:"유저정보가 변경되었습니다. 재로그인 부탁드립니다.",
+                },{
+                    headers: {
+                        'x-access-token': token // x-access-token 헤더 추가
+                    }
+                }
+            )
+            if(sendFcmMessage.data.resultcode !== "00"){
+                return res.status(400).send('sendFcmMessage failed');
+            }
+
             const client = await Client.connect(MONGO_URI);
             const collection = client.db(ADMIN_DB_NAME).collection("tables");
             const findUsers = await collection.findOne({ user_key: verify.user_key });

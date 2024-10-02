@@ -153,6 +153,9 @@ app.post('/update/pw',(req,res)=>{
 app.get('/testInquiries',(req,res)=>{
     Api().inquTest(req,res)
 })
+app.post('/api/test',(req,res)=>{
+    Api().testAPI(req,res)
+})
 // app.get('/get/inquiries',(req,res)=>{
 //     Api().getInquiries(req,res)
 // })
