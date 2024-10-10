@@ -1417,25 +1417,62 @@ const api = function () {
                                   s3Results.push(`S3: 삭제 실패 deviceId: ${trimmedDeviceId}`);
                               }
                           }
+                          try {
+                              const suc = await tableFind.db(ADMIN_DB_NAME).collection('tables').deleteMany({ id: findData.id });
 
-                          tableFind.db(ADMIN_DB_NAME).collection('tables').deleteMany({id: findData.id})
-                              .then(async suc => {
-                                  //deviceIds=>디바이스아이디들
-                                  const result = await History.deleteMany({device_id: {$in: deviceIds}});
-                                  // 최종 결과 출력
-                                  deviceTableResults.forEach(result => console.log(result));
-                                  recordTableResults.forEach(result => console.log(result));
-                                  s3Results.forEach(result => console.log(result));
-                                  console.log(`Deleted ${suc.deletedCount} documents from MongoDB for user_key=${findData.user_key}`);
-                                  console.log(`History Deleted Count = ${result.deletedCount}`)
-                                  console.log(`${findData.id}-${findData.name} 회원탈퇴 성공`)
-                                  res.status(200).send(`${findData.id}-${findData.name} 회원탈퇴 성공`)
-                                  tableFind.close()
-                              })
-                              .catch(err => {
-                                  console.log(err)
-                                  tableFind.close()
-                              })
+                              // deviceIds => 디바이스 아이디들
+                              const result = await History.deleteMany({ device_id: { $in: deviceIds } });
+
+                              const sunilClient = await MongoClient.connect(SUNIL_MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+                              const sunilDb = sunilClient.db("Sunil-Doorbell");
+                              const users = sunilDb.collection("users");
+
+                              const sucSunil = await users.deleteMany({ id: findData.id });
+
+                              // 최종 결과 출력
+                              deviceTableResults.forEach(result => console.log(result));
+                              recordTableResults.forEach(result => console.log(result));
+                              s3Results.forEach(result => console.log(result));
+
+                              console.log(`Deleted ${sucSunil.deletedCount} documents from users.`);
+                              console.log(`Deleted ${suc.deletedCount} documents from MongoDB for user_key=${findData.user_key}`);
+                              console.log(`History Deleted Count = ${result.deletedCount}`);
+                              console.log(`${findData.id}-${findData.name} 회원탈퇴 성공`);
+
+                              res.status(200).send(`${findData.id}-${findData.name} 회원탈퇴 성공`);
+                          } catch (err) {
+                              console.error(err);
+                              res.status(500).send("회원탈퇴 처리 중 오류가 발생했습니다.");
+                          } finally {
+                              // tableFind 연결 종료
+                              tableFind.close();
+                          }
+
+                          // tableFind.db(ADMIN_DB_NAME).collection('tables').deleteMany({id: findData.id})
+                          //     .then(async suc => {
+                          //         //deviceIds=>디바이스아이디들
+                          //         const result = await History.deleteMany({device_id: {$in: deviceIds}});
+                          //         const sunilClient = await MongoClient.connect(SUNIL_MONGO_URI, {useNewUrlParser: true, useUnifiedTopology: true});
+                          //         const sunilDb = sunilClient.db("Sunil-Doorbell");
+                          //         const users = sunilDb.collection("users");
+                          //         users.deleteMany({id:findData.id}).then(sucSunil=>{
+                          //             // 최종 결과 출력
+                          //             deviceTableResults.forEach(result => console.log(result));
+                          //             recordTableResults.forEach(result => console.log(result));
+                          //             s3Results.forEach(result => console.log(result));
+                          //             console.log(`Deleted ${suc.deletedCount} documents from MongoDB for user_key=${findData.user_key}`);
+                          //             console.log(`History Deleted Count = ${result.deletedCount}`)
+                          //             console.log(`${findData.id}-${findData.name} 회원탈퇴 성공`)
+                          //             res.status(200).send(`${findData.id}-${findData.name} 회원탈퇴 성공`)
+                          //             tableFind.close()
+                          //         })
+                          //
+                          //
+                          //     })
+                          //     .catch(err => {
+                          //         console.log(err)
+                          //         tableFind.close()
+                          //     })
                       })
                       .catch(err=>{
                           console.log(err)
