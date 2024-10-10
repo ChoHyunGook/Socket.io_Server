@@ -1418,7 +1418,7 @@ const api = function () {
                               }
                           }
 
-                          tableFind.db(ADMIN_DB_NAME).collection('tables').deleteMany({user_key: data.user_key})
+                          tableFind.db(ADMIN_DB_NAME).collection('tables').deleteMany({id: findData.id})
                               .then(async suc => {
                                   //deviceIds=>디바이스아이디들
                                   const result = await History.deleteMany({device_id: {$in: deviceIds}});
