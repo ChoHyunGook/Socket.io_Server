@@ -835,12 +835,15 @@ const api = function () {
             //     return res.status(400).json({ error: 'There are no device_id and fcm_token inside the body.' });
             // }
             if (data.fcm_token === undefined) {
+                console.log('There is no fcm_token inside the body.')
                 return res.status(400).json({ error: 'There is no fcm_token inside the body.' });
             }
             if (data.device_id === undefined) {
+                console.log('There is no device_id inside the body.')
                 return res.status(400).json({ error: 'There is no device_id inside the body.' });
             }
             if (token === undefined) {
+                console.log('Token not found.')
                 return res.status(400).send('Token not found.');
             }
 
@@ -861,6 +864,7 @@ const api = function () {
                 }
             )
             if(sendFcmMessage.data.resultcode !== "00"){
+                console.log('sendFcmMessage failed')
                 return res.status(400).send('sendFcmMessage failed');
             }
             console.log(sendFcmMessage.data)
