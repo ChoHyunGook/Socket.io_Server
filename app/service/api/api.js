@@ -865,7 +865,7 @@ const api = function () {
             )
             if(sendFcmMessage.data.resultcode !== "00"){
                 console.log('sendFcmMessage failed')
-                //return res.status(400).send('sendFcmMessage failed');
+                return res.status(400).send('sendFcmMessage failed');
             }
             console.log(sendFcmMessage.data)
 
