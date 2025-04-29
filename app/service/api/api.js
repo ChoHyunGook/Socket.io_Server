@@ -2318,7 +2318,7 @@ const api = function () {
                                     }
 
                                     return tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate(
-                                        { user_key: tokenVerify.user_key, company: "Sunil" },
+                                        { user_key: tokenVerify.user_key },
                                         {
                                             $set: {
                                                 device_id: findData.device_id ? findData.device_id + "," + data.device_id.toLowerCase() :
