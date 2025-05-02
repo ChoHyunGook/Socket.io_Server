@@ -125,9 +125,7 @@ app.post('/send/email',(req,res)=>{
 app.post('/check/auth',(req,res)=>{
     Api().checkAuthNum(req,res)
 })
-app.post('/update/deviceInfo',(req,res)=>{
-    Api().saveDeviceInfo(req,res)
-})
+
 app.get('/find/deviceInfo',(req,res)=>{
     Api().findDeviceInfo(req,res)
 })
@@ -218,6 +216,9 @@ app.post('/save/userKey',(req,res)=>{
 })
 app.post('/save/deviceId',(req,res)=>{
     Api().saveDeivceId(req,res)
+})
+app.post('/update/deviceInfo',(req,res)=>{
+    Api().saveDeviceInfo(req,res)
 })
 app.get('/deviceVersion/download',(req,res,next)=>{
     Management().deviceVersionDownload(req,res)

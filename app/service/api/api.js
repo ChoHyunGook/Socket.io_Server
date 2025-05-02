@@ -2361,15 +2361,14 @@ const api = function () {
             Client.connect(MONGO_URI)
                 .then(tableFind => {
                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({
-                        user_key: data.user_key,
-                        company: "Sunil"
+                        user_key: data.user_key
                     })
                         .then(findData => {
                             // findData.device_id가 null인 경우 처리
                             if (!findData.device_id || findData.device_id === "") {
                                 // device_id가 null이면 새 device_id를 저장
                                 tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate(
-                                    { user_key: data.user_key, company: "Sunil" },
+                                    { user_key: data.user_key },
                                     { $set: { device_id: data.device_id.toLowerCase() } }
                                 )
                                     .then(suc => {
@@ -2387,7 +2386,7 @@ const api = function () {
                                     res.status(200).send(`device_id:${data.device_id.toLowerCase()} - This is already saved device_id`);
                                 } else {
                                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate(
-                                        { user_key: data.user_key, company: "Sunil" },
+                                        { user_key: data.user_key },
                                         { $set: { device_id: findData.device_id + "," + data.device_id.toLowerCase() } }
                                     )
                                         .then(suc => {
@@ -2435,7 +2434,7 @@ const api = function () {
                     tableFind.db(ADMIN_DB_NAME).collection('tables').findOne({id:bodyData.user_id})
                         .then(findData=>{
                             if(findData.user_key === null){
-                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:bodyData.user_id,company:"Sunil"},
+                                    tableFind.db(ADMIN_DB_NAME).collection('tables').findOneAndUpdate({id:bodyData.user_id},
                                         {$set:{
                                                 user_key:userData.user_key
                                             }})
