@@ -109,7 +109,7 @@ app.get('/get/personal/policy',async (req, res) => {
     //     }
     // });
 
-    const filePath = path.join(__dirname, '../../../views', 'personalPolicy.rtf');
+    const filePath = path.join(__dirname, '../../../views', '개인정보처리방침.rtf');
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
