@@ -89,6 +89,26 @@ app.get('/get/personal/policy',async (req, res) => {
     //         res.status(500).send('파일을 전송할 수 없습니다.');
     //     }
     // });
+
+    // const filePath = path.join(__dirname, '../../../views', 'personalPolicy.rtf');
+    //
+    // fs.readFile(filePath, 'utf8', (err, data) => {
+    //     if (err) {
+    //         console.error('파일 읽기 오류:', err);
+    //         return res.status(500).send('파일을 읽을 수 없습니다.');
+    //     }
+    //
+    //     // ✅ HTML 태그만 추출
+    //     const htmlContent = data.match(/<!DOCTYPE html>[\s\S]*<\/html>/);
+    //
+    //     if (htmlContent) {
+    //         res.setHeader('Content-Type', 'text/html');
+    //         res.send(htmlContent[0]);
+    //     } else {
+    //         res.status(500).send('HTML 콘텐츠를 찾을 수 없습니다.');
+    //     }
+    // });
+
     const filePath = path.join(__dirname, '../../../views', 'personalPolicy.rtf');
 
     fs.readFile(filePath, 'utf8', (err, data) => {
@@ -101,8 +121,44 @@ app.get('/get/personal/policy',async (req, res) => {
         const htmlContent = data.match(/<!DOCTYPE html>[\s\S]*<\/html>/);
 
         if (htmlContent) {
+            const completeHTML = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>Privacy Policy</title>
+          <style>
+              body {
+                  font-family: Arial, sans-serif;
+                  line-height: 1.6;
+                  margin: 0;
+                  padding: 20px;
+                  background-color: #f4f4f4;
+              }
+              .container {
+                  max-width: 800px;
+                  margin: auto;
+                  padding: 20px;
+                  background: #fff;
+                  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+              }
+              ul {
+                  margin-left: 20px;
+              }
+              p {
+                  margin-bottom: 10px;
+              }
+          </style>
+      </head>
+      <body>
+          ${htmlContent[0]}
+      </body>
+      </html>
+      `;
+
             res.setHeader('Content-Type', 'text/html');
-            res.send(htmlContent[0]);
+            res.send(completeHTML);
         } else {
             res.status(500).send('HTML 콘텐츠를 찾을 수 없습니다.');
         }
