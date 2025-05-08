@@ -12,6 +12,9 @@ const moment = require("moment-timezone");
 const db = require("../../DataBase")
 const semiDate = require("../../service/Data/date")
 const EagleSafesInquiries = require("../../service/myrucell");
+const fs = require('fs');
+const path = require('path');
+const RTFParser = require('rtf-parser');
 
 
 const {
@@ -74,6 +77,19 @@ setInterval(()=>{
 
 
 
+app.get('/get/personal/policy',async (req, res) => {
+    const filePath = path.join(__dirname, '../../../views', 'personalPolicy.rtf');
+
+    res.setHeader('Content-Type', 'application/rtf');
+    res.setHeader('Content-Disposition', 'inline; filename="personalPolicy.rtf"');
+
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error('파일 전송 중 에러 발생:', err);
+            res.status(500).send('파일을 전송할 수 없습니다.');
+        }
+    });
+})
 
 
 app.post('/get/aws/table',(req,res)=>{
