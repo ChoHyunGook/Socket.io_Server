@@ -117,8 +117,11 @@ app.get('/get/personal/policy',async (req, res) => {
             return res.status(500).send('파일을 읽을 수 없습니다.');
         }
 
+        // ✅ 역슬래시(\) 제거
+        const cleanData = data.replace(/\\/g, '');
+
         // ✅ HTML 태그만 추출
-        const htmlContent = data.match(/<!DOCTYPE html>[\s\S]*<\/html>/);
+        const htmlContent = cleanData.match(/<!DOCTYPE html>[\s\S]*<\/html>/);
 
         if (htmlContent) {
             const completeHTML = `
