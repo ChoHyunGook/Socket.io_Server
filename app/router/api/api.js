@@ -78,94 +78,28 @@ setInterval(()=>{
 
 
 app.get('/get/personal/policy',async (req, res) => {
-    // const filePath = path.join(__dirname, '../../../views', 'personalPolicy.rtf');
-    //
-    // res.setHeader('Content-Type', 'application/rtf');
-    // res.setHeader('Content-Disposition', 'inline; filename="personalPolicy.rtf"');
-    //
-    // res.sendFile(filePath, (err) => {
-    //     if (err) {
-    //         console.error('파일 전송 중 에러 발생:', err);
-    //         res.status(500).send('파일을 전송할 수 없습니다.');
-    //     }
-    // });
+    // ✅ HTML 내용
+    const htmlContent = `<!DOCTYPE html><html lang="en" class=""><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Terms of Service</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:0;padding:20px;background-color:#f4f4f4}.container{max-width:800px;margin:auto;padding:20px;background:#fff;box-shadow:0 0 10px rgba(0,0,0,.1)}h1,h2,h3{color:#333}h1{text-align:center}p{margin:10px 0}</style></head><body><div class="container"><h1>Terms of Service</h1><p><em>Last updated: May 08, 2025</em></p><p>Welcome to Eagle Safes</p><p>These terms of service ("Terms", "Agreement") are an agreement between Eagle Safes ("Eagle Safes", "we", "us" or "our") and you ("User", "you" or "your"). This Agreement sets forth the general terms and conditions of your use of the Eagle Safes mobile application and any of its products or services (collectively, "Mobile Application" or "Services").</p><h2>1. Accounts and Membership</h2><h3>1.1.</h3><p>You must be at least 13 years old to use this Mobile Application. By using this Mobile Application and by agreeing to this Agreement, you warrant and represent that you are at least 13 years of age.</p><h3>1.2.</h3><p>If you create an account in the Mobile Application, you are responsible for maintaining the security of your account and you are fully responsible for all activities that occur under the account and any other actions taken in connection with it. We may, but have no obligation to, monitor and review new accounts before you may sign in and use our Services.</p><h3>1.3.</h3><p>Providing false contact information of any kind may result in the termination of your account. You must immediately notify us of any unauthorized uses of your account or any other breaches of security. We will not be liable for any acts or omissions by you, including any damages of any kind incurred as a result of such acts or omissions.</p><h2>2. User Content</h2><h3>2.1.</h3><p>We do not own any data, information, or material (collectively, "Content") that you submit in the Mobile Application in the course of using the Service. You shall have sole responsibility for the accuracy, quality, integrity, legality, reliability, appropriateness, and intellectual property ownership or right to use of all submitted Content.</p><h3>2.2.</h3><p>We may, but have no obligation to, monitor and review Content in the Mobile Application submitted or created using our Services by you. Unless specifically permitted by you, your use of the Mobile Application does not grant us the license to use, reproduce, adapt, modify, publish, or distribute the Content created by you or stored in your user account for commercial, marketing, or any similar purpose.</p><h3>2.3.</h3><p>You grant us permission to access, copy, distribute, store, transmit, reformat, display, and perform the Content of your user account solely as required for the purpose of providing the Services to you.</p><h2>3. Prohibited Uses</h2><h3>3.1.</h3><p>In addition to other terms as set forth in the Agreement, you are prohibited from using the Mobile Application or its Content:</p><ul><li>(a) for any unlawful purpose;</li><li>(b) to solicit others to perform or participate in any unlawful acts;</li><li>(c) to violate any international, federal, provincial or state regulations, rules, laws, or local ordinances;</li><li>(d) to infringe upon or violate our intellectual property rights or the intellectual property rights of others;</li><li>(e) to harass, abuse, insult, harm, defame, slander, disparage, intimidate, or discriminate based on gender, sexual orientation, religion, ethnicity, race, age, national origin, or disability;</li><li>(f) to submit false or misleading information;</li><li>(g) to upload or transmit viruses or any other type of malicious code that will or may be used in any way that will affect the functionality or operation of the Service or of any related mobile application, other mobile applications, or the Internet;</li><li>(h) to collect or track the personal information of others;</li><li>(i) to spam, phish, pharm, pretext, spider, crawl, or scrape;</li><li>(j) for any obscene or immoral purpose; or</li><li>(k) to interfere with or circumvent the security features of the Service or any related mobile application, other mobile applications, or the Internet.</li></ul><h3>3.2.</h3><p>We reserve the right to terminate your use of the Service or any related mobile application for violating any of the prohibited uses.</p><h2>4. Intellectual Property Rights</h2><h3>4.1.</h3><p>This Agreement does not transfer to you any intellectual property owned by Eagle Safes or third parties, and all rights, titles, and interests in and to such property will remain (as between the parties) solely with Eagle Safes.</p><h3>4.2.</h3><p>All trademarks, service marks, graphics and logos used in connection with our Mobile Application or Services, are trademarks or registered trademarks of Eagle Safes or Eagle Safes licensors.</p><h2>5. Limitation of Liability</h2><h3>5.1.</h3><p>To the fullest extent permitted by applicable law, in no event will Eagle Safes its affiliates, officers, directors, employees, agents, suppliers, or licensors be liable to any person for:</p><ul><li>(a) any indirect, incidental, special, punitive, cover or consequential damages (including, without limitation, damages for lost profits, revenue, sales, goodwill, use of content, impact on business, business interruption, loss of anticipated savings, loss of business opportunity) however caused, under any theory of liability, including, without limitation, contract, tort, warranty, breach of statutory duty, negligence or otherwise, even if Eagle Safes has been advised as to the possibility of such damages or could have foreseen such damages.</li></ul><h2>6. Changes and Amendments</h2><h3>6.1.</h3><p>We reserve the right to modify this Agreement or its policies relating to the Mobile Application or Services at any time, effective upon posting of an updated version of this Agreement in the Mobile Application. When we do, we will post a notification in the Mobile Application. Continued use of the Mobile Application after any such changes shall constitute your consent to such changes.</p><h2>7. Acceptance of These Terms</h2><h3>7.1.</h3><p>You acknowledge that you have read this Agreement and agree to all its terms and conditions. By using the Mobile Application or its Services you agree to be bound by this Agreement. If you do not agree to abide by the terms of this Agreement, you are not authorized to use or access the Mobile Application and its Services.</p><h2>8. Contacting Us</h2><h3>8.1.</h3><p>If you have any questions about this Agreement, please contact us at [Contact Information].</p></div>
 
-    // const filePath = path.join(__dirname, '../../../views', 'personalPolicy.rtf');
-    //
-    // fs.readFile(filePath, 'utf8', (err, data) => {
-    //     if (err) {
-    //         console.error('파일 읽기 오류:', err);
-    //         return res.status(500).send('파일을 읽을 수 없습니다.');
-    //     }
-    //
-    //     // ✅ HTML 태그만 추출
-    //     const htmlContent = data.match(/<!DOCTYPE html>[\s\S]*<\/html>/);
-    //
-    //     if (htmlContent) {
-    //         res.setHeader('Content-Type', 'text/html');
-    //         res.send(htmlContent[0]);
-    //     } else {
-    //         res.status(500).send('HTML 콘텐츠를 찾을 수 없습니다.');
-    //     }
-    // });
+ 
 
-    const filePath = path.join(__dirname, '../../../views', '개인정보처리방침.rtf');
 
-    fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-            console.error('파일 읽기 오류:', err);
-            return res.status(500).send('파일을 읽을 수 없습니다.');
-        }
 
-        // ✅ 역슬래시(\) 제거
-        const cleanData = data.replace(/\\/g, '');
+ 
 
-        // ✅ HTML 태그만 추출
-        const htmlContent = cleanData.match(/<!DOCTYPE html>[\s\S]*<\/html>/);
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy Policy for Eagle Safes</title><style>body{font-family:Arial,sans-serif;line-height:1.6;margin:0;padding:20px;background-color:#f4f4f4}.container{max-width:800px;margin:auto;padding:20px;background:#fff;box-shadow:0 0 10px rgba(0,0,0,.1)}h1,h2,h3{color:#333}h1{text-align:center}p{margin:10px 0}</style><div class="container"><h1>Private Usage Agreement</h1><p>
+    This Privacy Policy applies to the mobile application <strong>"Eagle Safes"</strong>,
+    developed and operated by <strong>(주)블라우비트</strong>.
+    We are committed to protecting your privacy.
+  </p>
+<h2>1. Overview</h2><p>This Privacy Policy (the "Policy") is designed to inform you about how (Company Name) ("we," "us," or "our") collects, uses, and discloses your personal information when you use our services (the "Services"). We take your privacy very seriously and are committed to protecting your personal information. This Policy explains how we do that.</p><h2>2. Collection and Use of Personal Information</h2><h3>2.1 Personal Information We Collect</h3><p>We collect the following personal information from you when you use our Services:</p><p><strong>Required Personal Information:</strong></p><ul><li>Name</li><li>Email address</li><li>Phone number</li><li>Login information (ID, password)</li></ul><p><strong>Optional Personal Information:</strong></p><ul><li>Date of birth</li><li>Gender</li><li>Address</li><li>Profile picture</li><li>Service usage history</li><li>Cookies and device information</li></ul><h3>2.2 Purposes of Using Personal Information</h3><p>We use the personal information we collect for the following purposes:</p><p><strong>Providing the Services:</strong></p><ul><li>Registering and managing your account</li><li>Verifying your service usage</li><li>Responding to your inquiries</li><li>Improving and developing our Services</li></ul><p><strong>Marketing:</strong></p><ul><li>Providing you with personalized advertisements and event information</li><li>Analyzing service usage and generating statistics</li></ul><p><strong>Other:</strong></p><ul><li>Complying with laws</li><li>Resolving disputes</li></ul><h3>2.3 Retention Period</h3><p>We retain your personal information for the following periods:</p><p><strong>Required Personal Information:</strong></p><ul><li>For as long as you use our Services</li><li>For any period required by law</li></ul><p><strong>Optional Personal Information:</strong></p><ul><li>Until you withdraw your consent or terminate your use of the Services</li></ul><h2>3. Sharing and Disclosure of Personal Information</h2><p>We do not share or disclose your personal information with third parties without your consent. However, we may share your personal information in the following limited circumstances:</p><ul><li>When required by law</li><li>When you have given us your express consent</li><li>In connection with a corporate reorganization, such as a merger, acquisition, or sale of assets</li><li>When we share your personal information in an aggregated and anonymized manner, so that it does not identify you</li></ul><h2>4. Data Security</h2><p>We use the following technical and administrative safeguards to protect your personal information:</p><p><strong>Technical Safeguards:</strong></p><ul><li>Encryption</li><li>Access controls</li><li>Firewalls</li><li>Regular security audits and vulnerability assessments</li></ul><p><strong>Administrative Safeguards:</strong></p><ul><li>Training and education for employees on personal information handling</li><li>Supervision and management of personal information processing activities</li><li>Policies and procedures for personal information handling</li></ul><h2>5. Your Rights</h2><p>You have the following rights with respect to your personal information:</p><p><strong>Access and Correction:</strong></p><ul><li>You have the right to access your personal information and to have it corrected if it is inaccurate.</li></ul><p><strong>Restriction and Deletion:</strong></p><ul><li>You have the right to restrict or delete your personal information.</li></ul><p><strong>Data Portability:</strong></p><ul><li>You have the right to receive your personal information in a structured, commonly used, and machine-readable format and to have it transferred to another controller.</li></ul><p><strong>Withdrawal of Consent:</strong></p><ul><li>You have the right to withdraw your consent to the processing of your personal information at any time.</li></ul><h2>6. Changes to this Policy</h2><p>We may change this Policy from time to time to reflect changes in the law, our Services, or our practices. We will notify you of any material changes by posting the revised Policy on our Services or by sending you an email notification.</p><h2>7. Contact Us</h2><p>If you have any questions about this Policy or your personal information, please contact us at:</p><p>bjkim@blauhealthcare.com</p></div>
 
-        if (htmlContent) {
-            const completeHTML = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width,initial-scale=1">
-          <title>Privacy Policy</title>
-          <style>
-              body {
-                  font-family: Arial, sans-serif;
-                  line-height: 1.6;
-                  margin: 0;
-                  padding: 20px;
-                  background-color: #f4f4f4;
-              }
-              .container {
-                  max-width: 800px;
-                  margin: auto;
-                  padding: 20px;
-                  background: #fff;
-                  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-              }
-              ul {
-                  margin-left: 20px;
-              }
-              p {
-                  margin-bottom: 10px;
-              }
-          </style>
-      </head>
-      <body>
-          ${htmlContent[0]}
-      </body>
-      </html>
-      `;
+ </body></html>`;
 
-            res.setHeader('Content-Type', 'text/html');
-            res.send(completeHTML);
-        } else {
-            res.status(500).send('HTML 콘텐츠를 찾을 수 없습니다.');
-        }
-    });
+    // ✅ HTML 콘텐츠 전송
+    res.setHeader('Content-Type', 'text/html');
+    res.send(htmlContent);
+
 })
 
 
