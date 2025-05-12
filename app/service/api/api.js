@@ -3002,6 +3002,102 @@ const api = function () {
 
         },
 
+        // 아이디 찾기{ service: "id", email:"이메일 주소" }
+        // 비밀번호 찾기{ service: "pw", email:"이메일 주소", user_id:"유저 아이디" }
+        async sendFindServiceEmail(req, res) {
+            const data = req.body;
+
+            if (!["id", "pw"].includes(data.service)) {
+                return res.status(400).send('Invalid service type');
+            }
+
+            try {
+                const client = await Client.connect(MONGO_URI);
+                const db = client.db(ADMIN_DB_NAME);
+                const query = data.service === "id" ? { email: data.email } : { id: data.user_id, email: data.email };
+
+                const findData = await db.collection("tables").findOne(query);
+                if (!findData) {
+                    return res.status(404).send('Not Found Data');
+                }
+
+                const findAuth = await AuthNumDB.findOne({ email: data.email });
+                if (findAuth) {
+                    return res.status(400).send('Email already requested for authentication');
+                }
+
+                const transporter = nodemailer.createTransport({
+                    service: NODEMAILER_SERVICE,
+                    host: NODEMAILER_HOST,
+                    port: 587,
+                    secure: false,
+                    auth: {
+                        user: NODEMAILER_USER,
+                        pass: NODEMAILER_PASS
+                    }
+                });
+
+                const authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+
+                const mailOptions = {
+                    from: `MyRucell`,
+                    to: data.email,
+                    subject: `[MyRucell] This is an email authentication number service.`,
+                    text: `Hello, please check the authentication number below to complete the authentication of your email address.\nAuthentication number: ${authNum} \nThis authentication number is valid for 3 minutes.`
+                };
+
+                transporter.sendMail(mailOptions, async (error, info) => {
+                    if (error) {
+                        console.error("Email send error:", error);
+                        return res.status(500).send(error.message);
+                    } else {
+                        await new AuthNumDB({
+                            email: data.email,
+                            user_id: data.service === "id" ? findData.user_id : data.user_id,
+                            num: authNum,
+                            expires: new Date(new Date().getTime() + 3 * 60 * 1000)
+                        }).save();
+                        await client.close(); // ✅ 종료
+
+                        res.send('ok');
+                    }
+                });
+            } catch (error) {
+                console.error("Error in sendFindIdEmail:", error);
+                res.status(500).send('Internal Server Error');
+            }
+        },
+
+        async checkFindAuth(req,res){
+            const data = req.body;
+            if (!["id", "pw"].includes(data.service)) {
+                return res.status(400).send('Invalid service type');
+            }
+            // ✅ 인증번호 형식 체크 (6자리 숫자)
+            if (!/^\d{6}$/.test(data.auth.trim())) {
+                return res.status(400).send("Invalid authentication number format");
+            }
+            try {
+                const query = data.service === "id" ? { email: data.email } : { user_id: data.user_id, email: data.email };
+                const findAuth = await AuthNumDB.findOne(query);
+                if (findAuth) {
+                    if(String(data.auth).trim() === findAuth.num){
+                        await AuthNumDB.findOneAndDelete(query);
+                        return res.status(200).send(data.service === "id" ? findAuth.user_id:true)
+                    }else{
+                        res.status(400).send("Authentication number mismatch")
+                    }
+                }else{
+                    return res.status(404).send(false);
+                }
+            }catch(err){
+                console.error("Error in sendFindIdEmail:", err);
+                res.status(500).send('Internal Server Error',err);
+            }
+
+        },
+
+
         async sendEmail(req, res) {
             const data = req.body
             // try {
@@ -3159,53 +3255,19 @@ const api = function () {
         checkAuthNum(req,res){
             const data = req.body
             AuthNumDB.findOne({user_id:data.user_id.trim(),email:data.email.trim()})
-                .then(findData=>{
-                    if(findData){
-                        if(String(data.auth).trim() === findData.num){
+                .then(async findData => {
+                    if (findData) {
+                        if (String(data.auth).trim() === findData.num) {
+                            await AuthNumDB.findOneAndDelete({user_id: data.user_id.trim(), email: data.email.trim()});
                             res.status(200).send(true)
-                        }else{
+                        } else {
                             res.status(400).send("Authentication number mismatch")
                         }
-                    }else{
+                    } else {
                         res.status(400).send(false)
                     }
                 })
 
-            // AuthNumDB.findOne({user_id:data.user_id.trim(),email:data.email.trim()})
-            //     .then(findId=>{
-            //         if(findId){
-            //             AuthNumDB.findOne({email:data.email.trim()})
-            //                 .then(findEmail=>{
-            //                     if(findEmail){
-            //                         if(String(data.auth).trim() === findEmail.num){
-            //                             // 현재 시간
-            //                             const curr = new Date();
-            //                             const kr_curr = new Date(curr.getTime() + (9 * 60 * 60 * 1000)); // UTC 시간에 9시간을 더함
-            //                             const timeDifference = kr_curr - findEmail.expires;
-            //                             // 3분(밀리초)
-            //                             const threeMinutes = 3 * 60 * 1000;
-            //                             AuthNumDB.deleteOne({user_id:data.user_id,email:data.email})
-            //                                 .then(suc2=>{
-            //                                     // 3분이 지났는지 확인
-            //                                     if (timeDifference > threeMinutes) {
-            //                                         console.log("expires 값에서 3분이 지났습니다.(재인증)");
-            //                                         res.status(400).send(false)
-            //                                     } else {
-            //                                         console.log("expires 값에서 3분이 지나지 않았습니다.");
-            //                                         res.status(200).send(true)
-            //                                     }
-            //                                 })
-            //                         }else{
-            //                             res.status(400).send('Authentication number mismatch')
-            //                         }
-            //                     }else{
-            //                         res.status(400).send('The Email requested for authentication does not exist.')
-            //                     }
-            //                 })
-            //         }else{
-            //             res.status(400).send('The user_id requested for authentication does not exist.')
-            //         }
-            //     })
         },
 
 

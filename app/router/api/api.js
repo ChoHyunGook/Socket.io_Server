@@ -149,6 +149,13 @@ app.post('/send/email',(req,res)=>{
     Api().sendEmail(req,res)
 })
 
+app.post('/send/findService/email',(req,res)=>{
+    Api().sendFindServiceEmail(req,res)
+})
+app.post('/chck/findService/auth',(req,res)=>{
+    Api().checkFindAuth(req,res)
+})
+
 app.post('/check/auth',(req,res)=>{
     Api().checkAuthNum(req,res)
 })
