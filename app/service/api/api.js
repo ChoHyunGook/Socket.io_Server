@@ -3004,15 +3004,96 @@ const api = function () {
 
         // 아이디 찾기{ service: "id", email:"이메일 주소" }
         // 비밀번호 찾기{ service: "pw", email:"이메일 주소", user_id:"유저 아이디" }
+        // async sendFindServiceEmail(req, res) {
+        //     const data = req.body;
+        //
+        //     if (!["id", "pw"].includes(data.service)) {
+        //         return res.status(400).send('Invalid service type');
+        //     }
+        //
+        //     try {
+        //         const client = await Client.connect(MONGO_URI);
+        //         const db = client.db(ADMIN_DB_NAME);
+        //         const query = data.service === "id" ? { email: data.email } : { id: data.user_id, email: data.email };
+        //
+        //         const findData = await db.collection("tables").findOne(query);
+        //         if (!findData) {
+        //             return res.status(404).send('Not Found Data');
+        //         }
+        //
+        //         const findAuth = await AuthNumDB.findOne({ email: data.email });
+        //         if (findAuth) {
+        //             return res.status(400).send('Email already requested for authentication');
+        //         }
+        //
+        //         const transporter = nodemailer.createTransport({
+        //             service: NODEMAILER_SERVICE,
+        //             host: NODEMAILER_HOST,
+        //             port: 587,
+        //             secure: false,
+        //             auth: {
+        //                 user: NODEMAILER_USER,
+        //                 pass: NODEMAILER_PASS
+        //             }
+        //         });
+        //
+        //         const authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+        //
+        //         const mailOptions = {
+        //             from: `MyRucell`,
+        //             to: data.email,
+        //             subject: `[MyRucell] This is an email authentication number service.`,
+        //             text: `Hello, please check the authentication number below to complete the authentication of your email address.\nAuthentication number: ${authNum} \nThis authentication number is valid for 3 minutes.`
+        //         };
+        //
+        //         transporter.sendMail(mailOptions, async (error, info) => {
+        //             if (error) {
+        //                 console.error("Email send error:", error);
+        //                 return res.status(500).send(error.message);
+        //             } else {
+        //                 await new AuthNumDB({
+        //                     email: data.email,
+        //                     user_id: data.service === "id" ? findData.user_id : data.user_id,
+        //                     num: authNum,
+        //                     expires: new Date(new Date().getTime() + 3 * 60 * 1000)
+        //                 }).save();
+        //                 await client.close(); // ✅ 종료
+        //
+        //                 res.send('ok');
+        //             }
+        //         });
+        //     } catch (error) {
+        //         console.error("Error in sendFindServiceEmail:", error);
+        //         res.status(500).send('Internal Server Error');
+        //     }
+        // },
+        // 📌 Promise로 감싼 sendMail
+
+
         async sendFindServiceEmail(req, res) {
             const data = req.body;
+
+            const sendMailPromise = (transporter, mailOptions) => {
+                return new Promise((resolve, reject) => {
+                    transporter.sendMail(mailOptions, (error, info) => {
+                        if (error) {
+                            console.error("Email send error:", error);
+                            return reject(error.message);
+                        } else {
+                            console.log("Email sent:", info.response);
+                            return resolve(info.response);
+                        }
+                    });
+                });
+            };
 
             if (!["id", "pw"].includes(data.service)) {
                 return res.status(400).send('Invalid service type');
             }
 
+            const client = await Client.connect(MONGO_URI);
+
             try {
-                const client = await Client.connect(MONGO_URI);
                 const db = client.db(ADMIN_DB_NAME);
                 const query = data.service === "id" ? { email: data.email } : { id: data.user_id, email: data.email };
 
@@ -3046,25 +3127,25 @@ const api = function () {
                     text: `Hello, please check the authentication number below to complete the authentication of your email address.\nAuthentication number: ${authNum} \nThis authentication number is valid for 3 minutes.`
                 };
 
-                transporter.sendMail(mailOptions, async (error, info) => {
-                    if (error) {
-                        console.error("Email send error:", error);
-                        return res.status(500).send(error.message);
-                    } else {
-                        await new AuthNumDB({
-                            email: data.email,
-                            user_id: data.service === "id" ? findData.user_id : data.user_id,
-                            num: authNum,
-                            expires: new Date(new Date().getTime() + 3 * 60 * 1000)
-                        }).save();
-                        await client.close(); // ✅ 종료
+                // ✅ sendMail이 끝날 때까지 기다림
+                await sendMailPromise(transporter, mailOptions);
 
-                        res.send('ok');
-                    }
-                });
+                // ✅ 인증 정보를 DB에 저장
+                await new AuthNumDB({
+                    email: data.email,
+                    user_id: data.service === "id" ? findData.user_id : data.user_id,
+                    num: authNum,
+                    expires: new Date(new Date().getTime() + 3 * 60 * 1000)
+                }).save();
+
+                res.send('ok');
+
             } catch (error) {
-                console.error("Error in sendFindIdEmail:", error);
+                console.error("Error in sendFindServiceEmail:", error);
                 res.status(500).send('Internal Server Error');
+            } finally {
+                // ✅ 모든 처리가 완료된 후에만 DB 연결을 닫음
+                await client.close();
             }
         },
 
@@ -3091,7 +3172,7 @@ const api = function () {
                     return res.status(404).send(false);
                 }
             }catch(err){
-                console.error("Error in sendFindIdEmail:", err);
+                console.error("Error in checkFindAuth:", err);
                 res.status(500).send('Internal Server Error',err);
             }
 
