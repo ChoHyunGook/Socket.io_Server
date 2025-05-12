@@ -152,7 +152,7 @@ app.post('/send/email',(req,res)=>{
 app.post('/send/findService/email',(req,res)=>{
     Api().sendFindServiceEmail(req,res)
 })
-app.post('/chck/findService/auth',(req,res)=>{
+app.post('/check/findService/auth',(req,res)=>{
     Api().checkFindAuth(req,res)
 })
 
