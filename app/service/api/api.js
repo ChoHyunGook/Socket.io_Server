@@ -3133,7 +3133,7 @@ const api = function () {
                 // ✅ 인증 정보를 DB에 저장
                 await new AuthNumDB({
                     email: data.email,
-                    user_id: data.service === "id" ? findData.user_id : data.user_id,
+                    user_id: data.service === "id" ? findData.id : data.user_id,
                     num: authNum,
                     expires: new Date(new Date().getTime() + 3 * 60 * 1000)
                 }).save();
