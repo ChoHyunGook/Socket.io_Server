@@ -2223,102 +2223,76 @@ const api = function () {
 
         async sendEmail(req, res) {
             const data = req.body;
-            let client;  // 👉 클라이언트 객체를 외부에 저장
+            let client;
 
-            Client.connect(MONGO_URI)
-                .then(tableFind => {
-                    client = tableFind;  // 👉 클라이언트 저장
-                    tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ id: data.user_id })
-                        .then(findData => {
-                            if (!findData) {
-                                tableFind.db(ADMIN_DB_NAME).collection("tables").findOne({ email: data.email })
-                                    .then(async findEmail => {
-                                        if (!findEmail) {
-                                            AuthNumDB.findOne({ email: data.email })
-                                                .then(findEmails => {
-                                                    if (!findEmails) {
-                                                        AuthNumDB.findOne({ user_id: data.user_id })
-                                                            .then(async findUserIds => {
-                                                                if (!findUserIds) {
-                                                                    const transporter = nodemailer.createTransport({
-                                                                        service: NODEMAILER_SERVICE,
-                                                                        host: NODEMAILER_HOST,
-                                                                        port: 587,
-                                                                        secure: false,
-                                                                        auth: {
-                                                                            user: NODEMAILER_USER,
-                                                                            pass: NODEMAILER_PASS
-                                                                        }
-                                                                    });
+            try {
+                client = await Client.connect(MONGO_URI);
+                const db = client.db(ADMIN_DB_NAME).collection("tables");
 
-                                                                    const authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+                const findUser = await db.findOne({ id: data.user_id });
+                if (findUser) {
+                    return res.status(400).send('Duplicate user_id');
+                }
 
-                                                                    const mailOptions = {
-                                                                        from: `MyRucell`,
-                                                                        to: data.email,
-                                                                        subject: `[MyRucell] This is an email authentication number service.`,
-                                                                        text: `Hello, please check the authentication number below to complete the authentication of your email address.\nAuthentication number: ${authNum} \nThis authentication number is valid for 3 minutes.`
-                                                                    };
+                const findEmail = await db.findOne({ email: data.email });
+                if (findEmail) {
+                    return res.status(400).send('Duplicate email address');
+                }
 
-                                                                    transporter.sendMail(mailOptions, function (error, info) {
-                                                                        if (error) {
-                                                                            res.status(400).send(error);
-                                                                        } else {
-                                                                            new AuthNumDB({
-                                                                                email: data.email,
-                                                                                user_id: data.user_id,
-                                                                                num: authNum,
-                                                                                expires: new Date(new Date().getTime() + 3 * 60 * 1000)
-                                                                            }).save();
-                                                                            res.send('ok');
-                                                                        }
-                                                                    });
-                                                                    transporter.close();
-                                                                } else {
-                                                                    res.status(400).send('user_id requested for authentication');
-                                                                }
-                                                            })
-                                                            .finally(() => {
-                                                                if (client) {
-                                                                    console.log("✅ DB Connection closed.");
-                                                                    client.close(); // ✅ 무조건 종료
-                                                                }
-                                                            });
-                                                    } else {
-                                                        res.status(400).send('email requested for authentication');
-                                                        if (client) {
-                                                            console.log("✅ DB Connection closed.");
-                                                            client.close(); // ✅ 무조건 종료
-                                                        }
-                                                    }
-                                                })
-                                        } else {
-                                            res.status(400).send('Duplicate email address');
-                                            if (client) {
-                                                console.log("✅ DB Connection closed.");
-                                                client.close(); // ✅ 무조건 종료
-                                            }
-                                        }
-                                    })
-                            } else {
-                                res.status(400).send('Duplicate user_id');
-                                if (client) {
-                                    console.log("✅ DB Connection closed.");
-                                    client.close(); // ✅ 무조건 종료
-                                }
-                            }
-                        })
-                })
-                .catch(error => {
-                    console.error('Error in sendEmail:', error);
-                    res.status(500).send('Server Error');
-                })
-                .finally(() => {
-                    if (client) {
-                        console.log("✅ DB Connection closed.");
-                        client.close(); // ✅ 무조건 종료
+                const findEmails = await AuthNumDB.findOne({ email: data.email });
+                if (findEmails) {
+                    return res.status(400).send('email requested for authentication');
+                }
+
+                const findUserIds = await AuthNumDB.findOne({ user_id: data.user_id });
+                if (findUserIds) {
+                    return res.status(400).send('user_id requested for authentication');
+                }
+
+                const authNum = String(Math.floor(Math.random() * 1000000)).padStart(6, "0");
+
+                const transporter = nodemailer.createTransport({
+                    service: NODEMAILER_SERVICE,
+                    host: NODEMAILER_HOST,
+                    port: 587,
+                    secure: false,
+                    auth: {
+                        user: NODEMAILER_USER,
+                        pass: NODEMAILER_PASS
                     }
                 });
+
+                const mailOptions = {
+                    from: `MyRucell`,
+                    to: data.email,
+                    subject: `[MyRucell] This is an email authentication number service.`,
+                    text: `Hello, please check the authentication number below to complete the authentication of your email address.\nAuthentication number: ${authNum} \nThis authentication number is valid for 3 minutes.`
+                };
+
+                transporter.sendMail(mailOptions, async (error, info) => {
+                    if (error) {
+                        return res.status(400).send(error);
+                    }
+
+                    await new AuthNumDB({
+                        email: data.email,
+                        user_id: data.user_id,
+                        num: authNum,
+                        expires: new Date(new Date().getTime() + 3 * 60 * 1000)
+                    }).save();
+
+                    res.send('ok');
+                });
+
+            } catch (error) {
+                console.error('Error in sendEmail:', error);
+                res.status(500).send('Server Error');
+            } finally {
+                if (client) {
+                    console.log("✅ DB Connection closed.");
+                    client.close(); // ✅ 여기서만 닫기
+                }
+            }
         },
         // async sendEmail(req, res) {
         //     const data = req.body

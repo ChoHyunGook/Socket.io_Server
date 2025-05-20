@@ -179,9 +179,9 @@ app.post('/find/user',(req,res)=>{
 app.post('/update/pw',(req,res)=>{
     Api().updateOverseasUser(req,res)
 })
-app.get('/testInquiries',(req,res)=>{
-    Api().inquTest(req,res)
-})
+// app.get('/testInquiries',(req,res)=>{
+//     Api().inquTest(req,res)
+// })
 app.post('/api/test',(req,res)=>{
     Api().testAPI(req,res)
 })
