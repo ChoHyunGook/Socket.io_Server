@@ -1037,6 +1037,92 @@ const api = function () {
                 });
         },
 
+        eaglesSafesOverseasSave(target, data) {
+            const saveTime = moment().tz('Asia/Seoul');
+
+            if (target === "signUp") {
+                const saveData = {
+                    overseas: true,
+                    id: data.id,
+                    addr: {
+                        location: {},
+                        address: "overseas",
+                        road_address: "overseas",
+                        zone_code: "overseas",
+                        detail: "overseas",
+                        full_address: "overseas"
+                    },
+                    email: data.email,
+                    name: data.name,
+                    open: "O",
+                    serviceDate: saveTime.format('YYYY-MM-DD kk:mm:ss'),
+                    items: [],
+                    discount: {
+                        point: 0,
+                        coupon: []
+                    },
+                    bookmark: []
+                };
+
+                let client;  // 👉 클라이언트 객체를 외부에 저장
+
+                Client.connect(SUNIL_MONGO_URI)
+                    .then(tableFind => {
+                        client = tableFind;
+                        tableFind.db("Sunil-Doorbell").collection('users').insertOne(saveData)
+                            .then(suc => {
+                                tableFind.db("Sunil-Doorbell").collection('users').findOne({ id: data.id })
+                                    .then(findData => {
+                                        console.log(suc);
+                                        console.log(findData);
+                                    })
+                                    .catch(err => {
+                                        console.log(err);
+                                    });
+                            })
+                            .catch(err => {
+                                console.log(err);
+                            })
+                            .finally(() => {
+                                if (client) {
+                                    console.log("✅ Sunil-Doorbell DB Connection closed.");
+                                    client.close(); // ✅ 무조건 종료
+                                }
+                            });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                    });
+            }
+
+            if (target === "saveUserKey") {
+                let client;  // 👉 클라이언트 객체를 외부에 저장
+
+                Client.connect(SUNIL_MONGO_URI)
+                    .then(tableFind => {
+                        client = tableFind;
+                        tableFind.db("Sunil-Doorbell").collection('users').findOneAndUpdate(
+                            { id: data.id },
+                            { $set: { user_key: data.user_key } }
+                        )
+                            .then(suc => {
+                                console.log(suc);
+                            })
+                            .catch(err => {
+                                console.log(err);
+                            })
+                            .finally(() => {
+                                if (client) {
+                                    console.log("✅ Sunil-Doorbell DB Connection closed.");
+                                    client.close(); // ✅ 무조건 종료
+                                }
+                            });
+                    })
+                    .catch(err => {
+                        console.log(err);
+                    });
+            }
+        },
         // eaglesSafesOverseasSave(target,data){
         //     const saveTime = moment().tz('Asia/Seoul')
         //     if(target === "signUp"){
