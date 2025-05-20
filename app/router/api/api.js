@@ -209,9 +209,7 @@ app.get('/check/pairing',(req,res)=>{
 app.get('/cut',(req, res) => {
     Api().cutToken(req,res)
 })
-app.get('/checkDevice',(req,res)=>{
-    Api().findDeviceId(req,res)
-})
+
 app.post('/add/deviceId',(req,res)=>{
     Api().addDeviceId(req,res)
 })
