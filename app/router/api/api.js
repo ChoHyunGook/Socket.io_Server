@@ -115,9 +115,6 @@ app.get('/update/admin',(req,res)=>{
 app.get('/findLog',(req,res)=>{
     Api().findLog(req,res)
 })
-app.post('/b2c/service',(req,res)=>{
-    Api().b2cService(req,res)
-})
 
 app.post('/faceRegister',(req,res)=>{
     Api().face_register(req,res)
