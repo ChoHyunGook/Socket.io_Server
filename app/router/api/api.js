@@ -11,10 +11,6 @@ var upload = multer({storage: storage});
 const moment = require("moment-timezone");
 const db = require("../../DataBase")
 const semiDate = require("../../service/Data/date")
-const EagleSafesInquiries = require("../../service/myrucell");
-const fs = require('fs');
-const path = require('path');
-const RTFParser = require('rtf-parser');
 
 
 const {
@@ -74,6 +70,8 @@ setInterval(()=>{
         })
     })
 },1000*60*60*24)
+
+
 
 
 
@@ -179,32 +177,13 @@ app.post('/find/user',(req,res)=>{
 app.post('/update/pw',(req,res)=>{
     Api().updateOverseasUser(req,res)
 })
-// app.get('/testInquiries',(req,res)=>{
-//     Api().inquTest(req,res)
-// })
-app.post('/api/test',(req,res)=>{
-    Api().testAPI(req,res)
-})
-// app.get('/get/inquiries',(req,res)=>{
-//     Api().getInquiries(req,res)
-// })
-// app.post('/update/inquiries',(req,res)=>{
-//     Api().eaglesSafesInquiries(req,res)
-// })
+
 app.post('/delete/history',(req,res)=>{
     Api().deleteHistory(req,res)
 })
-// app.post('/dynamoUserKey',(req,res)=>{
-//     Api().dynamoUserKey(req,res)
-// })
-// app.get('/connect/doorbell',(req,res)=>{
-//     Api().saveUsersKey(req,res)
-// })
+
 app.get('/check/pairing',(req,res)=>{
     Api().checkPairing(req,res)
-})
-app.get('/cut',(req, res) => {
-    Api().cutToken(req,res)
 })
 
 app.post('/add/deviceId',(req,res)=>{

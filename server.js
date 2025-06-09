@@ -13,6 +13,7 @@ const Socket = require('./app/router/socket/socket')
 
 const Api = require('./app/router/api/api')
 const Myrucell = require('./app/router/myrucell/index')
+const Doorbell = require('./app/router/Doorbell/index')
 
 
 
@@ -47,9 +48,11 @@ async function startServer(){
 
     //WebRtc()
 
-    app.use('/socketServer',Socket)
-    app.use(Api)
-    app.use('/myrucell',Myrucell)
+
+    app.use('/socketServer', Socket)
+    app.use('/myrucell', Myrucell)
+    app.use('/doorbell', Doorbell)
+    app.use('/', Api)
 
 
     app.set('trust proxy', true);
@@ -76,6 +79,16 @@ async function startServer(){
 
 }
 startServer()
+
+const { cachedClients } = require('./app/service/ConnectMongo'); // ConnectMongo 있는 경로
+process.on('SIGINT', async () => {
+    const uris = Object.keys(cachedClients);
+    for (const uri of uris) {
+        await cachedClients[uri].close();
+        console.log(`🔒 MongoClient closed for URI: ${uri}`);
+    }
+    process.exit(0);
+});
 
 
 

@@ -1,0 +1,19 @@
+const express = require('express')
+const app = express();
+const Doorbell = require('../../service/Doorbell')
+
+
+app.post('/signUp',(req,res)=>{
+    Doorbell().signUp(req,res)
+})
+
+app.post('/send/signUp/email',(req,res)=>{
+    Doorbell().signUpEmail(req,res)
+})
+
+app.post('/send/find/email',(req,res)=>{
+    Doorbell().findEmail(req,res)
+})
+
+
+module.exports = app
