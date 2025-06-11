@@ -814,6 +814,8 @@ const api = function () {
             }
         },
 
+
+
         async updateOverseasUser(req, res) {
             const data = req.body;
 
@@ -1970,7 +1972,7 @@ const api = function () {
                 json: true,
                 url: url,
                 headers: {
-                    "Contenc-type": "application/json; charset=utf-8",
+                    "Content-type": "application/json; charset=utf-8",
                     "x-ncp-iam-access-key": accessKey,
                     "x-ncp-apigw-timestamp": date
                     ,

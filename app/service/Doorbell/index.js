@@ -8,6 +8,7 @@ const axios = require("axios");
 const CryptoJS = require('crypto-js')
 const {ConnectMongo} = require('../ConnectMongo');
 const db = require("../../DataBase");
+const jwt = require("jsonwebtoken");
 
 
 const {
@@ -35,8 +36,70 @@ const AuthNumDB = db.authNum
 
 const doorbell = function () {
     return {
-        test(req,res){
-          res.status(200).send('success Check')
+        async updateUser(req, res) {
+            const data = req.body;
+            const token = req.headers['token'];
+
+            try {
+                const verify = jwt.verify(token, process.env.AWS_TOKEN);
+                const userKey = verify.user_key;
+
+                // ✅ MongoDB 연결 및 해당 유저 조회
+                const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+
+                const findData = await tablesCol.findOne({ user_key: userKey });
+
+                if (!findData) {
+                    return res.status(404).send('User not found');
+                }
+
+                // ✅ MongoDB 정보 업데이트 (비밀번호 제외)
+                await tablesCol.updateOne(
+                    { user_key: userKey },
+                    {
+                        $set: {
+                            id: data.user_id,
+                            name: data.name,
+                            tel: data.tel,
+                            addr: data.addr
+                        }
+                    }
+                );
+
+                // ✅ DynamoDB 비밀번호 포함 모든 정보 업데이트
+                const encryptedPassword = bcrypt.hashSync(data.user_pw, 5);
+
+                const updateParams = {
+                    TableName: 'USER_TABLE',
+                    Key: {
+                        user_key: userKey
+                    },
+                    UpdateExpression: 'SET user_id = :user_id, user_pw = :user_pw, #name = :name, tel = :tel, addr = :addr',
+                    ExpressionAttributeNames: {
+                        '#name': 'name' // 'name'은 예약어이므로 ExpressionAttributeNames로 지정
+                    },
+                    ExpressionAttributeValues: {
+                        ':user_id': data.user_id,
+                        ':user_pw': encryptedPassword,
+                        ':name': data.name,
+                        ':tel': data.tel,
+                        ':addr': data.addr
+                    },
+                    ReturnValues: 'ALL_NEW'
+                };
+
+                dynamoDB.update(updateParams, (err, result) => {
+                    if (err) {
+                        console.error('Error updating DynamoDB:', err);
+                        return res.status(400).send('Could not update user in DynamoDB');
+                    }
+                    return res.status(200).send('User updated successfully');
+                });
+
+            } catch (error) {
+                console.error('Update error:', error);
+                return res.status(500).send('Internal server error');
+            }
         },
 
         async signUp(req, res) {
