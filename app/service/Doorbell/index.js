@@ -52,6 +52,7 @@ const doorbell = function () {
                 if (!findData) {
                     return res.status(404).send('User not found');
                 }
+                console.log(data)
 
                 // ✅ MongoDB 정보 업데이트 (비밀번호 제외)
                 await tablesCol.updateOne(
