@@ -48,7 +48,9 @@ const doorbell = function () {
                 );
                 console.log('[autoSignIn] raw lambda response:', lambdaResponse.data);
 
-                const result = JSON.parse(lambdaResponse.data.body);
+                const result = typeof lambdaResponse.data.body === 'string'
+                    ? JSON.parse(lambdaResponse.data.body)
+                    : lambdaResponse.data;
 
                 console.log('[autoSignIn] parsed lambda result:', result);
                 if (result.resultcode === '00') {
