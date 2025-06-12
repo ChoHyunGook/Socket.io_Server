@@ -14,7 +14,7 @@ const jwt = require("jsonwebtoken");
 const {
     AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, MONGO_URI, ADMIN_DB_NAME, SMS_service_id,
     SMS_secret_key, SMS_access_key, SMS_PHONE, NICE_CLIENT_ID, NICE_CLIENT_SECRET, NICE_PRODUCT_CODE,
-    NICE_ACCESS_TOKEN, AWS_LAMBDA_SIGNUP,
+    NICE_ACCESS_TOKEN, AWS_LAMBDA_SIGNUP,AWS_LAMBDA_SIGNIN,
     AWS_TOKEN, NODEMAILER_USER, NODEMAILER_PASS, NODEMAILER_SERVICE, NODEMAILER_HOST, SUNIL_MONGO_URI,
 } = applyDotenv(dotenv)
 
@@ -36,6 +36,81 @@ const AuthNumDB = db.authNum
 
 const doorbell = function () {
     return {
+        async autoSignIn(req, res) {
+            const body = req.body;
+
+            try {
+                const lambdaResponse = await axios.post(
+                    AWS_LAMBDA_SIGNIN,
+                    JSON.stringify(body),
+                    { headers: { 'Content-Type': 'application/json' } }
+                );
+
+                const result = JSON.parse(lambdaResponse.data.body);
+
+                if (result.resultcode === '00') {
+                    const autoToken = jwt.sign({ user_key: result.response.user_key }, AWS_TOKEN);
+
+                    const resultObj = {
+                        resultcode: '00',
+                        message: 'success',
+                        response: {
+                            token: autoToken,
+                            user_key: result.response.user_key
+                        }
+                    };
+
+                    return res.status(200).json({
+                        statusCode: 200,
+                        headers: {
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Credentials': true
+                        },
+                        body: JSON.stringify(resultObj, null, 2)
+                    });
+                } else {
+                    // 실패한 람다 응답을 그대로 전달
+                    return res.status(401).json({
+                        statusCode: 401,
+                        headers: {
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Credentials': true
+                        },
+                        body: lambdaResponse.data.body // 람다에서 받은 body 그대로
+                    });
+                }
+            } catch (err) {
+                // 람다 호출 자체가 실패한 경우
+                return res.status(500).json({
+                    resultcode: 'FF',
+                    message: 'Lambda call failed',
+                    error: err.message
+                });
+            }
+        },
+        // async autoSignIn(req,res){
+        //     const body = req.body;
+        //
+        //     const lambdaResponse = await axios.post(AWS_LAMBDA_SIGNIN,JSON.stringify(body));
+        //
+        //     const result = lambdaResponse.data;
+        //
+        //     if (result.resultcode === '00') {
+        //         // 로그인 성공 → 토큰을 expires 없이 전달
+        //         const tokenVerify = jwt.verify(result.response.token, AWS_TOKEN)
+        //         const autoToken = jwt.sign({user_key: tokenVerify.user_key}, AWS_TOKEN)
+        //
+        //         return res.status(200).json({
+        //             token: autoToken,
+        //             user_key: result.response.user_key
+        //         });
+        //     } else {
+        //         // 로그인 실패
+        //         return res.status(401).json(result);
+        //     }
+        //
+        // },
+
         async updateUser(req, res) {
             const data = req.body;
             const token = req.headers['token'];

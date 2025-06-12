@@ -20,5 +20,9 @@ app.patch('/patch/user',(req,res)=>{
     Doorbell().updateUser(req,res);
 })
 
+app.post('/auto/signIn',(req,res)=>{
+    Doorbell().autoSignIn(req,res)
+})
+
 
 module.exports = app

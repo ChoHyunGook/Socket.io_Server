@@ -29,6 +29,7 @@ const applyDotenv = dotenv => {
         AWS_DOORBELL_NAME:process.env.AWS_DOORBELL_NAME,
         DEV_FRONT_ADMIN:process.env.DEV_FRONT_ADMIN,
         AWS_LAMBDA_SIGNUP:process.env.AWS_LAMBDA_SIGNUP,
+        AWS_LAMBDA_SIGNIN:process.env.AWS_LAMBDA_SIGNIN,
         AWS_CLOUD_FRONT:process.env.AWS_CLOUD_FRONT,
         AWS_TOKEN:process.env.AWS_TOKEN,
         NODEMAILER_USER:process.env.NODEMAILER_USER,
