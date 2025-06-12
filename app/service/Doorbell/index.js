@@ -49,7 +49,7 @@ const doorbell = function () {
                 const result = JSON.parse(lambdaResponse.data.body);
 
                 if (result.resultcode === '00') {
-                    const autoToken = jwt.sign({ user_key: result.response.user_key }, AWS_TOKEN);
+                    const autoToken = jwt.sign({ user_key: result.response.user_key }, AWS_TOKEN, {expiresIn: '1y'});
 
                     const resultObj = {
                         resultcode: '00',
