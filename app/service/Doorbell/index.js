@@ -40,6 +40,7 @@ const doorbell = function () {
             const body = req.body;
             console.log('[autoSignIn] called');
             console.log('[autoSignIn] request body:', body);
+
             try {
                 const lambdaResponse = await axios.post(
                     AWS_LAMBDA_SIGNIN,
@@ -53,8 +54,13 @@ const doorbell = function () {
                     : lambdaResponse.data;
 
                 console.log('[autoSignIn] parsed lambda result:', result);
+
                 if (result.resultcode === '00') {
-                    const autoToken = jwt.sign({ user_key: result.response.user_key }, AWS_TOKEN, {expiresIn: '1y'});
+                    const autoToken = jwt.sign(
+                        { user_key: result.response.user_key },
+                        AWS_TOKEN,
+                        { expiresIn: '1y' }
+                    );
 
                     const resultObj = {
                         resultcode: '00',
@@ -72,31 +78,20 @@ const doorbell = function () {
                     });
                     console.log('[autoSignIn] final response object:', resultObj);
 
-                    return res.status(200).json({
-                        statusCode: 200,
-                        headers: {
-                            'Access-Control-Allow-Origin': '*',
-                            'Access-Control-Allow-Credentials': true
-                        },
-                        body: JSON.stringify(resultObj, null, 2)
-                    });
+                    return res.status(200).json(resultObj);
                 } else {
-                    // 실패한 람다 응답을 그대로 전달
                     console.log('[autoSignIn] login failed - lambda result:', result);
-
                     return res.status(401).json({
-                        statusCode: 401,
-                        headers: {
-                            'Access-Control-Allow-Origin': '*',
-                            'Access-Control-Allow-Credentials': true
-                        },
-                        body: lambdaResponse.data.body // 람다에서 받은 body 그대로
+                        resultcode: result.resultcode || 'EE',
+                        message: result.message || 'Login failed',
+                        response: null
                     });
                 }
+
             } catch (err) {
-                // 람다 호출 자체가 실패한 경우
                 console.error('[autoSignIn] lambda call failed');
-                console.error(err); // AxiosError 객체 전체 출력
+                console.error(err);
+
                 if (err.response) {
                     console.error('[autoSignIn] err.response.data:', err.response.data);
                     console.error('[autoSignIn] err.response.status:', err.response.status);
@@ -105,19 +100,14 @@ const doorbell = function () {
                 } else {
                     console.error('[autoSignIn] err.message:', err.message);
                 }
-                return res.status(500).json({
-                    statusCode: 500,
-                    headers: {
-                        'Access-Control-Allow-Origin': '*',
-                        'Access-Control-Allow-Credentials': true
-                    },
-                    body: JSON.stringify({
-                        resultcode: 'FF',
-                        message: 'Lambda call failed',
-                        error: err.message
-                    }, null, 2)
-                });
 
+                return res.status(500).json({
+                    resultcode: 'FF',
+                    message: 'Lambda call failed',
+                    response: {
+                        error: err.message
+                    }
+                });
             }
         },
         // async autoSignIn(req,res){
