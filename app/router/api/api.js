@@ -100,13 +100,13 @@ app.get('/get/personal/policy',async (req, res) => {
     res.send(htmlContent);
 
 })
-app.get('/get/picture', upload.single('file'),(req,res)=>{
+app.get('/get/picture',(req,res)=>{
     AWSAPI.getPicture(req,res);
 })
 app.post('/upload/picture', upload.single('file'),(req,res)=>{
     AWSAPI.uploadPicture(req,res);
 })
-app.delete('/delete/picture', upload.single('file'),(req,res)=>{
+app.delete('/delete/picture',(req,res)=>{
     AWSAPI.deletePicture(req,res);
 })
 
