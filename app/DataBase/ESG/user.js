@@ -1,87 +1,22 @@
+let data =
 
-
-//회원테이블
-const User = function (mongoose){
-    const UserSchema = new mongoose.Schema({
-        company:{type:String,required:true},
-        id:{type:String,required:true},
-        name:{type:String,required:true},
-        tel:{type:String,required:true},
-        password:{type:String,required:true},
-        admin:{type:Boolean,required:true},
-    },{ versionKey : false })
-    return mongoose.model('User',UserSchema)
-}
-
-module.exports = User
-
-//자료테이블
-const Data = function (mongoose){
-    const DataSchema = new mongoose.Schema({
-        name:{type:String,required:true},
-        universal:{type:String,required:true},
-        data:{type:Object,required:true},
-        date:{type:Date,required:true},
-    },{ versionKey : false })
-    return mongoose.model('Data',DataSchema)
-}
-
-module.exports = Data
-//평가테이블
-const Evaluation = function (mongoose){
-    const EvaluationSchema = new mongoose.Schema({
-        id:{type:String,required:true},
-        company:{type:String,required:true},
-        indexNum:{type:Number,required:true},
-        question:{type:String,required:true},
-        answer:{type:String,required:true},
-        date:{type:Date,required:true},
-    },{ versionKey : false })
-    return mongoose.model('Evaluation',EvaluationSchema)
-}
-
-module.exports = Evaluation
-//경영평가테이블
-const ManagementEvaluation = function (mongoose){
-    const ManagementEvaluationSchema = new mongoose.Schema({
-        id:{type:String,required:true},
-        name:{type:String,required:true},
-        types:{type:String},
-        data:{type:Object,required:true},
-    },{ versionKey : false })
-    return mongoose.model('ManagementEvaluation',ManagementEvaluationSchema)
-}
-
-module.exports = ManagementEvaluation
-
-const ManagementEvaluation = function (mongoose){
-    const ManagementEvaluationSchema = new mongoose.Schema({
-        id:{type:String,required:true},
-        name:{type:String,required:true},
-        types:{type:String},
-        data:{type:Object,required:true},
-    },{ versionKey : false })
-    return mongoose.model('ManagementEvaluation',ManagementEvaluationSchema)
-}
-
-module.exports = ManagementEvaluation
-
-//교육프로그램
-const EducationalEvaluation = function (mongoose){
-    const EducationalEvaluationSchema = new mongoose.Schema({
-        date:{type:Date,required:true},
-        kind:{type:String,required:true},
-        Application:{type:[{
-                id:String,
-                name:String,
-                tel:String,
-                approve:Boolean
-            }]},
-    },{ versionKey : false })
-    return mongoose.model('EducationalEvaluation',EducationalEvaluationSchema)
-}
-
-module.exports = EducationalEvaluation
-
-
-
+    {
+        "_id": {
+            "$oid": "64d5e99f01becd9161f2d31a"
+        },
+        "contract_num": "Blau7",
+        "device_id": "a4:da:22:11:85:e8,a4:da:22:11:92:e2,a4:da:22:11:83:4f,a4:da:22:11:83:ff",
+        "company": "Blaubit",
+        "name": "김의선",
+        "contract_service": "주계약자",
+        "id": "kes",
+        "addr": "서울",
+        "tel": "01090858423",
+        "communication": "O",
+        "service_name": "A-Type",
+        "service_start": "2023-06-23",
+        "service_end": "2024-06-23",
+        "start_up": "O",
+        "user_key": "e0251cb5-3994-48df-992d-4a2b5a06e442",
+        "email": "sun@blaubit.co.kr"
+    }

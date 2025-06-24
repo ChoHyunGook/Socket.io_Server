@@ -11,6 +11,7 @@ var upload = multer({storage: storage});
 const moment = require("moment-timezone");
 const db = require("../../DataBase")
 const semiDate = require("../../service/Data/date")
+const AWSAPI = require("../AWS");
 
 
 const {
@@ -99,6 +100,15 @@ app.get('/get/personal/policy',async (req, res) => {
     res.send(htmlContent);
 
 })
+app.get('/get/picture', upload.single('file'),(req,res)=>{
+    AWSAPI.getPicture(req,res);
+})
+app.post('/upload/picture', upload.single('file'),(req,res)=>{
+    AWSAPI.uploadPicture(req,res);
+})
+app.delete('/delete/picture', upload.single('file'),(req,res)=>{
+    AWSAPI.deletePicture(req,res);
+})
 
 
 app.post('/get/aws/table',(req,res)=>{
@@ -158,10 +168,6 @@ app.post('/check/auth',(req,res)=>{
 app.get('/find/deviceInfo',(req,res)=>{
     Api().findDeviceInfo(req,res)
 })
-
-// app.post('/saveHistory',(req,res)=>{
-//     Api().saveHistory(req,res)
-// })
 
 app.get('/', (req,res)=>{
     Api().getService(req,res)
@@ -228,6 +234,9 @@ app.post('/save/deviceId',(req,res)=>{
 app.post('/update/deviceInfo',(req,res)=>{
     Api().saveDeviceInfo(req,res)
 })
+
+
+
 app.get('/deviceVersion/download',(req,res,next)=>{
     Management().deviceVersionDownload(req,res)
 })
@@ -237,7 +246,6 @@ app.get('/blaubit/doorbellsquare/apk/download',(req,res)=>{
 app.get('/version/dev/file/Management',(req,res)=>{
     Management().fileManagement(req,res)
 })
-
 app.post('/uploadS3File', upload.single('file'), function (req,res){
     Management().deviceS3Upload(req,res)
 });
@@ -259,29 +267,6 @@ app.post('/history/logs/deleted',(req,res)=>{
 app.post('/history/search/table',(req,res)=>{
     Management().searchTable(req,res)
 })
-
-
-// //플랫폼 문의 + A/S + user
-// app.get('/myrucell/get',async (req, res) => {
-//     const myRucellService = await EagleSafesInquiries(); // 비동기 호출
-//     myRucellService.getMyrucell(req, res)
-// })
-//
-// //inquiries
-//
-// app.post('/myrucell/create/inquiries',async (req, res) => {
-//     const inquiriesService = await EagleSafesInquiries(); // 비동기 호출
-//     inquiriesService.createInquiries(req, res)
-// })
-// app.post('/myrucell/update/inquiries',async (req, res) => {
-//     const inquiriesService = await EagleSafesInquiries(); // 비동기 호출
-//     inquiriesService.updateInquiries(req, res)
-// })
-// app.post('/myrucell/delete/inquiries',async (req, res) => {
-//     const inquiriesService = await EagleSafesInquiries(); // 비동기 호출
-//     inquiriesService.deleteInquiries(req, res)
-// })
-
 
 
 

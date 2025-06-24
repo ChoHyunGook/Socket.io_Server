@@ -110,28 +110,6 @@ const doorbell = function () {
                 });
             }
         },
-        // async autoSignIn(req,res){
-        //     const body = req.body;
-        //
-        //     const lambdaResponse = await axios.post(AWS_LAMBDA_SIGNIN,JSON.stringify(body));
-        //
-        //     const result = lambdaResponse.data;
-        //
-        //     if (result.resultcode === '00') {
-        //         // 로그인 성공 → 토큰을 expires 없이 전달
-        //         const tokenVerify = jwt.verify(result.response.token, AWS_TOKEN)
-        //         const autoToken = jwt.sign({user_key: tokenVerify.user_key}, AWS_TOKEN)
-        //
-        //         return res.status(200).json({
-        //             token: autoToken,
-        //             user_key: result.response.user_key
-        //         });
-        //     } else {
-        //         // 로그인 실패
-        //         return res.status(401).json(result);
-        //     }
-        //
-        // },
 
         async updateUser(req, res) {
             const data = req.body;
@@ -275,6 +253,7 @@ const doorbell = function () {
                     service_end: "9999-12-30",
                     start_up: 'O',
                     user_key: null,
+                    member_key: null
                 };
 
                 const findData = await tableCol.find({id: data.user_id}).toArray();
@@ -308,6 +287,7 @@ const doorbell = function () {
             }
 
         },
+
 
         async signUpEmail(req, res) {
             let {company, user_id, email} = req.body;
