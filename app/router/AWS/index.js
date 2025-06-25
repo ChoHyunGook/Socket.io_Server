@@ -130,6 +130,52 @@ const AWSAPI  = function (){
             }
         },
 
+        // userKeys: [master_user_key, ...unit_user_keys]
+        // USER_TABLE: 'USER_TABLE' (테이블명)
+        // responseMsg: 객체(로깅용, 그대로 재활용)
+        async renewalDelDynamoUserFcm(USER_TABLE, userKeys, responseMsg) {
+            for (const user_key of userKeys) {
+                const UserParams = {
+                    TableName: USER_TABLE,
+                    Key: { user_key },
+                    UpdateExpression: 'set fcm_token = :fcm_token',
+                    ExpressionAttributeValues: { ':fcm_token': [] },
+                    ReturnValues: 'UPDATED_NEW'
+                };
+                try {
+                    const result = await dynamoDB.update(UserParams).promise();
+                    if (!responseMsg.USER_TABLE.complete) responseMsg.USER_TABLE.complete = [];
+                    responseMsg.USER_TABLE.complete.push(user_key);
+                } catch (error) {
+                    if (!responseMsg.USER_TABLE.false) responseMsg.USER_TABLE.false = [];
+                    responseMsg.USER_TABLE.false.push(user_key);
+                    responseMsg.USER_TABLE.err = error.message;
+                }
+            }
+        },
+
+        // DEVICE_TABLE: 'DEVICE_TABLE' (테이블명)
+        // device_id: (소문자 변환해서 넣어줌)
+        // userKeys: [master_user_key, ...unit_user_keys]
+        // responseMsg: 객체(로깅용)
+        async renewalDelDynamoDeviceTable(DEVICE_TABLE, device_id, userKeys, responseMsg) {
+            for (const user_key of userKeys) {
+                const deviceDeleteParams = {
+                    TableName: DEVICE_TABLE,
+                    Key: { device_id, user_key }
+                };
+                try {
+                    await dynamoDB.delete(deviceDeleteParams).promise();
+                    if (!responseMsg.DEVICE_TABLE.complete) responseMsg.DEVICE_TABLE.complete = [];
+                    responseMsg.DEVICE_TABLE.complete.push({ device_id, user_key });
+                } catch (error) {
+                    if (!responseMsg.DEVICE_TABLE.false) responseMsg.DEVICE_TABLE.false = [];
+                    responseMsg.DEVICE_TABLE.false.push({ device_id, user_key });
+                    responseMsg.DEVICE_TABLE.err = error.message;
+                }
+            }
+        },
+
         async delDynamoUserFcm(table,user_key,msg){
             const UserParams = {
                 TableName: table,

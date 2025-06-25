@@ -14,6 +14,7 @@ const Socket = require('./app/router/socket/socket')
 const Api = require('./app/router/api/api')
 const Myrucell = require('./app/router/myrucell/index')
 const Doorbell = require('./app/router/Doorbell/index')
+const Member = require('./app/router/Doorbell/Member')
 
 
 
@@ -52,6 +53,7 @@ async function startServer(){
     app.use('/socketServer', Socket)
     app.use('/myrucell', Myrucell)
     app.use('/doorbell', Doorbell)
+    app.use('/member', Member)
     app.use('/', Api)
 
 

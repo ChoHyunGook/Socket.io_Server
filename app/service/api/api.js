@@ -20,6 +20,7 @@ const CryptoJS = require('crypto-js')
 
 const AWSAPI = require("../../router/AWS");
 const { ConnectMongo } = require('../ConnectMongo');
+const {verify} = require("jsonwebtoken");
 
 var Client = require('mongodb').MongoClient;
 
@@ -265,7 +266,7 @@ const api = function () {
             }
         },
 
-
+        //중복 체크 (true,false)
         async checkDeivceId(req, res) {
             try {
                 const data = req.body;
@@ -327,6 +328,41 @@ const api = function () {
             }
 
         },
+        //[ { "M" : { "fcm_token" : { "S" : "fOZWxioXiE8Kl-z4n_Pp3E:APA91bG81zNiUyuohJhNtlxP7OU_Q7bn78PikCQ0E_meX3o0Wa9xBGNxZWh834AqAEt6J2cbC9UyNgOegP8HrKslglwnzcp2iH1BUp06H7neKHxjYb2_4tM" }, "upKey" : { "S" : "FB265E03-1FDB-4786-92D7-B6FFED22AA17" }, "device_id" : { "NULL" : true } } } ]
+        //[ { "M" : { "fcm_token" : { "S" : "fOZWxioXiE8Kl-z4n_Pp3E:APA91bG81zNiUyuohJhNtlxP7OU_Q7bn78PikCQ0E_meX3o0Wa9xBGNxZWh834AqAEt6J2cbC9UyNgOegP8HrKslglwnzcp2iH1BUp06H7neKHxjYb2_4tM1" }, "upKey" : { "S" : "FB265E03-1FDB-4786-92D7-B6FFED22AA17" }, "device_id" : { "NULL" : true } } } ]
+        async upsertFcmToken(req, res) {
+            const {token, fcm_token, upKey} = req.body;
+            const { user_key } = verify(token, process.env.AWS_TOKEN);
+
+            const userItem = await dynamoDB.get({
+                TableName: "USER_TABLE",
+                Key: { user_key }
+            }).promise();
+
+            let updateFcmToken = userItem.Item.fcm_token;
+
+            // upKey 기준으로 매칭해서 fcm_token 값만 교체
+            updateFcmToken = updateFcmToken.map(item => {
+                if (item.upKey === upKey) {
+                    // upKey가 일치하는 객체의 fcm_token 값을 바꿈
+                    return { ...item, fcm_token };
+                }
+                // 일치하지 않으면 그대로 리턴
+                return item;
+            });
+
+            await dynamoDB.update({
+                TableName: "USER_TABLE",
+                Key: { user_key },
+                UpdateExpression: "set fcm_token = :tokens",
+                ExpressionAttributeValues: {
+                    ":tokens": updateFcmToken
+                }
+            }).promise();
+
+            res.json({ result: updateFcmToken });
+
+        },
 
         record(req,res){
             const data = req.body
@@ -355,152 +391,6 @@ const api = function () {
                 }
             });
 
-        },
-
-        async allDeleteDevices(req, res) {
-            const data = req.body;
-            const lowerDeviceId = data.device_id.toLowerCase();
-
-            try {
-                const result = {
-                    Mongo: { admin: "", history: "" },
-                    Dynamo: { Device_Table: "", Record_Table: "" },
-                    S3: ""
-                };
-
-                // ✅ MongoDB: device_id 검색 및 삭제
-                const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
-                const findKey = await tablesCol.findOne({
-                    device_id: { $regex: lowerDeviceId, $options: 'i' }
-                });
-
-                if (!findKey) {
-                    result.Mongo.admin = "삭제할 데이터 없음";
-                } else {
-                    const deviceIds = findKey.device_id ? findKey.device_id.split(',') : [];
-                    const updatedDeviceIds = deviceIds.filter(id => id.trim() !== lowerDeviceId);
-                    const newDeviceId = updatedDeviceIds.length > 0 ? updatedDeviceIds.join(',') : null;
-
-                    await tablesCol.updateOne(
-                        { _id: findKey._id },
-                        { $set: { device_id: newDeviceId } }
-                    );
-
-                    result.Mongo.admin = "삭제 성공";
-                }
-
-                // ✅ MongoDB: History 삭제
-                const historyResult = await History.deleteMany({ device_id: lowerDeviceId });
-                result.Mongo.history = historyResult.deletedCount > 0 ? "삭제 성공" : "삭제할 데이터 없음";
-
-                // ✅ DynamoDB: DEVICE_TABLE 삭제
-                const deviceKeyResult = await dynamoDB.query({
-                    TableName: "DEVICE_TABLE",
-                    KeyConditionExpression: "device_id = :device_id",
-                    ExpressionAttributeValues: {
-                        ":device_id": lowerDeviceId
-                    }
-                }).promise();
-
-                if (deviceKeyResult.Items && deviceKeyResult.Items.length > 0) {
-                    const user_key = deviceKeyResult.Items[0].user_key;
-
-                    const deleteParams = {
-                        TableName: "DEVICE_TABLE",
-                        Key: {
-                            "device_id": lowerDeviceId,
-                            "user_key": user_key
-                        }
-                    };
-                    await dynamoDB.delete(deleteParams).promise();
-                    result.Dynamo.Device_Table = "삭제 성공";
-                } else {
-                    result.Dynamo.Device_Table = "삭제할 데이터 없음";
-                }
-
-                // ✅ DynamoDB: RECORD_TABLE 삭제
-                const recordDeleteResult = await deleteFromRecordTable(lowerDeviceId);
-                result.Dynamo.Record_Table = recordDeleteResult ? "삭제 성공" : "삭제할 데이터 없음";
-
-                // ✅ S3 삭제
-                const s3DeleteResult = await deleteFromS3(lowerDeviceId);
-                result.S3 = s3DeleteResult ? "삭제 성공" : "삭제할 데이터 없음";
-
-                // ✅ 최종 응답
-                res.status(200).json(result);
-
-            } catch (err) {
-                console.error('❌ Error during deletion process:', err);
-                res.status(500).json({ error: 'Internal Server Error' });
-            }
-
-            // 내부 함수들 (같은 위치 유지)
-            async function deleteFromRecordTable(lowerDeviceId) {
-                const queryParams = {
-                    TableName: "RECORD_TABLE",
-                    KeyConditionExpression: "device_id = :device_id",
-                    ExpressionAttributeValues: {
-                        ":device_id": lowerDeviceId
-                    }
-                };
-
-                try {
-                    const result = await dynamoDB.query(queryParams).promise();
-                    if (result.Items?.length > 0) {
-                        for (const record of result.Items) {
-                            const deleteParams = {
-                                TableName: "RECORD_TABLE",
-                                Key: {
-                                    device_id: record.device_id,
-                                    file_location: record.file_location
-                                }
-                            };
-                            await dynamoDB.delete(deleteParams).promise();
-                            console.log(`Deleted from RECORD_TABLE: ${record.device_id}, ${record.file_location}`);
-                        }
-                        return true;
-                    } else {
-                        console.log(`No RECORD_TABLE data for: ${lowerDeviceId}`);
-                        return false;
-                    }
-                } catch (error) {
-                    console.error("RECORD_TABLE deletion error:", error);
-                    return false;
-                }
-            }
-
-            async function deleteFromS3(lowerDeviceId) {
-                const s3 = new AWS.S3();
-                const bucketName = "doorbell-video";
-                const directoryKey = lowerDeviceId.replace(/:/g, '_') + "/";
-
-                const listParams = {
-                    Bucket: bucketName,
-                    Prefix: directoryKey
-                };
-
-                try {
-                    const listData = await s3.listObjectsV2(listParams).promise();
-                    if (listData.Contents.length === 0) {
-                        console.log(`No S3 objects for: ${directoryKey}`);
-                        return false;
-                    }
-
-                    const deleteParams = {
-                        Bucket: bucketName,
-                        Delete: {
-                            Objects: listData.Contents.map(obj => ({ Key: obj.Key }))
-                        }
-                    };
-
-                    await s3.deleteObjects(deleteParams).promise();
-                    console.log(`S3 deleted: ${directoryKey}`);
-                    return true;
-                } catch (error) {
-                    console.error("S3 deletion error:", error);
-                    return false;
-                }
-            }
         },
 
         deleteTarget: async (req, res) => {

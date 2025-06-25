@@ -2,6 +2,7 @@ const express = require('express')
 const app = express();
 const Api = require('../../service/api/api')
 const Management = require('../../service/api/management')
+const Device = require('../../service/Doorbell/device')
 const multer = require('multer');
 const applyDotenv = require("../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
@@ -184,6 +185,7 @@ app.post('/update/pw',(req,res)=>{
     Api().updateOverseasUser(req,res)
 })
 
+//????(앱사용x)
 app.post('/delete/history',(req,res)=>{
     Api().deleteHistory(req,res)
 })
@@ -201,15 +203,18 @@ app.post('/signOut',(req,res)=>{
 app.post('/record',(req,res)=>{
     Api().record(req,res)
 })
-app.post('/force/del/deviceId',(req,res)=>{
-    Api().allDeleteDevices(req,res)
-})
+// 개발자용 강제삭제였음
+// app.post('/force/del/deviceId',(req,res)=>{
+//     Device().forceDeleteDeviceId(req,res)
+// })
 app.get('/del/all/record',(req,res)=>{
     Api().allDeleteRecord(req,res)
 })
+//실질적으로 사용하는거 같음
 app.post('/delete/deviceId',(req,res)=>{
     Api().renewalDeleteDeviceId(req,res)
 })
+//앱 사용 x => 디바이스 확인후 해당 api 존폐여부 가려야함
 app.post('/del/target/deviceId',(req,res)=>{
     Api().deleteTarget(req,res)
 })
@@ -222,9 +227,7 @@ app.post('/signup/overseas',(req,res)=>{
 app.get('/find/overseas',(req,res)=>{
     Api().findAWS(req,res)
 })
-app.post('/find/test',(req,res)=>{
-    Api().testToken(req,res)
-})
+
 app.post('/save/userKey',(req,res)=>{
     Api().saveUserKey(req,res)
 })
@@ -235,6 +238,14 @@ app.post('/update/deviceInfo',(req,res)=>{
     Api().saveDeviceInfo(req,res)
 })
 
+//fcm업데이트 토큰
+app.patch('/upsert/fcm_token',(req,res)=>{
+    Api().upsertFcmToken(req,res)
+})
+//token 생성
+app.post('/find/test',(req,res)=>{
+    Api().testToken(req,res)
+})
 
 
 app.get('/deviceVersion/download',(req,res,next)=>{

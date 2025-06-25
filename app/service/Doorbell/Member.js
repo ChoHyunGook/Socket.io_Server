@@ -89,10 +89,84 @@ async function syncMemberDevicePermission(target_user_key, device_ids, master_us
     );
 }
 
+// user_key가 가진 모든 디바이스 권한 삭제 (DynamoDB)
+async function removeAllDevicePermissions(user_key, dynamoDB) {
+
+
+    // DynamoDB: 해당 user_key의 모든 device_id row 삭제
+    // - 전체 조회
+    const { Items: devices = [] } = await dynamoDB.query({
+        TableName: DEVICE_TABLE,
+        KeyConditionExpression: 'user_key = :u',
+        ExpressionAttributeValues: { ':u': user_key }
+    }).promise();
+
+    for (const item of devices) {
+        await dynamoDB.delete({
+            TableName: DEVICE_TABLE,
+            Key: {
+                device_id: item.device_id,
+                user_key: item.user_key
+            }
+        }).promise();
+    }
+}
+
+
 
 
 const members = function () {
     return {
+        //본인 계정정보 (계정정보, 그룹정보)
+        async getUserInfo(req, res) {
+            const token = req.headers['token'];
+            if (!token) {
+                return res.status(401).send("Unauthorized: Token is required.");
+            }
+            let verify;
+            try {
+                verify = jwt.verify(token, process.env.AWS_TOKEN);
+            } catch (e) {
+                return res.status(401).send("Unauthorized: Invalid token.");
+            }
+            const user_key = verify.user_key;
+
+            try {
+                const { collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
+                const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+
+                const findUser = await tablesCol.findOne({ user_key });
+                let groupInfo = null;
+                let groupMsg = null;
+
+                if (findUser.contract_service === "주계약자") {
+                    // 마스터: 본인 user_key로 그룹 조회
+                    groupInfo = await membersCol.findOne({ user_key });
+                    if (!groupInfo) {
+                        groupMsg = "Group has not been created yet.";
+                    } else {
+                        groupMsg = "Group has been created.";
+                    }
+                } else {
+                    // 맴버: unit.user_key로 포함된 그룹 조회
+                    groupInfo = await membersCol.findOne({ "unit.user_key": user_key });
+                    if (!groupInfo) {
+                        groupMsg = "You are not a member of any group.";
+                    } else {
+                        groupMsg = "Group has been created.";
+                    }
+                }
+
+                return res.status(200).json({
+                    user: findUser,
+                    group: groupInfo,
+                    contract_service:findUser.contract_service,
+                    message: groupMsg
+                });
+            } catch (err) {
+                return res.status(500).send(err);
+            }
+        },
         //맴버 그룹 생성
         async createMembers(req, res) {
             const token = req.headers['token'];
@@ -137,7 +211,7 @@ const members = function () {
 
         //이메일,아이디로 검색 API(초대할 사람 검색)
         async findUsers(req, res) {
-            const {email, user_id} = req.body;
+            const {email, user_id} = req.query;
             let query = {}
             if (email) query.email = email;
             if (user_id) query.id = user_id;
@@ -232,18 +306,23 @@ const members = function () {
                     to: email,
                     subject: `${mailSubjectPrefix}[${findMaster.company}] ${findMaster.name}님의 그룹 초대 안내`,
                     html: `
-        <div style="font-family:sans-serif">
-            <h2>[${findMaster.name}]님의 그룹 초대 안내</h2>
-            <p>${findInvitee.name}님, [${findMaster.name}]님의 그룹에 초대되었습니다.<br/>
-            아래 버튼을 눌러 초대 수락을 완료해주세요.</p>
-            <a href="https://your-domain.com/api/invite/confirm?token=${token}"
-                style="display:inline-block;padding:12px 32px;background:#3489f7;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">
-                초대 수락하기
-            </a>
-            <p style="color:#888;font-size:12px">이 링크는 10분간만 유효합니다.</p>
-        </div>
+    <div style="font-family:sans-serif">
+        <h2>[${findMaster.name}]님의 그룹 초대 안내</h2>
+        <p>${findInvitee.name}님, [${findMaster.name}]님의 그룹에 초대되었습니다.<br/>
+        아래 버튼을 눌러 초대 수락 또는 거절을 선택해주세요.</p>
+        <a href="http://socket.doorbellsquare.com:8080/doorbell/invite/confirm?token=${token}"
+            style="display:inline-block;padding:12px 32px;background:#3489f7;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;margin-right:10px;">
+            초대 수락하기
+        </a>
+        <a href="http://socket.doorbellsquare.com:8080/doorbell/invite/reject?token=${token}"
+            style="display:inline-block;padding:12px 32px;background:#c13232;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">
+            초대 거절하기
+        </a>
+        <p style="color:#888;font-size:12px">이 링크는 10분간만 유효합니다.</p>
+    </div>
     `
                 }
+
 
                 const sendMailPromise = () => {
                     return new Promise((resolve, reject) => {
@@ -285,9 +364,6 @@ const members = function () {
                 return res.status(500).send(err);
             }
         },
-
-
-
 
         //버튼 누르면 승인상태 변경,
         async inviteConfirm(req, res) {
@@ -351,6 +427,47 @@ const members = function () {
             return res.send(`<h3>초대가 정상적으로 수락되었습니다. 승인 대기 중입니다.</h3>`);
         },
 
+        //그룹 초대 거절
+        async inviteReject(req, res) {
+            const { token } = req.query;
+            if (!token) return res.status(400).send('Invalid or missing token.');
+
+            let decoded;
+            try {
+                decoded = jwt.verify(token, process.env.AWS_TOKEN);
+            } catch (e) {
+                if (e.name === "TokenExpiredError") {
+                    // 만료된 토큰도 필요하면 처리
+                    return res.status(400).send('Invitation link has expired. Please request a new invitation.');
+                }
+                return res.status(400).send('Token invalid.');
+            }
+
+            // 정상적으로 verify 된 경우
+            const { master, invitee } = decoded;
+            const membersCol = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
+            const group = await membersCol.findOne({ user_key: master, "unit.user_key": invitee });
+
+            if (!group) return res.status(404).send('Invitation not found.');
+
+            const invitedUnit = group.unit.find(u => u.user_key === invitee);
+
+            if (!invitedUnit || invitedUnit.token !== token) {
+                return res.status(400).send('This invitation link is no longer valid.');
+            }
+            if (invitedUnit.state !== "INVITED") {
+                return res.send(`<h3>이미 초대가 처리된 상태입니다.</h3>`);
+            }
+
+            // 거절 처리
+            await membersCol.updateOne(
+                { user_key: master, "unit.user_key": invitee },
+                { $set: { "unit.$.state": "REJECTED" } }
+            );
+
+            return res.send(`<h3>초대를 거절하셨습니다.</h3>`);
+        },
+
         // 마스터 최종 승인(부계약자로 변경)
         async memberApprove(req,res) {
             const token = req.headers['token'];
@@ -366,16 +483,21 @@ const members = function () {
             }
 
             const user_key = verify.user_key;
+            const {client, collection: membersCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
+            const {collection: tablesCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+
+            const session = client.startSession();
 
             try {
-                const {collection: membersCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
-                const {collection: tablesCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+                session.startTransaction();
 
                 const findMaster = await tablesCol.findOne({user_key});
                 const findInvitee = await tablesCol.findOne({email});
                 const findMember = await membersCol.findOne({user_key});
 
                 if (!findMaster || !findInvitee || !findMember) {
+                    await session.abortTransaction();
+                    session.endSession();
                     return res.status(404).send("Master or Invitee not found.");
                 }
 
@@ -389,25 +511,36 @@ const members = function () {
                                 "unit.$.state": "APPROVED",
                                 "unit.$.join_at": moment().tz('Asia/Seoul').toDate()
                             }
-                        }
+                        },
+                        { session }
                     );
                     // tables의 contract_service를 '부계약자'로
                     await tablesCol.updateOne(
                         { user_key: findInvitee.user_key },
-                        { $set: { contract_service: "부계약자" } }
+                        { $set: { contract_service: "부계약자" } },
+                        { session }
                     );
-                    return res.status(200).send("Member has been approved successfully.");
+
                 }else{
                     // false면 맴버 unit에 findInvitee.user_key 찾아서 state를 APPROVED_REJECTED로 변경
                     // APPROVED_REJECTED 처리
                     await membersCol.updateOne(
                         { user_key, "unit.user_key": findInvitee.user_key },
-                        { $set: { "unit.$.state": "APPROVED_REJECTED" } }
+                        { $set: { "unit.$.state": "APPROVED_REJECTED" } },
+                        { session }
                     );
-                    return res.status(200).send("Member invitation has been rejected.");
                 }
+                await session.commitTransaction();
+                session.endSession();
+                return res.status(200).send(
+                    approve
+                        ? "Member has been approved successfully."
+                        : "Member invitation has been rejected."
+                );
 
             }catch (err) {
+                await session.abortTransaction();
+                session.endSession();
                 return res.status(500).send(err);
             }
 
@@ -469,38 +602,167 @@ const members = function () {
             }
             const user_key = verify.user_key; // 마스터의 user_key
 
+            const { client, collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
+            const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+
+            const session = client.startSession();
+
             try {
-                const { collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
-                const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+                session.startTransaction();
 
                 // 1. unit에서 해당 멤버 정보 찾기 (상태확인용)
                 const findMember = await membersCol.findOne({ user_key });
                 if (!findMember) {
+                    await session.abortTransaction();
+                    session.endSession();
                     return res.status(404).send("Group not found.");
                 }
                 const targetUnit = (findMember.unit || []).find(u => u.user_key === target_user_key);
                 if (!targetUnit) {
+                    await session.abortTransaction();
+                    session.endSession();
                     return res.status(404).send("Member not found in group.");
                 }
 
                 // 2. unit에서 해당 멤버 제거
                 await membersCol.updateOne(
                     { user_key },
-                    { $pull: { unit: { user_key: target_user_key } } }
+                    { $pull: { unit: { user_key: target_user_key } } },
+                    { session }
                 );
 
                 // 3. APPROVED 상태면 tables 컬렉션 contract_service를 "주계약자"로 변경
                 if (targetUnit.state === "APPROVED") {
                     await tablesCol.updateOne(
                         { user_key: target_user_key },
-                        { $set: { contract_service: "주계약자" } }
+                        { $set: { contract_service: "주계약자" } },
+                        { session }
                     );
                 }
 
+                // 4. MongoDB: device_id를 null로
+                await tablesCol.updateOne(
+                    { user_key: target_user_key },
+                    { $set: { device_id: null } },
+                    { session }
+                );
+
+                await session.commitTransaction();
+                session.endSession();
+
+                // 4. [추가] device 권한 모두 삭제
+                await removeAllDevicePermissions(target_user_key, dynamoDB);
+
                 return res.status(200).send("Member removed successfully.");
             } catch (err) {
+
                 return res.status(500).send(err);
             }
+        },
+
+        async removeGroup(req, res) {
+            const token = req.headers['token'];
+            if (!token) {
+                return res.status(401).send("Unauthorized: Token is required.");
+            }
+            let verify;
+            try {
+                verify = jwt.verify(token, process.env.AWS_TOKEN);
+            } catch (e) {
+                return res.status(401).send("Unauthorized: Invalid token.");
+            }
+            const user_key = verify.user_key; // 마스터의 user_key
+
+            const { client, collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
+            const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+
+            const session = client.startSession();
+
+            try {
+                // tables 디비는 해당 그룹 unit들의 user_key 배열로 저장해놓고 contract_service 부계약자 => 주계약자로 device_id는 null
+                // 다이나모 USER_TABLE에 fcm_token [] 초기화 하기 전 Group삭제 되었다고 유닛들에게 fcm메세지 전송 후 각 유닛들의 fcm_token []로 초기화
+                // 다이나모 DEVICE_TABLE에 해당 유닛들 user_key를 가진 device_id 매칭시켜서 삭제
+                // 맴버 디비는 마스터 user_key로 삭제
+
+                session.startTransaction();
+
+                // 1. 마스터의 group(unit 배열 포함) 조회
+                const findMember = await membersCol.findOne({ user_key });
+                const unitKeys = Array.isArray(findMember?.unit) ? findMember.unit.map(u => u.user_key) : [];
+
+                // 2. 각 유닛들의 contract_service, device_id 초기화 (unit 없어도 문제X)
+                for (const uKey of unitKeys) {
+                    await tablesCol.updateOne(
+                        { user_key: uKey },
+                        { $set: { contract_service: "주계약자", device_id: null } },
+                        { session }
+                    );
+                }
+
+                // 3. fcm_token 초기화 & 삭제 전 알림
+                for (const uKey of unitKeys) {
+                    // fcm_token 전체 추출
+                    const userItem = await dynamoDB.get({
+                        TableName: "USER_TABLE",
+                        Key: { user_key: uKey }
+                    }).promise();
+
+                    if (userItem.Item && Array.isArray(userItem.Item.fcm_token)) {
+                        for (const t of userItem.Item.fcm_token) {
+                            const tokenVal = typeof t === 'string' ? t : t?.fcm_token;
+                            if (tokenVal) {
+                                await axios.post(
+                                    "https://l122dwssje.execute-api.ap-northeast-2.amazonaws.com/Prod/push",
+                                    {
+                                        user_key: uKey,
+                                        fcm_token: tokenVal,
+                                        title: "[Re-login Request] Group deleted",
+                                        message: "The group has been deleted by the master. Please re-login.",
+                                        fileName: "removeGroup"
+                                    }
+                                ).catch(() => { });
+                            }
+                        }
+                    }
+                    // fcm_token 배열 초기화
+                    await dynamoDB.update({
+                        TableName: "USER_TABLE",
+                        Key: { user_key: uKey },
+                        UpdateExpression: 'set fcm_token = :fcm_token',
+                        ExpressionAttributeValues: { ':fcm_token': [] }
+                    }).promise();
+                }
+
+                // 4. DEVICE_TABLE에서 각 유닛 user_key가 가진 device row 삭제
+                for (const uKey of unitKeys) {
+                    // 해당 user_key가 가진 모든 device_id row 삭제
+                    const { Items: devices = [] } = await dynamoDB.query({
+                        TableName: DEVICE_TABLE,
+                        KeyConditionExpression: 'user_key = :u',
+                        ExpressionAttributeValues: { ':u': uKey }
+                    }).promise();
+                    for (const item of devices) {
+                        await dynamoDB.delete({
+                            TableName: DEVICE_TABLE,
+                            Key: { device_id: item.device_id, user_key: item.user_key }
+                        }).promise();
+                    }
+                }
+
+                // 5. members, tables에서 마스터 row 삭제 (유닛이 없어도 이 부분만 하면 됨)
+                await membersCol.deleteOne({ user_key }, { session });
+                await tablesCol.deleteOne({ user_key }, { session });
+
+                await session.commitTransaction();
+                session.endSession();
+
+                return res.status(200).send("그룹이 정상적으로 삭제되었습니다.");
+
+
+            }catch (err){
+                return res.status(500).send(err);
+            }
+
         },
 
         //맴버- 그룹탈퇴
@@ -517,33 +779,56 @@ const members = function () {
             }
             const user_key = verify.user_key;
 
+            // 트랜잭션 준비
+            const { client, collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
+            const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+            const session = client.startSession();
+
             try {
-                const { collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
-                const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+                session.startTransaction();
 
                 // 1. 내가 unit에 포함된 그룹(마스터)의 user_key 찾기
                 const group = await membersCol.findOne({ "unit.user_key": user_key });
                 if (!group) {
+                    await session.abortTransaction();
+                    session.endSession();
                     return res.status(404).send("You are not a member of any group.");
                 }
 
                 // 2. 내 unit 정보(state 확인)
                 const myUnit = (group.unit || []).find(u => u.user_key === user_key);
                 if (!myUnit || myUnit.state !== "APPROVED") {
+                    await session.abortTransaction();
+                    session.endSession();
                     return res.status(400).send("You can only leave a group if your membership is approved.");
                 }
 
                 // 3. unit에서 내 정보 삭제
                 await membersCol.updateOne(
                     { user_key: group.user_key },
-                    { $pull: { unit: { user_key } } }
+                    { $pull: { unit: { user_key } } },
+                    { session }
                 );
 
                 // 4. 내 contract_service를 '주계약자'로 변경
                 await tablesCol.updateOne(
                     { user_key },
-                    { $set: { contract_service: "주계약자" } }
+                    { $set: { contract_service: "주계약자" } },
+                    { session }
                 );
+
+                // 5. device_id null로 변경 (Mongo)
+                await tablesCol.updateOne(
+                    { user_key },
+                    { $set: { device_id: null } },
+                    { session }
+                );
+
+                await session.commitTransaction();
+                session.endSession();
+
+                // 5. [추가] device 권한 모두 삭제
+                await removeAllDevicePermissions(user_key, dynamoDB);
 
                 return res.status(200).send("Successfully left the group.");
             } catch (err) {
@@ -591,16 +876,33 @@ const members = function () {
                     { $set: { device_id: device_id_str } }
                 );
 
-                // 권한 동기화
-                await syncMemberDevicePermission(
-                    target_user_key,
-                    device_id,
-                    user_key,
-                    dynamoDB,
-                    tablesCol
-                );
+                // 2. DynamoDB에 권한 동기화 (try-catch 분리!)
+                try {
+                    await syncMemberDevicePermission(
+                        target_user_key,
+                        Array.isArray(device_id) ? device_id : [device_id],
+                        user_key,
+                        dynamoDB,
+                        tablesCol
+                    );
+                    return res.status(200).send("Device permission assigned successfully.");
+                } catch (dynamoErr) {
+                    // DynamoDB 동기화 실패
+                    console.error('DynamoDB 동기화 실패:', dynamoErr);
+                    // 사용자에겐 partial failure 알림
+                    return res.status(500).send("Partial failure: Device permission updated in main DB, but synchronization with device server failed. Please try again later or contact support.");
+                }
 
-                return res.status(200).send("Device permission assigned successfully.");
+                // // 권한 동기화
+                // await syncMemberDevicePermission(
+                //     target_user_key,
+                //     device_id,
+                //     user_key,
+                //     dynamoDB,
+                //     tablesCol
+                // );
+
+                //return res.status(200).send("Device permission assigned successfully.");
             } catch (err) {
                 return res.status(500).send(err);
             }
