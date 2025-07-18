@@ -1,7 +1,7 @@
-const applyDotenv = require("../../../lambdas/applyDotenv");
+const applyDotenv = require("../../middlewares/applyDotenv");
 const dotenv = require("dotenv");
 const AWS = require("aws-sdk");
-const {ConnectMongo} = require("../ConnectMongo");
+const {ConnectMongo} = require("../../utils/connectMongo");
 const {verify} = require("jsonwebtoken");
 const axios = require("axios");
 

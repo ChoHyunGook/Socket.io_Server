@@ -1,13 +1,13 @@
 const dotenv = require("dotenv");
-const applyDotenv = require("../../../lambdas/applyDotenv");
+const applyDotenv = require("../../middlewares/applyDotenv");
 const bcrypt = require('bcrypt')
 const AWS = require("aws-sdk")
 const nodemailer = require("nodemailer");
 const moment = require("moment-timezone");
 const axios = require("axios");
 const CryptoJS = require('crypto-js')
-const {ConnectMongo} = require('../ConnectMongo');
-const db = require("../../DataBase");
+const {ConnectMongo} = require('../../utils/connectMongo');
+const db = require("../../Models");
 const jwt = require("jsonwebtoken");
 
 
