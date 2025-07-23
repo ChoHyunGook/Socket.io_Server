@@ -66,11 +66,17 @@ const devices = function () {
             if (!findMembers) {
                 return res.status(404).json({ error: "Group (master) not found." });
             }
-            const userKeys = [verify.user_key, ...(findMembers.unit || []).map(u => u.user_key)];
+            // 1. 그룹 전체 user_key 배열 (마스터 + unit)
+            // 그룹 전체 user_key (마스터 + 실제 user_key가 존재하는 unit 멤버만- 첫로그인 안한 아이들도 있음.)
+            const userKeys = [verify.user_key, ...(findMembers.unit || []).map(u => u.user_key).filter(Boolean)];
+            // 푸시 메시지는 unit에 실제 user_key 있는 멤버만!
+            const unitUserKeys = (findMembers.unit || [])
+                .map(u => u.user_key)
+                .filter(uKey => !!uKey && uKey !== verify.user_key); // null/undefined 및 본인 제외
 
             // 2. 각 유저의 fcm_token 전체 수집 (중복제거)
             const fcmTokenSet = new Set();
-            for (const uKey of userKeys) {
+            for (const uKey of unitUserKeys) {
                 const userItem = await dynamoDB.get({
                     TableName: USER_TABLE,
                     Key: { user_key: uKey }
@@ -82,10 +88,11 @@ const devices = function () {
                     });
                 }
             }
+            // 이제 unit 멤버 중 user_key 있는 애들에게만 PUSH
             const messagePayload = {
-                user_key: verify.user_key,
-                title: "[Re-login Request] Change User Information",
-                message: "Your user information has been changed. Please log in again.",
+                user_key: verify.user_key, // 보내는 사람: 마스터 (이건 상황에 따라)
+                title: "Device Removed",
+                message: "A device has been removed from your group by the master.",
                 fileName: "deleteDeviceId"
             };
 
@@ -145,7 +152,7 @@ const devices = function () {
             };
 
             await Promise.all([
-                AWSAPI().renewalDelDynamoUserFcm(USER_TABLE, userKeys, responseMsg),
+                //AWSAPI().renewalDelDynamoUserFcm(USER_TABLE, userKeys, responseMsg), 안씀
                 AWSAPI().renewalDelDynamoDeviceTable(DEVICE_TABLE, lowerDeviceId, userKeys, responseMsg),
                 AWSAPI().delDynamoRecord(RECORD_TABLE, lowerDeviceId, responseMsg),
                 AWSAPI().delS3(BUCKET_NAME, lowerDeviceId, responseMsg)
@@ -161,7 +168,50 @@ const devices = function () {
             });
 
         },
+        //마스터가 기기 페어링 후 등록 시 members 내 deviceInfo 정보 저장 필요
+        async saveDeivceId(req, res) {
+            const data = req.body;
 
+            try {
+                const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+                const findData = await tablesCol.findOne({ user_key: data.user_key });
+
+                if (!findData) {
+                    return res.status(404).send('User not found');
+                }
+
+                const incomingDeviceId = data.device_id.toLowerCase();
+
+                if (!findData.device_id || findData.device_id === "") {
+                    // device_id가 null이거나 빈 문자열인 경우 새로 저장
+                    await tablesCol.findOneAndUpdate(
+                        { user_key: data.user_key },
+                        { $set: { device_id: incomingDeviceId } }
+                    );
+                    console.log(`${findData.id}-${findData.name}-${incomingDeviceId} saved`);
+                    return res.status(200).send('success');
+                } else {
+                    const dataArray = findData.device_id.toLowerCase().split(',');
+
+                    if (dataArray.includes(incomingDeviceId)) {
+                        return res.status(200).send(`device_id:${incomingDeviceId} - This is already saved device_id`);
+                    } else {
+                        const updatedDeviceId = findData.device_id + "," + incomingDeviceId;
+                        await tablesCol.findOneAndUpdate(
+                            { user_key: data.user_key },
+                            { $set: { device_id: updatedDeviceId } }
+                        );
+                        console.log(`${findData.id}-${findData.name}-${incomingDeviceId} saved`);
+                        return res.status(200).send('success');
+                    }
+                }
+            } catch (err) {
+                console.error('Error in saveDeivceId:', err);
+                return res.status(500).send('Internal Server Error');
+            }
+        },
+
+        //device_id 만 받아서 그룹에 생성된 것들도 배열을 돌면서 업데이트 같이 됨.
         async updateDeviceInfo(req,res){
             const data = req.body;
             console.log(data);
@@ -188,16 +238,6 @@ const devices = function () {
                 expressionAttributeValues[':battery_status'] = data.battery_status === null ? null : Number(data.battery_status);
             }
 
-            const key = {
-                device_id: data.device_id,
-                user_key: data.user_key
-            };
-
-            // 먼저 해당 항목이 존재하는지 확인
-            const getParams = {
-                TableName: 'DEVICE_TABLE',
-                Key: key
-            };
 
             try {
                 // 1. device_id로 모든 row 조회

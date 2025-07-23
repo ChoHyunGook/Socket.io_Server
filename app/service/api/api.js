@@ -331,37 +331,52 @@ const api = function () {
         //[ { "M" : { "fcm_token" : { "S" : "fOZWxioXiE8Kl-z4n_Pp3E:APA91bG81zNiUyuohJhNtlxP7OU_Q7bn78PikCQ0E_meX3o0Wa9xBGNxZWh834AqAEt6J2cbC9UyNgOegP8HrKslglwnzcp2iH1BUp06H7neKHxjYb2_4tM" }, "upKey" : { "S" : "FB265E03-1FDB-4786-92D7-B6FFED22AA17" }, "device_id" : { "NULL" : true } } } ]
         //[ { "M" : { "fcm_token" : { "S" : "fOZWxioXiE8Kl-z4n_Pp3E:APA91bG81zNiUyuohJhNtlxP7OU_Q7bn78PikCQ0E_meX3o0Wa9xBGNxZWh834AqAEt6J2cbC9UyNgOegP8HrKslglwnzcp2iH1BUp06H7neKHxjYb2_4tM1" }, "upKey" : { "S" : "FB265E03-1FDB-4786-92D7-B6FFED22AA17" }, "device_id" : { "NULL" : true } } } ]
         async upsertFcmToken(req, res) {
-            const {token, fcm_token, upKey} = req.body;
-            const { user_key } = verify(token, process.env.AWS_TOKEN);
+            try {
+                const {token, fcm_token, upKey} = req.body;
 
-            const userItem = await dynamoDB.get({
-                TableName: "USER_TABLE",
-                Key: { user_key }
-            }).promise();
+                if (!token) return res.status(400).json({ error: "token is required" });
+                if (!fcm_token) return res.status(400).json({ error: "fcm_token is required" });
+                if (!upKey) return res.status(400).json({ error: "upKey is required" });
 
-            let updateFcmToken = userItem.Item.fcm_token;
 
-            // upKey 기준으로 매칭해서 fcm_token 값만 교체
-            updateFcmToken = updateFcmToken.map(item => {
-                if (item.upKey === upKey) {
-                    // upKey가 일치하는 객체의 fcm_token 값을 바꿈
-                    return { ...item, fcm_token };
+                const { user_key } = verify(token, process.env.AWS_TOKEN);
+
+                const userItem = await dynamoDB.get({
+                    TableName: "USER_TABLE",
+                    Key: { user_key }
+                }).promise();
+
+                let updateFcmToken = userItem.Item.fcm_token;
+
+                // upKey 기준으로 매칭해서 fcm_token 값만 교체
+                updateFcmToken = updateFcmToken.map(item => {
+                    if (item.upKey === upKey) {
+                        // upKey가 일치하는 객체의 fcm_token 값을 바꿈
+                        return { ...item, fcm_token };
+                    }
+                    // 일치하지 않으면 그대로 리턴
+                    return item;
+                });
+
+                try {
+                    await dynamoDB.update({
+                        TableName: "USER_TABLE",
+                        Key: { user_key },
+                        UpdateExpression: "set fcm_token = :tokens",
+                        ExpressionAttributeValues: {
+                            ":tokens": updateFcmToken
+                        }
+                    }).promise();
+                    res.status(200).json({ msg:"Fcm_token update success", result: updateFcmToken });
+                } catch (dbErr) {
+                    // DynamoDB 업데이트 실패 시
+                    res.status(400).json({ error: 'DynamoDB update failed', detail: dbErr.message });
                 }
-                // 일치하지 않으면 그대로 리턴
-                return item;
-            });
 
-            await dynamoDB.update({
-                TableName: "USER_TABLE",
-                Key: { user_key },
-                UpdateExpression: "set fcm_token = :tokens",
-                ExpressionAttributeValues: {
-                    ":tokens": updateFcmToken
-                }
-            }).promise();
-
-            res.json({ result: updateFcmToken });
-
+            } catch (err) {
+                // 서버 자체 에러(토큰 검증 등)
+                res.status(500).json({ error: 'Server error', detail: err.message });
+            }
         },
 
         record(req,res){
@@ -878,10 +893,18 @@ const api = function () {
                     user_key: null,
                 };
 
-                const findData = await tableCol.find({ id: data.user_id }).toArray();
+                const findData = await tableCol.find({
+                    $or: [
+                        { id: data.user_id },
+                        { email: data.user_email }
+                    ]
+                }).toArray();
+
                 if (findData.length !== 0) {
-                    console.log('Duplicate UserId');
-                    return res.status(400).send('Duplicate UserId');
+                    let dupMsg = '';
+                    if (findData.some(u => u.id === data.user_id)) dupMsg += 'UserId ';
+                    if (findData.some(u => u.email === data.user_email)) dupMsg += 'Email ';
+                    return res.status(400).send(`Duplicate ${dupMsg.trim()}`);
                 }
 
                 const insertResult = await tableCol.insertOne(mongoData);
@@ -1241,11 +1264,15 @@ const api = function () {
                         { $set: { user_key: userData.user_key } }
                     );
 
-                    const eaglesSave = {
-                        id: bodyData.user_id,
-                        user_key: userData.user_key
-                    };
-                    this.eaglesSafesOverseasSave("saveUserKey", eaglesSave);
+                    if(findData.company === "Sunil"){
+                        const eaglesSave = {
+                            id: bodyData.user_id,
+                            user_key: userData.user_key
+                        };
+                        this.eaglesSafesOverseasSave("saveUserKey", eaglesSave);
+                    }
+
+
                     console.log(`Login-id:${bodyData.user_id}- user_key Save Success`);
                     return res.status(200).send('success');
                 } else {

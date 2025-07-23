@@ -247,7 +247,6 @@ app.post('/find/test',(req,res)=>{
     Api().testToken(req,res)
 })
 
-
 app.get('/deviceVersion/download',(req,res,next)=>{
     Management().deviceVersionDownload(req,res)
 })

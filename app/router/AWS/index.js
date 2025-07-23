@@ -133,26 +133,26 @@ const AWSAPI  = function (){
         // userKeys: [master_user_key, ...unit_user_keys]
         // USER_TABLE: 'USER_TABLE' (테이블명)
         // responseMsg: 객체(로깅용, 그대로 재활용)
-        async renewalDelDynamoUserFcm(USER_TABLE, userKeys, responseMsg) {
-            for (const user_key of userKeys) {
-                const UserParams = {
-                    TableName: USER_TABLE,
-                    Key: { user_key },
-                    UpdateExpression: 'set fcm_token = :fcm_token',
-                    ExpressionAttributeValues: { ':fcm_token': [] },
-                    ReturnValues: 'UPDATED_NEW'
-                };
-                try {
-                    const result = await dynamoDB.update(UserParams).promise();
-                    if (!responseMsg.USER_TABLE.complete) responseMsg.USER_TABLE.complete = [];
-                    responseMsg.USER_TABLE.complete.push(user_key);
-                } catch (error) {
-                    if (!responseMsg.USER_TABLE.false) responseMsg.USER_TABLE.false = [];
-                    responseMsg.USER_TABLE.false.push(user_key);
-                    responseMsg.USER_TABLE.err = error.message;
-                }
-            }
-        },
+        // async renewalDelDynamoUserFcm(USER_TABLE, userKeys, responseMsg) {
+        //     for (const user_key of userKeys) {
+        //         const UserParams = {
+        //             TableName: USER_TABLE,
+        //             Key: { user_key },
+        //             UpdateExpression: 'set fcm_token = :fcm_token',
+        //             ExpressionAttributeValues: { ':fcm_token': [] },
+        //             ReturnValues: 'UPDATED_NEW'
+        //         };
+        //         try {
+        //             const result = await dynamoDB.update(UserParams).promise();
+        //             if (!responseMsg.USER_TABLE.complete) responseMsg.USER_TABLE.complete = [];
+        //             responseMsg.USER_TABLE.complete.push(user_key);
+        //         } catch (error) {
+        //             if (!responseMsg.USER_TABLE.false) responseMsg.USER_TABLE.false = [];
+        //             responseMsg.USER_TABLE.false.push(user_key);
+        //             responseMsg.USER_TABLE.err = error.message;
+        //         }
+        //     }
+        // },
 
         // DEVICE_TABLE: 'DEVICE_TABLE' (테이블명)
         // device_id: (소문자 변환해서 넣어줌)

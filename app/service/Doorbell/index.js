@@ -214,6 +214,7 @@ const doorbell = function () {
 
             try {
                 const {collection: tableCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+                const {collection: membersCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'groups');
                 const allData = await tableCol.find({company}).toArray();
                 const maxContractNumObj = allData
                     .filter(item => item.contract_num && item.contract_num.startsWith(`${company}-`))
@@ -223,6 +224,20 @@ const doorbell = function () {
                     }, {contract_num: `${company}-0`});
 
                 const maxContractNum = maxContractNumObj ? parseInt(maxContractNumObj.contract_num.split(`${company}-`)[1], 10) : 0;
+
+                const findData = await tableCol.find({
+                    $or: [
+                        { id: data.user_id },
+                        { email: data.user_email }
+                    ]
+                }).toArray();
+
+                if (findData.length !== 0) {
+                    let dupMsg = '';
+                    if (findData.some(u => u.id === data.user_id)) dupMsg += 'UserId ';
+                    if (findData.some(u => u.email === data.user_email)) dupMsg += 'Email ';
+                    return res.status(400).send(`Duplicate ${dupMsg.trim()}`);
+                }
 
                 const key = data.user_id;
                 // const tel = "00000000000";
@@ -237,43 +252,65 @@ const doorbell = function () {
                     company,
                 };
 
-                const mongoData = {
-                    name: data.name,
-                    tel: data.tel,
-                    addr: addr,
-                    email: data.user_email,
-                    contract_num: `${company}-${Number(maxContractNum) + 1}`,
-                    device_id: null,
-                    company,
-                    contract_service: '주계약자',
-                    id: data.user_id,
-                    communication: 'O',
-                    service_name: `${company}Service`,
-                    service_start: saveTime.format('YYYY-MM-DD'),
-                    service_end: "9999-12-30",
-                    start_up: 'O',
-                    user_key: null,
-                    member_key: null
-                };
-
-                const findData = await tableCol.find({id: data.user_id}).toArray();
-                if (findData.length !== 0) {
-                    console.log('Duplicate UserId');
-                    return res.status(400).send('Duplicate UserId');
-                }
-
-                const insertResult = await tableCol.insertOne(mongoData);
-                console.log(insertResult);
-
-                const sendData = await tableCol.find({id: data.user_id}).toArray();
-
                 try {
                     const awsResponse = await axios.post(AWS_LAMBDA_SIGNUP, saveAwsData);
                     console.log('success SignUp');
+                    const awsResponseData = awsResponse.data;
+                    let lambdaDecoded = jwt.verify(awsResponseData.token, AWS_TOKEN); // 또는 AWS 쪽에서 사용하는 키
+                    let newUserKey = lambdaDecoded.user_key; // 여기에 유저키가 들어있음
+
+                    const mongoSignUpData = {
+                        name: data.name,
+                        tel: data.tel,
+                        addr: addr,
+                        email: data.user_email,
+                        contract_num: `${company}-${Number(maxContractNum) + 1}`,
+                        device_id: null,
+                        company,
+                        contract_service: '주계약자',
+                        id: data.user_id,
+                        communication: 'O',
+                        service_name: `${company}Service`,
+                        service_start: saveTime.format('YYYY-MM-DD'),
+                        service_end: "9999-12-30",
+                        start_up: 'O',
+                        user_key: newUserKey
+                    };
+
+                    const memberData = {
+                        group_name: `${data.name}의 그룹`,
+                        user_key:newUserKey,
+                        unit:[
+                            {
+                                user_key:newUserKey,
+                                user_name:data.name,
+                                alias_name:null,
+                                email:data.user_email,
+                                device_info:[],
+                                token:null,
+                                auth:true,
+                                state:"ACTIVE",
+                                join_at:moment().tz('Asia/Seoul').toDate(),
+                            }
+                        ],
+                        create_at:moment().tz('Asia/Seoul').toDate()
+                    }
+
+
+                    const insertSignUpResult = await tableCol.insertOne(mongoSignUpData);
+                    const insertMembersResult = await membersCol.insertOne(memberData);
+
+                    console.log(insertSignUpResult);
+                    console.log(insertMembersResult)
+
+                    const signUpData = await tableCol.findOne({id: data.user_id});
+                    const groupData = await membersCol.findOne({user_key:newUserKey})
+
                     return res.status(200).json({
                         msg: 'Success Signup',
-                        checkData: sendData[0],
-                        awsResponse: awsResponse.data
+                        signUpData,
+                        groupData,
+                        awsResponse: awsResponseData
                     });
                 } catch (awsErr) {
                     console.log(awsErr);

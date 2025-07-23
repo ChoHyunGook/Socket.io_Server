@@ -36,7 +36,9 @@ const applyDotenv = dotenv => {
         NODEMAILER_PASS:process.env.NODEMAILER_PASS,
         NODEMAILER_SERVICE:process.env.NODEMAILER_SERVICE,
         NODEMAILER_HOST:process.env.NODEMAILER_HOST,
-        SUNIL_MONGO_URI:process.env.SUNIL_MONGO_URI
+        SUNIL_MONGO_URI:process.env.SUNIL_MONGO_URI,
+        GROUP_MONGO_URI:process.env.GROUP_MONGO_URI,
+        GROUP_DB_NAME:process.env.GROUP_DB_NAME,
     }
 }
 

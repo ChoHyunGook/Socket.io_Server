@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>[<%= company %>] 그룹원 회원가입</title>
+    <script>
+        function validateForm() {
+            const user_id = document.forms["signup"]["user_id"].value.trim();
+            const name = document.forms["signup"]["name"].value.trim();
+            const tel = document.forms["signup"]["tel"].value.trim();
+            const user_pw = document.forms["signup"]["user_pw"].value.trim();
+
+            // 아이디 2자 이상
+            if(user_id.length < 2) {
+                alert("아이디는 2자 이상이어야 합니다.");
+                return false;
+            }
+            // 이름 2자 이상
+            if(name.length < 2) {
+                alert("이름은 2자 이상이어야 합니다.");
+                return false;
+            }
+            // 핸드폰번호 11자리
+            if(!/^\d{11}$/.test(tel)) {
+                alert("휴대폰 번호는 11자리 숫자여야 합니다.");
+                return false;
+            }
+            // 비밀번호: 영문+숫자+특수문자 8~15자리
+            if(!/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()\-_=+{}[\]:;<>,.?~]).{8,15}$/.test(user_pw)) {
+                alert("비밀번호는 영문, 숫자, 특수문자 조합 8~15자리여야 합니다.");
+                return false;
+            }
+            return true;
+        }
+    </script>
+</head>
+<body>
+<h2>[<%= company %>] 그룹원 회원가입</h2>
+<form name="signup" action="/member/signUp/group" method="POST" onsubmit="return validateForm()">
+    <input type="hidden" name="token" value="<%= token %>">
+    <!-- 아이디, 비번 등등 -->
+    <label>아이디: <input type="text" name="user_id" required></label><br>
+    <label>비밀번호: <input type="password" name="user_pw" required></label><br>
+    <label>이름: <input type="text" name="name" required></label><br>
+    <label>전화번호: <input type="text" name="tel" maxlength="11" required></label><br>
+    <button type="submit">회원가입</button>
+</form>
+</body>
+</html>

@@ -1,5 +1,6 @@
 const history = function (mongoose){
     const historySchema = new mongoose.Schema({
+        user_key:{type:String,required: true},
         title:{type:String, trim:true},
         body:{type:String, trim:true},
         upKey:{type:String, trim:true},
