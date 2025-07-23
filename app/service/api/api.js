@@ -875,24 +875,6 @@ const api = function () {
                     company: "Sunil",
                 };
 
-                const mongoData = {
-                    name: key,
-                    tel: tel,
-                    addr: addr,
-                    email: data.user_email,
-                    contract_num: `Sunil-overseas-${Number(maxContractNum) + 1}`,
-                    device_id: null,
-                    company: "Sunil",
-                    contract_service: '주계약자',
-                    id: data.user_id,
-                    communication: 'O',
-                    service_name: "SunilService",
-                    service_start: saveTime.format('YYYY-MM-DD'),
-                    service_end: "9999-12-30",
-                    start_up: 'O',
-                    user_key: null,
-                };
-
                 const findData = await tableCol.find({
                     $or: [
                         { id: data.user_id },
@@ -907,24 +889,102 @@ const api = function () {
                     return res.status(400).send(`Duplicate ${dupMsg.trim()}`);
                 }
 
-                const insertResult = await tableCol.insertOne(mongoData);
-                console.log(insertResult);
-
-                const sendData = await tableCol.find({ id: data.user_id }).toArray();
-
+                let newUserKey = null;
                 try {
                     const awsResponse = await axios.post(AWS_LAMBDA_SIGNUP, saveAwsData);
                     console.log('success SignUp');
+                    const awsResponseData = awsResponse.data;
+                    // ★ CHANGED: 토큰 디코드해서 user_key 추출
+                    newUserKey = jwt.verify(awsResponseData.token, AWS_TOKEN).user_key;
+
+                    // 5) MongoDB 저장용 데이터 (★ CHANGED: user_key 세팅)
+                    const mongoData = {
+                        name:            key,
+                        tel:             tel,
+                        addr:            addr,
+                        email:           data.user_email,
+                        contract_num:    `Sunil-overseas-${Number(maxContractNum) + 1}`,
+                        device_id:       null,
+                        company:         "Sunil",
+                        contract_service:'주계약자',
+                        id:              data.user_id,
+                        communication:   'O',
+                        service_name:    "SunilService",
+                        service_start:   saveTime.format('YYYY-MM-DD'),
+                        service_end:     "9999-12-30",
+                        start_up:        'O',
+                        user_key:        newUserKey,   // ★ CHANGED
+                    };
+
+                    // 6) ★ CHANGED: 이제 insertOne (user_key 포함된 상태)
+                    const insertResult = await tableCol.insertOne(mongoData);
+                    console.log(insertResult);
+
+                    const { collection: membersCol } = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'groups');
+
+                    const memberData = {
+                        group_name: `${mongoData.name}의 그룹`,
+                        company: "Sunil",
+                        user_key: newUserKey,
+                        unit: [
+                            {
+                                user_key: newUserKey,
+                                user_name: mongoData.name,
+                                alias_name: null,
+                                email: mongoData.email,
+                                latest_device_id: "",
+                                device_info: [],
+                                token: null,
+                                auth: true,
+                                state: "ACTIVE",
+                                join_at: saveTime.toDate()
+                            }
+                        ],
+                        created_at: saveTime.toDate()  // 스키마가 create_at이면 create_at으로 맞춰라
+                    };
+
+                    const insertMembersResult = await membersCol.insertOne(memberData);
+                    console.log(insertMembersResult);
+
+                    // 7) Sunil 별도 DB 저장 (기존 로직 유지) - user_key 필요 없으면 signUp 그대로
                     this.eaglesSafesOverseasSave("signUp", mongoData);
+                    // 필요하면 user_key 저장도 추가 가능:
+                    // this.eaglesSafesOverseasSave("saveUserKey", { id: mongoData.id, user_key: newUserKey });
+
+                    // 8) 리턴용 데이터 조회 (기존 포맷 유지)
+                    const sendData = await tableCol.find({ id: data.user_id }).toArray();
+
                     return res.status(200).json({
                         msg: 'Success Signup',
                         checkData: sendData[0],
-                        awsResponse: awsResponse.data
+                        awsResponse: awsResponseData
                     });
+
                 } catch (awsErr) {
+                    // AWS 실패 시 기존처럼 400
                     console.log(awsErr);
                     return res.status(400).send(awsErr);
                 }
+
+
+                // const insertResult = await tableCol.insertOne(mongoData);
+                // console.log(insertResult);
+                //
+                // const sendData = await tableCol.find({ id: data.user_id }).toArray();
+                //
+                // try {
+                //     const awsResponse = await axios.post(AWS_LAMBDA_SIGNUP, saveAwsData);
+                //     console.log('success SignUp');
+                //     this.eaglesSafesOverseasSave("signUp", mongoData);
+                //     return res.status(200).json({
+                //         msg: 'Success Signup',
+                //         checkData: sendData[0],
+                //         awsResponse: awsResponse.data
+                //     });
+                // } catch (awsErr) {
+                //     console.log(awsErr);
+                //     return res.status(400).send(awsErr);
+                // }
 
             } catch (err) {
                 console.error(err);

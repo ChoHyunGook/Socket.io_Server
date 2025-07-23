@@ -12,7 +12,7 @@ const AWSAPI = require("../../../router/AWS");
 
 const {
     AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, MONGO_URI, ADMIN_DB_NAME,
-    AWS_TOKEN, SUNIL_MONGO_URI
+    AWS_TOKEN, SUNIL_MONGO_URI, AWS_LAMBDA_SIGNUP,GROUP_MONGO_URI,GROUP_DB_NAME
 } = applyDotenv(dotenv)
 
 AWS.config.update({
@@ -73,7 +73,7 @@ const renewals = function () {
 
             try {
                 const {collection: tableCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
-                const {collection: membersCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'groups');
+                const {collection: membersCol} = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'groups');
                 const allData = await tableCol.find({company}).toArray();
                 const maxContractNumObj = allData
                     .filter(item => item.contract_num && item.contract_num.startsWith(`${company}-`))
@@ -146,6 +146,7 @@ const renewals = function () {
                                 user_name:data.name,
                                 alias_name:null,
                                 email:data.user_email,
+                                latest_device_id:"",
                                 device_info:[],
                                 token:null,
                                 auth:true,
@@ -153,7 +154,7 @@ const renewals = function () {
                                 join_at:moment().tz('Asia/Seoul').toDate(),
                             }
                         ],
-                        create_at:moment().tz('Asia/Seoul').toDate()
+                        created_at:moment().tz('Asia/Seoul').toDate()
                     }
 
 
@@ -199,7 +200,7 @@ const renewals = function () {
 
             // MongoDB 연결
             const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
-            const { collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
+            const { collection: membersCol } = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'groups');
             const findData = await tablesCol.findOne({ user_key });
             if (!findData) return res.status(404).send("User data not found.");
 
@@ -213,32 +214,6 @@ const renewals = function () {
             const group = await membersCol.findOne({ user_key });
             if (!group) return res.status(404).send("Group not found.");
 
-            // 2. FCM 알림을 보낼 ACTIVE 그룹원(본인 제외) 필터링
-            const unitsToNotify = (group.unit || []).filter(u =>
-                u.user_key !== user_key && u.state === "ACTIVE"
-            );
-
-            // 3. 각 그룹원에게 그룹 삭제 FCM 알림 전송
-            if (unitsToNotify.length > 0) {
-                const pushArr = unitsToNotify.map(unit => {
-                    const alias = unit.alias_name || group.group_name;
-                    return {
-                        user_key: unit.user_key,
-                        title: `[${alias}] Group Deleted`,
-                        message: "The group has been deleted by the master.",
-                        fileName: ""
-                    }
-                });
-                try {
-                    await axios.post(
-                        "https://l122dwssje.execute-api.ap-northeast-2.amazonaws.com/Prod/push",
-                        { push: pushArr },
-                        { headers: { "x-access-token": token } }
-                    );
-                } catch (e) {
-                    console.error("FCM Push Error:", e?.response?.data || e.message);
-                }
-            }
 
             // 본인 USER_TABLE row 삭제
             await dynamoDB.delete({
@@ -319,11 +294,11 @@ const renewals = function () {
 
 
         async renewalSaveDeviceId(req, res) {
-            let { user_key, device_id } = req.body;
+            let { user_key, device_id, device_name, op } = req.body;
 
             try {
                 const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
-                const { collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
+                const { collection: membersCol } = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'groups');
                 const findData = await tablesCol.findOne({ user_key });
 
                 if (!findData) {
@@ -332,44 +307,96 @@ const renewals = function () {
 
                 device_id = device_id.toLowerCase();
 
-                if (!findData.device_id || findData.device_id === "") {
-                    // device_id가 null이거나 빈 문자열인 경우 새로 저장
-                    await tablesCol.findOneAndUpdate(
-                        { user_key },
-                        { $set: { device_id } }
-                    );
-                    console.log(`${findData.id}-${findData.name}-${device_id} saved`);
-                    //return res.status(200).send('success');
-                } else {
-                    const dataArray = findData.device_id.toLowerCase().split(',');
+                const raw = (findData.device_id ?? "").trim();   // null/undefined 대비
+                const lower = raw ? raw.toLowerCase().split(",").filter(Boolean) : [];
+                if (!lower.includes(device_id)) {
+                    const newValue = raw ? `${raw},${device_id}` : device_id;
+                    await tablesCol.updateOne({ user_key }, { $set: { device_id: newValue } });
+                }
 
-                    if (dataArray.includes(device_id)) {
-                        //return res.status(200).send(`device_id:${device_id} - This is already saved device_id`);
-                    } else {
-                        const updatedDeviceId = findData.device_id + "," + device_id;
-                        await tablesCol.findOneAndUpdate(
-                            { user_key },
-                            { $set: { device_id: updatedDeviceId } }
+                if (op === "update") {
+                    // device_name만 수정 (값이 왔을 때만)
+                    if (req.body.device_name !== undefined) {
+                        await membersCol.updateOne(
+                            {
+                                user_key,
+                                "unit.user_key": user_key,
+                                "unit.auth": true,
+                                "unit.device_info.device_id": device_id
+                            },
+                            {
+                                $set: {
+                                    "unit.$[u].device_info.$[d].device_name": device_name,
+                                    "unit.$[u].latest_device_id": device_id
+                                }
+                            },
+                            {
+                                arrayFilters: [
+                                    { "u.user_key": user_key, "u.auth": true },
+                                    { "d.device_id": device_id }
+                                ]
+                            }
                         );
-                        console.log(`${findData.id}-${findData.name}-${device_id} saved`);
-                        //return res.status(200).send('success');
+                    }
+                } else { // create or 미지정
+                    // 이미 있는지 확인 후 없으면 prepend
+                    const groupDoc = await membersCol.findOne(
+                        { user_key, "unit.user_key": user_key, "unit.auth": true },
+                        { projection: { unit: { $elemMatch: { user_key, auth: true } } } }
+                    );
+                    if (!groupDoc?.unit?.length) return res.status(404).send("group/unit 없음");
+
+                    const devArr = groupDoc.unit[0].device_info || [];
+                    const exist = devArr.find(d => (d.device_id || "").toLowerCase() === device_id);
+
+                    if (!exist) {
+                        await membersCol.updateOne(
+                            { user_key, "unit.user_key": user_key, "unit.auth": true },
+                            {
+                                $push: {
+                                    "unit.$.device_info": {
+                                        $each: [{ device_id, device_name, privacy: false }],
+                                        $position: 0
+                                    }
+                                }
+                            }
+                        );
+                    } else {
+                        // 이미 있었으면 이름만 업데이트
+                        await membersCol.updateOne(
+                            {
+                                user_key,
+                                "unit.user_key": user_key,
+                                "unit.auth": true,
+                                "unit.device_info.device_id": device_id
+                            },
+                            {
+                                $set: {
+                                    "unit.$[u].device_info.$[d].device_name": device_name
+                                }
+                            },
+                            {
+                                arrayFilters: [
+                                    { "u.user_key": user_key, "u.auth": true },
+                                    { "d.device_id": device_id }
+                                ]
+                            }
+                        );
                     }
                 }
-                const groups = await membersCol.findOne({ user_key });
-                const targetUnit = (groups.unit || []).find(u => u.user_key === user_key);
-                await membersCol.updateOne(
-                    { user_key, "unit.user_key": user_key },
-                    { $set: { "unit.$.device_info": [
-                                {
-                                    device_id,
-                                    device_name:"noname",
-                                    privacy: false,
-                                    alarm_event: true,
-                                    motion_event: true
-                                },
-                                ...((targetUnit && targetUnit.device_info) || [])
-                            ] } }
-                );
+                // const groups = await membersCol.findOne({ user_key });
+                // const targetUnit = (groups.unit || []).find(u => u.user_key === user_key);
+                // await membersCol.updateOne(
+                //     { user_key, "unit.user_key": user_key },
+                //     { $set: { "unit.$.device_info": [
+                //                 {
+                //                     device_id,
+                //                     device_name:"noname",
+                //                     privacy: false
+                //                 },
+                //                 ...((targetUnit && targetUnit.device_info) || [])
+                //             ] } }
+                // );
 
                 return res.status(200).send('success')
 
@@ -379,234 +406,16 @@ const renewals = function () {
             }
         },
 
-        async renewalSaveUserKey(req, res) {
-            const data = req.body;
-            const bodyData = data.bodyData;
-            const userData = data.userData;
-
-            // 로그인 로그 저장 (실패해도 본 로직에 영향 X)
-            new AwsLogin({
-                ...bodyData,
-                id: bodyData.user_id,
-                up_key: bodyData.upKey
-            }).save()
-                .then(() => {
-                    console.log(`${bodyData.user_id} - Login-log Save Success`);
-                })
-                .catch(err => {
-                    console.log(err);
-                    console.log(`${bodyData.user_id} - Login-log Save Fail`);
-                });
-
-            try {
-                const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
-                const { collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
-
-                // 1. tables에서 user_key 없으면 저장
-                const findData = await tablesCol.findOne({ id: bodyData.user_id });
-                if (!findData) {
-                    console.log(`Login-id:${bodyData.user_id} - No user found`);
-                    return res.status(404).send('User not found');
-                }
-                let didUpdate = false;
-                if (!findData.user_key) {
-                    await tablesCol.findOneAndUpdate(
-                        { id: bodyData.user_id },
-                        { $set: { user_key: userData.user_key } }
-                    );
-                    didUpdate = true;
-                    // 특수 회사(e.g. Sunil) 추가 로직
-                    if (findData.company === "Sunil") {
-                        const eaglesSave = {
-                            id: bodyData.user_id,
-                            user_key: userData.user_key
-                        };
-                        serviceAPI().eaglesSafesOverseasSave("saveUserKey", eaglesSave);
-                    }
-                    console.log(`Login-id:${bodyData.user_id} - user_key saved in tables`);
-                }
-
-                // 2. (선택) 본인이 그룹의 마스터(user_key)라면, group.members에서도 user_key 없으면 저장
-                const myGroup = await membersCol.findOne({ user_key: userData.user_key });
-                if (myGroup && !myGroup.user_key) {
-                    await membersCol.updateOne(
-                        { _id: myGroup._id },
-                        { $set: { user_key: userData.user_key } }
-                    );
-                    didUpdate = true;
-                    console.log(`Login-id:${bodyData.user_id} - user_key saved in my group`);
-                }
-
-                // 3. 그룹의 unit으로 속해있는 경우, 내 email이 unit에 있는데 user_key 없는 경우만 업데이트
-                const unitUpdateResult = await membersCol.updateMany(
-                    { "unit.email": findData.email, "unit.user_key": { $ne: userData.user_key } },
-                    {
-                        $set: {
-                            "unit.$[elem].user_key": userData.user_key
-                        }
-                    },
-                    { arrayFilters: [{ "elem.email": findData.email, "elem.user_key": { $ne: userData.user_key } }] }
-                );
-                if (unitUpdateResult.modifiedCount > 0) {
-                    didUpdate = true;
-                    console.log(`Login-id:${bodyData.user_id} - user_key updated in group units`);
-                }
-
-                // 모두 이미 있으면 별도 메시지
-                if (!didUpdate) {
-                    console.log(`Login-id:${bodyData.user_id} - user_key already set everywhere`);
-                    return res.status(200).send('Saved user_key');
-                }
-
-                // 하나라도 새로 저장/업데이트 했으면
-                return res.status(200).send('success');
-            } catch (err) {
-                console.log(err);
-                return res.status(500).send('Internal Server Error');
-            }
-        },
-
-        async renewalUpdateDeviceInfo(req, res) {
-            const data = req.body;
-            console.log(data);
-
-            try {
-                // 1. DynamoDB에서 device_id로 모든 row 조회
-                const queryParams = {
-                    TableName: 'DEVICE_TABLE',
-                    KeyConditionExpression: 'device_id = :device_id',
-                    ExpressionAttributeValues: { ':device_id': data.device_id }
-                };
-                const queryResult = await dynamoDB.query(queryParams).promise();
-
-                if (!queryResult.Items || queryResult.Items.length === 0) {
-                    console.log('Device data not found, update ignored.');
-                    return res.status(404).json({ message: 'Device data not found, update ignored.' });
-                }
-
-                // 2. MongoDB group에 device_name 동기화 (마스터만)
-                const { collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
-
-                const allGroups = await membersCol.find({ "unit.device_info.device_id": data.device_id }).toArray();
-
-                for (const group of allGroups) {
-                    for (let unitIdx = 0; unitIdx < (group.unit || []).length; unitIdx++) {
-                        const unit = group.unit[unitIdx];
-                        if (!Array.isArray(unit.device_info)) continue;
-                        for (let deviceIdx = 0; deviceIdx < unit.device_info.length; deviceIdx++) {
-                            const device = unit.device_info[deviceIdx];
-                            if (device.device_id !== data.device_id) continue;
-                            // DynamoDB에 저장된 device_name 적용 (해당 user_key+device_id 조합)
-                            const dynamoItem = queryResult.Items.find(i => i.user_key === unit.user_key && i.device_id === data.device_id);
-                            const device_name = (dynamoItem && dynamoItem.device_name) || "noname";
-                            let newDeviceInfo = { ...device, device_name };
-
-                            // (옵션) 나머지 값들 갱신
-                            if ('privacy' in data) newDeviceInfo.privacy = data.privacy;
-                            if ('wifi_quality' in data) newDeviceInfo.wifi_quality = data.wifi_quality;
-                            if ('firmware' in data) newDeviceInfo.firmware = data.firmware;
-                            if ('ac' in data) newDeviceInfo.ac = data.ac;
-                            if ('pir' in data) newDeviceInfo.pir = data.pir;
-                            if ('battery_status' in data) newDeviceInfo.battery_status = data.battery_status;
-
-                            const setPath = `unit.${unitIdx}.device_info.${deviceIdx}`;
-                            await membersCol.updateOne(
-                                { _id: group._id },
-                                { $set: { [setPath]: newDeviceInfo } }
-                            );
-                        }
-                    }
-                }
-
-                // for (const item of queryResult.Items) {
-                //     const { user_key, device_id } = item;
-                //     // 해당 그룹의 마스터 unit 찾기
-                //     const group = await membersCol.findOne({ "unit.user_key": user_key, "unit.auth": true });
-                //     if (!group) continue;
-                //     const masterUnitIdx = (group.unit || []).findIndex(u => u.user_key === user_key && u.auth === true);
-                //     if (masterUnitIdx === -1) continue;
-                //     const masterUnit = group.unit[masterUnitIdx];
-                //     const deviceInfoIdx = (masterUnit.device_info || []).findIndex(d => d.device_id === device_id);
-                //     if (deviceInfoIdx === -1) continue;
-                //
-                //     // device_name은 DynamoDB 값으로 덮어쓰기, 나머지는 기존 방식대로 갱신
-                //     let newDeviceInfo = { ...masterUnit.device_info[deviceInfoIdx] };
-                //     newDeviceInfo.device_name = item.device_name || "noname";
-                //     if ('privacy' in data) newDeviceInfo.privacy = data.privacy;
-                //     if ('wifi_quality' in data) newDeviceInfo.wifi_quality = data.wifi_quality;
-                //     if ('firmware' in data) newDeviceInfo.firmware = data.firmware;
-                //     if ('ac' in data) newDeviceInfo.ac = data.ac;
-                //     if ('pir' in data) newDeviceInfo.pir = data.pir;
-                //     if ('battery_status' in data) newDeviceInfo.battery_status = data.battery_status;
-                //
-                //     const setPath = `unit.${masterUnitIdx}.device_info.${deviceInfoIdx}`;
-                //     const updateResult = await membersCol.updateOne(
-                //         { _id: group._id },
-                //         { $set: { [setPath]: newDeviceInfo } }
-                //     );
-                //     if (updateResult.modifiedCount > 0) updatedCount++;
-                // }
-
-                // 3. DynamoDB 업데이트 (기존 방식과 동일)
-                const updateResults = [];
-                let updateExpression = `set wifi_quality = :wifi_quality, privacy = :privacy, firmware = :firmware`;
-                let expressionAttributeValues = {
-                    ':wifi_quality': data.wifi_quality,
-                    ':privacy': data.privacy,
-                    ':firmware': data.firmware,
-                };
-                if (data.ac !== undefined) {
-                    updateExpression += ', ac = :ac';
-                    expressionAttributeValues[':ac'] = data.ac;
-                }
-                if (data.pir !== undefined) {
-                    updateExpression += ', pir = :pir';
-                    expressionAttributeValues[':pir'] = data.pir === null ? null : Number(data.pir);
-                }
-                if (data.battery_status !== undefined) {
-                    updateExpression += ', battery_status = :battery_status';
-                    expressionAttributeValues[':battery_status'] = data.battery_status === null ? null : Number(data.battery_status);
-                }
-
-                for (const item of queryResult.Items) {
-                    const params = {
-                        TableName: 'DEVICE_TABLE',
-                        Key: { device_id: item.device_id, user_key: item.user_key },
-                        UpdateExpression: updateExpression,
-                        ExpressionAttributeValues: expressionAttributeValues,
-                        ReturnValues: 'ALL_NEW'
-                    };
-                    const result = await dynamoDB.update(params).promise();
-                    updateResults.push(result.Attributes);
-                }
-
-                // 👉 리스폰스는 기존 포맷 그대로!
-                res.json({
-                    message: 'Device data updated successfully for all users',
-                    data: updateResults
-                });
-
-            } catch (error) {
-                console.error('Error updating device data:', error);
-                res.status(500).json({ error: 'Could not update device data' });
-            }
-        },
 
 
         async renewalDeleteDeviceId(req, res) {
-            const data = req.body;
-            console.log(data);
-            const lowerDeviceId = data.device_id.toLowerCase();
+            const data  = req.body;
             const token = req.headers['token'];
 
-            if (!data.device_id) {
-                console.log('There is no device_id inside the body.');
-                return res.status(400).json({ error: 'There is no device_id inside the body.' });
-            }
-            if (!token) {
-                console.log('Token not found.');
-                return res.status(400).send('Token not found.');
-            }
+            if (!data.device_id) return res.status(400).json({ error: 'There is no device_id inside the body.' });
+            if (!token)         return res.status(400).send('Token not found.');
+
+            const lowerDeviceId = String(data.device_id).toLowerCase();
 
             let verify;
             try {
@@ -615,162 +424,89 @@ const renewals = function () {
                 return res.status(401).json({ error: 'Token invalid.' });
             }
 
-            // 1. 마스터 그룹 조회
-            const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
-            const { collection: membersCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'members');
+            // === 컬렉션 / 상수 ===
+            const { collection: tablesCol  } = await ConnectMongo(MONGO_URI,       ADMIN_DB_NAME, 'tables');
+            const { collection: membersCol } = await ConnectMongo(MONGO_URI,       ADMIN_DB_NAME, 'members');
+            const DEVICE_TABLE = 'DEVICE_TABLE';
+            const RECORD_TABLE = 'RECORD_TABLE';
+            const BUCKET_NAME  = 'doorbell-video';
+            const s3           = new AWS.S3();
+
+            // 1. 그룹(마스터) 조회
             const group = await membersCol.findOne({ user_key: verify.user_key });
-            if (!group) {
-                return res.status(404).json({ error: "Group (master) not found." });
-            }
+            if (!group) return res.status(404).json({ error: "Group (master) not found." });
 
-            // 2. unit에서 해당 device_id를 가진 모든 그룹원(user_key) 추출
-            const targetUserKeys = [];
-            (group.unit || []).forEach(u => {
-                if (
-                    u.user_key &&
-                    Array.isArray(u.device_info) &&
-                    u.device_info.some(d => (d.device_id || '').toLowerCase() === lowerDeviceId)
-                ) {
-                    targetUserKeys.push(u.user_key);
-                }
-            });
-            // 마스터 본인도 device_info에 해당 device_id가 있으면 추가
-            if (
-                group.user_key &&
-                (group.unit || []).some(u =>
-                    u.user_key === group.user_key &&
-                    Array.isArray(u.device_info) &&
-                    u.device_info.some(d => (d.device_id || '').toLowerCase() === lowerDeviceId)
-                )
-            ) {
-                targetUserKeys.push(group.user_key);
-            }
-            // (중복 방지)
-            const uniqueUserKeys = Array.from(new Set(targetUserKeys));
-
-            // 3. FCM 푸시: 마스터 제외, state == ACTIVE, device_id 있는 유닛만
-            const unitsToPush = (group.unit || []).filter(u =>
-                u.user_key &&                            // 가입자만
-                u.user_key !== group.user_key &&         // 마스터 제외
-                u.state === "ACTIVE" &&                  // 활성화
-                Array.isArray(u.device_info) &&
-                u.device_info.some(d => (d.device_id || '').toLowerCase() === lowerDeviceId)
+            // 2. (그룹원은 건드리지 않음) 마스터 unit만 device_info에서 해당 device_id 제거
+            await membersCol.updateOne(
+                { user_key: verify.user_key, "unit.user_key": verify.user_key, "unit.auth": true },
+                { $pull: { "unit.$.device_info": { device_id: lowerDeviceId } } }
             );
-            const pushArr = unitsToPush.map(unit => {
-                const alias = unit.alias_name || group.group_name;
-                return {
-                    user_key: unit.user_key,
-                    title: `[${alias}]기기 삭제`,
-                    message: "그룹장이 해당 기기를 그룹에서 삭제했습니다.",
-                    fileName: "deleteDeviceId"
-                };
-            });
-            if (pushArr.length > 0) {
-                try {
-                    await axios.post(
-                        "https://l122dwssje.execute-api.ap-northeast-2.amazonaws.com/Prod/push",
-                        { push: pushArr },
-                        { headers: { "x-access-token": req.headers["token"] } }
-                    );
-                } catch (e) {
-                    console.error("FCM Push Error:", e?.response?.data || e.message);
-                }
-            }
 
-            // 4. 그룹장 본인만 tables.device_id에서 해당 device_id만 삭제
+            // 3. tables.device_id 문자열에서 해당 id 제거 (마스터만)
             const findUser = await tablesCol.findOne({ user_key: verify.user_key });
             if (findUser) {
-                let updatedDeviceIds = findUser.device_id !== null
-                    ? findUser.device_id.split(',').filter(id => id !== lowerDeviceId).join(',')
-                    : null;
-                if (updatedDeviceIds === '') updatedDeviceIds = null;
-                await tablesCol.updateOne(
-                    { _id: findUser._id },
-                    { $set: { device_id: updatedDeviceIds } }
-                );
+                let updated = (findUser.device_id || '')
+                    .split(',')
+                    .map(v => v.trim())
+                    .filter(v => v && v.toLowerCase() !== lowerDeviceId)
+                    .join(',');
+                if (!updated) updated = null;
+                await tablesCol.updateOne({ _id: findUser._id }, { $set: { device_id: updated } });
             }
 
-            // 5. 그룹 내 unit.device_info에서도 해당 device_id 객체만 삭제 (마스터/그룹원 모두)
-            const updatedUnits = (group.unit || []).map(unit => {
-                if (Array.isArray(unit.device_info)) {
-                    return {
-                        ...unit,
-                        device_info: unit.device_info.filter(d => (d.device_id || '').toLowerCase() !== lowerDeviceId)
-                    };
-                }
-                return unit;
-            });
-            await membersCol.updateOne(
-                { _id: group._id },
-                { $set: { unit: updatedUnits } }
-            );
-
-            // 6. History 컬렉션(몽고)에서 해당 device_id 전체 삭제
+            // 4. History 삭제
             await History.deleteMany({ device_id: lowerDeviceId });
 
-            // 7. DynamoDB DEVICE_TABLE에서 해당 user_key+device_id로 삭제 (기존처럼)
-            const DEVICE_TABLE = 'DEVICE_TABLE';
-            for (const user_key of uniqueUserKeys) {
-                await dynamoDB.delete({
-                    TableName: DEVICE_TABLE,
-                    Key: {
-                        device_id: lowerDeviceId,
-                        user_key: user_key
-                    }
-                }).promise();
-            }
-
-            // 8. RECORD_TABLE, S3: device_id 기준으로 일괄 삭제 (user_key 기준X)
-            const RECORD_TABLE = "RECORD_TABLE";
-            const BUCKET_NAME = "doorbell-video";
-            const s3 = new AWS.S3();
-
-            // RECORD_TABLE: device_id로 등록된 모든 레코드 삭제 (file_location=정렬키)
-            const scanResult = await dynamoDB.scan({
-                TableName: RECORD_TABLE,
-                FilterExpression: 'device_id = :device_id',
-                ExpressionAttributeValues: { ':device_id': lowerDeviceId }
+            // 5. DynamoDB 삭제 (마스터만)
+            await dynamoDB.delete({
+                TableName: DEVICE_TABLE,
+                Key: { device_id: lowerDeviceId, user_key: verify.user_key }
             }).promise();
-            if (scanResult.Items && scanResult.Items.length > 0) {
-                for (const record of scanResult.Items) {
+
+            // 6. RECORD_TABLE 삭제 (device_id 기준)
+            const scan = await dynamoDB.scan({
+                TableName: RECORD_TABLE,
+                FilterExpression: 'device_id = :id',
+                ExpressionAttributeValues: { ':id': lowerDeviceId }
+            }).promise();
+
+            if (scan.Items?.length) {
+                for (const r of scan.Items) {
                     await dynamoDB.delete({
                         TableName: RECORD_TABLE,
-                        Key: {
-                            device_id: record.device_id,
-                            file_location: record.file_location
-                        }
+                        Key: { device_id: r.device_id, file_location: r.file_location }
                     }).promise();
                 }
             }
 
-            // S3: device_id 변환한 prefix로 버킷 전체 삭제
-            const s3ObjectPrefix = lowerDeviceId.replace(/:/g, '_') + '/';
-            let continuationToken;
+            // 7. S3 삭제
+            const prefix = lowerDeviceId.replace(/:/g, '_') + '/';
+            let ct;
             do {
-                const listedObjects = await s3.listObjectsV2({
+                const listed = await s3.listObjectsV2({
                     Bucket: BUCKET_NAME,
-                    Prefix: s3ObjectPrefix,
-                    ContinuationToken: continuationToken
+                    Prefix: prefix,
+                    ContinuationToken: ct
                 }).promise();
-                if (listedObjects.Contents && listedObjects.Contents.length > 0) {
+
+                if (listed.Contents?.length) {
                     await s3.deleteObjects({
                         Bucket: BUCKET_NAME,
-                        Delete: {
-                            Objects: listedObjects.Contents.map(object => ({ Key: object.Key }))
-                        }
+                        Delete: { Objects: listed.Contents.map(o => ({ Key: o.Key })) }
                     }).promise();
                 }
-                continuationToken = listedObjects.IsTruncated ? listedObjects.NextContinuationToken : null;
-            } while (continuationToken);
+                ct = listed.IsTruncated ? listed.NextContinuationToken : null;
+            } while (ct);
 
-            // 마지막 결과 로깅 및 응답
+            // 8. 기존 리턴 형식 유지
             const lastData = await tablesCol.findOne({ user_key: verify.user_key });
 
-            res.status(200).json({
+            return res.status(200).json({
                 msg: `Deleted (MongoDB, DynamoDB, S3 Video-Data) device_id: ${lastData.id}-${lastData.name}`,
                 changeData: lastData
             });
-        }
+        },
+
 
     }
 

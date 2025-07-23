@@ -176,7 +176,6 @@ const groups = function () {
                 }
             );
 
-            if (r.modifiedCount === 0) return res.status(400).send("업데이트된 정보가 없습니다.");
 
             return res.status(200).json(true);
         },
