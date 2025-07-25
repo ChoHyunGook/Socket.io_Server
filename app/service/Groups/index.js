@@ -267,7 +267,7 @@ const groups = function () {
                                 const protoMessage = protocol.message || "";
                                 const expiredAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
 
-                                await History.create({
+                                await db.history.create({
                                     user_key: element.user_key,
                                     title: protoTitle,
                                     body: protoMessage,
@@ -296,7 +296,7 @@ const groups = function () {
                             // 프라이버시 true면 히스토리 바로 저장 (FCM 미발송)
                             const expiredAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
 
-                            await History.create({
+                            await db.history.create({
                                 user_key: element.user_key,
                                 title: element.title,    // 일반 메시지라 title 그대로
                                 body: element.message,   // 일반 메시지라 message 그대로
