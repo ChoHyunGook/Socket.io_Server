@@ -6,6 +6,7 @@ const history = function (mongoose){
         upKey:{type:String, trim:true},
         device_id:{type:String, trim:true},
         fileName:{type:String, trim:true},
+        status:{type:String,trim:true},
         date:{type:String, trim:true},
         regDate:{type:Date,default:Date.now},
         createAt:{type:Date},

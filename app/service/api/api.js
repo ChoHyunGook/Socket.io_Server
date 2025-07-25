@@ -1252,45 +1252,155 @@ const api = function () {
 
 
         async saveDeivceId(req, res) {
-            const data = req.body;
+            let { user_key, device_id, device_name, op } = req.body;
 
             try {
                 const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
-                const findData = await tablesCol.findOne({ user_key: data.user_key });
+                const { collection: membersCol } = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'groups');
+                const findData = await tablesCol.findOne({ user_key });
 
                 if (!findData) {
                     return res.status(404).send('User not found');
                 }
 
-                const incomingDeviceId = data.device_id.toLowerCase();
+                device_id = device_id.toLowerCase();
 
-                if (!findData.device_id || findData.device_id === "") {
-                    // device_id가 null이거나 빈 문자열인 경우 새로 저장
-                    await tablesCol.findOneAndUpdate(
-                        { user_key: data.user_key },
-                        { $set: { device_id: incomingDeviceId } }
-                    );
-                    console.log(`${findData.id}-${findData.name}-${incomingDeviceId} saved`);
-                    return res.status(200).send('success');
-                } else {
-                    const dataArray = findData.device_id.toLowerCase().split(',');
+                const raw = (findData.device_id ?? "").trim();   // null/undefined 대비
+                const lower = raw ? raw.toLowerCase().split(",").filter(Boolean) : [];
+                if (!lower.includes(device_id)) {
+                    const newValue = raw ? `${raw},${device_id}` : device_id;
+                    await tablesCol.updateOne({ user_key }, { $set: { device_id: newValue } });
+                }
 
-                    if (dataArray.includes(incomingDeviceId)) {
-                        return res.status(200).send(`device_id:${incomingDeviceId} - This is already saved device_id`);
-                    } else {
-                        const updatedDeviceId = findData.device_id + "," + incomingDeviceId;
-                        await tablesCol.findOneAndUpdate(
-                            { user_key: data.user_key },
-                            { $set: { device_id: updatedDeviceId } }
+                if (op === "update") {
+                    // device_name만 수정 (값이 왔을 때만)
+                    if (req.body.device_name !== undefined) {
+                        await membersCol.updateOne(
+                            {
+                                user_key,
+                                "unit.user_key": user_key,
+                                "unit.auth": true,
+                                "unit.device_info.device_id": device_id
+                            },
+                            {
+                                $set: {
+                                    "unit.$[u].device_info.$[d].device_name": device_name,
+                                    "unit.$[u].latest_device_id": device_id
+                                }
+                            },
+                            {
+                                arrayFilters: [
+                                    { "u.user_key": user_key, "u.auth": true },
+                                    { "d.device_id": device_id }
+                                ]
+                            }
                         );
-                        console.log(`${findData.id}-${findData.name}-${incomingDeviceId} saved`);
-                        return res.status(200).send('success');
+                    }
+                } else { // create or 미지정
+                    // 이미 있는지 확인 후 없으면 prepend
+                    const groupDoc = await membersCol.findOne(
+                        { user_key, "unit.user_key": user_key, "unit.auth": true },
+                        { projection: { unit: { $elemMatch: { user_key, auth: true } } } }
+                    );
+                    if (!groupDoc?.unit?.length) return res.status(404).send("group/unit 없음");
+
+                    const devArr = groupDoc.unit[0].device_info || [];
+                    const exist = devArr.find(d => (d.device_id || "").toLowerCase() === device_id);
+
+                    if (!exist) {
+                        await membersCol.updateOne(
+                            { user_key, "unit.user_key": user_key, "unit.auth": true },
+                            {
+                                $push: {
+                                    "unit.$.device_info": {
+                                        $each: [{ device_id, device_name, privacy: false }],
+                                        $position: 0
+                                    }
+                                }
+                            }
+                        );
+                    } else {
+                        // 이미 있었으면 이름만 업데이트
+                        await membersCol.updateOne(
+                            {
+                                user_key,
+                                "unit.user_key": user_key,
+                                "unit.auth": true,
+                                "unit.device_info.device_id": device_id
+                            },
+                            {
+                                $set: {
+                                    "unit.$[u].device_info.$[d].device_name": device_name
+                                }
+                            },
+                            {
+                                arrayFilters: [
+                                    { "u.user_key": user_key, "u.auth": true },
+                                    { "d.device_id": device_id }
+                                ]
+                            }
+                        );
                     }
                 }
+                // const groups = await membersCol.findOne({ user_key });
+                // const targetUnit = (groups.unit || []).find(u => u.user_key === user_key);
+                // await membersCol.updateOne(
+                //     { user_key, "unit.user_key": user_key },
+                //     { $set: { "unit.$.device_info": [
+                //                 {
+                //                     device_id,
+                //                     device_name:"noname",
+                //                     privacy: false
+                //                 },
+                //                 ...((targetUnit && targetUnit.device_info) || [])
+                //             ] } }
+                // );
+
+                return res.status(200).send('success')
+
             } catch (err) {
                 console.error('Error in saveDeivceId:', err);
                 return res.status(500).send('Internal Server Error');
             }
+            // const data = req.body;
+            //
+            // try {
+            //     const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+            //     const findData = await tablesCol.findOne({ user_key: data.user_key });
+            //
+            //     if (!findData) {
+            //         return res.status(404).send('User not found');
+            //     }
+            //
+            //     const incomingDeviceId = data.device_id.toLowerCase();
+            //
+            //     if (!findData.device_id || findData.device_id === "") {
+            //         // device_id가 null이거나 빈 문자열인 경우 새로 저장
+            //         await tablesCol.findOneAndUpdate(
+            //             { user_key: data.user_key },
+            //             { $set: { device_id: incomingDeviceId } }
+            //         );
+            //         console.log(`${findData.id}-${findData.name}-${incomingDeviceId} saved`);
+            //         return res.status(200).send('success');
+            //     } else {
+            //         const dataArray = findData.device_id.toLowerCase().split(',');
+            //
+            //         if (dataArray.includes(incomingDeviceId)) {
+            //             return res.status(200).send(`device_id:${incomingDeviceId} - This is already saved device_id`);
+            //         } else {
+            //             const updatedDeviceId = findData.device_id + "," + incomingDeviceId;
+            //             await tablesCol.findOneAndUpdate(
+            //                 { user_key: data.user_key },
+            //                 { $set: { device_id: updatedDeviceId } }
+            //             );
+            //             console.log(`${findData.id}-${findData.name}-${incomingDeviceId} saved`);
+            //             return res.status(200).send('success');
+            //         }
+            //     }
+            // } catch (err) {
+            //     console.error('Error in saveDeivceId:', err);
+            //     return res.status(500).send('Internal Server Error');
+            // }
         },
 
 

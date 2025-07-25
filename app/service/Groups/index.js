@@ -2,6 +2,8 @@ const {ConnectMongo} = require("../ConnectMongo");
 const applyDotenv = require("../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
+const db = require("../../DataBase/index");
+const moment = require("moment-timezone");
 
 const {
     GROUP_MONGO_URI,AWS_TOKEN,GROUP_DB_NAME
@@ -181,7 +183,156 @@ const groups = function () {
         },
 
 
+        async checkFcm (req,res){
+
+            try {
+                const pushArray = req.body;
+
+                const { collection: groupsCol } = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'groups');
+                const { collection: protocolsCol } = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'fcmprotocols');
+
+                let sendFcm = [];
+
+                for (const element of pushArray) {
+                    if (!element.user_key || !element.title || !element.message) {
+                        console.log('Invalid element:', JSON.stringify(element));
+                        return res.status(400).json({code:'A3',message:"Invalid parameter in push element."});
+                    }
+                    let { user_key, device_id, title, message, fileName, MacAddr, ...elseData } = element;
+
+                    device_id = device_id || (fileName ? MacAddr : "");
+
+                    // groups에서 해당 user_key의 group, 그리고 unit에서 auth:true + 해당 device_id의 device_info 찾기
+                    const group = await groupsCol.findOne({ user_key });
+                    if (!group) continue;
+
+                    let unit = (group.unit || []).find(u =>
+                        u.auth === true &&
+                        Array.isArray(u.device_info) &&
+                        u.device_info.some(d => (d.device_id === device_id))
+                    );
+                    if (!unit) continue;
+
+                    let deviceInfo = (unit.device_info || []).find(d => d.device_id === device_id);
+                    if (!deviceInfo) continue;
+
+
+                    if(title === "Protocol"){
+                        // message에 프로토콜 코드 ex) Kmotion01
+                        // protocolsCol에서 해당 프로토콜 정보 찾기
+                        const protocol = await protocolsCol.findOne({ protocol: message });
+                        if (!protocol) continue;
+
+                        // Kdoor03, Kdoor04라면 히스토리에 저장 (FCM X)
+                        if (["Kdoor03", "Kdoor04"].includes(message)) {
+
+                            // 프로토콜 title에서 {}를 device_name으로 치환
+                            const protoTitle = (protocol.title || "").replace(/\{\}/g, deviceInfo.device_name || "");
+                            const protoMessage = protocol.message || "";
+
+                            // 만료일 (7일 후)
+                            const expiredAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+
+                            // 저장할 문서 생성
+                            await db.history.create({
+                                user_key: element.user_key,
+                                title: protoTitle,
+                                body: protoMessage,
+                                date: moment().tz('Asia/Seoul').format('YYYY:MM:DD.HH:mm:ss'),
+                                createAt: new Date(),
+                                expiredAt,
+                                upKey: element.upKey || "",
+                                device_id: element.device_id || (element.fileName ? element.MacAddr : ""),
+                                fileName: element.fileName || "",
+                            });
+
+                            continue; // FCM 발송 안함
+                        }
+
+                        // privacy 체크
+                        if (deviceInfo.privacy === true) {
+                            // 프로토콜에서 bypass true여야만 FCM 발송
+                            if (protocol.bypass === true) {
+                                // title 메시지 가공: {} 부분에 device_name 넣기
+                                let protoTitle = (protocol.title || "").replace(/\{\}/g, deviceInfo.device_name || "");
+                                sendFcm.push({
+                                    title: protoTitle,
+                                    message: protocol.message,
+                                    user_key, device_id, fileName,
+                                    ...elseData
+                                });
+                            } else {
+                                // 히스토리 저장만 (FCM 미발송)
+                                const protoTitle = (protocol.title || "").replace(/\{\}/g, deviceInfo.device_name || "");
+                                const protoMessage = protocol.message || "";
+                                const expiredAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+
+                                await History.create({
+                                    user_key: element.user_key,
+                                    title: protoTitle,
+                                    body: protoMessage,
+                                    date: moment().tz('Asia/Seoul').format('YYYY:MM:DD.HH:mm:ss'),
+                                    createAt: new Date(),
+                                    expiredAt,
+                                    upKey: element.upKey || "",
+                                    device_id: element.device_id || (element.fileName ? element.MacAddr : ""),
+                                    fileName: element.fileName || "",
+                                });
+
+                                continue; // FCM 발송 안함
+                            }
+                        } else {
+                            // privacy false → 그냥 프로토콜대로 FCM 보냄
+                            let protoTitle = (protocol.title || "").replace(/\{\}/g, deviceInfo.device_name || "");
+                            sendFcm.push({
+                                title: protoTitle,
+                                message: protocol.message,
+                                user_key, device_id, fileName,
+                                ...elseData
+                            });
+                        }
+                    }else{
+                        if (deviceInfo.privacy === true) {
+                            // 프라이버시 true면 히스토리 바로 저장 (FCM 미발송)
+                            const expiredAt = new Date(Date.now() + 7 * 24 * 3600 * 1000);
+
+                            await History.create({
+                                user_key: element.user_key,
+                                title: element.title,    // 일반 메시지라 title 그대로
+                                body: element.message,   // 일반 메시지라 message 그대로
+                                date: moment().tz('Asia/Seoul').format('YYYY:MM:DD.HH:mm:ss'),
+                                createAt: new Date(),
+                                expiredAt,
+                                upKey: element.upKey || "",
+                                device_id: element.device_id || (element.fileName ? element.MacAddr : ""),
+                                fileName: element.fileName || "",
+                                status: "GENERAL_PRIVACY_BLOCKED"
+                            });
+
+                            continue; // FCM 발송 안함
+                        }
+                        // privacy false → 그대로 FCM 발송
+                        sendFcm.push({
+                            ...element
+                        });
+                    }
+
+                }
+                // sendFcm 배열에는 실제 발송할 FCM 데이터가 모임
+                // saveHistory 배열에는 히스토리로 따로 저장할 데이터가 모임 (직접 저장 로직 구현)
+
+                return res.status(200).json(sendFcm);
+            }catch(e){
+                console.error(e);
+                return res.status(500).json({ code: 'ERR', message: e.message });
+            }
+
+        },
+
+
     }
+
+
 }
 
 module.exports = groups
