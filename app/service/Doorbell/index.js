@@ -14,7 +14,7 @@ const jwt = require("jsonwebtoken");
 const {
     AWS_SECRET, AWS_ACCESS, AWS_REGION, AWS_BUCKET_NAME, MONGO_URI, ADMIN_DB_NAME, SMS_service_id,
     SMS_secret_key, SMS_access_key, SMS_PHONE, NICE_CLIENT_ID, NICE_CLIENT_SECRET, NICE_PRODUCT_CODE,
-    NICE_ACCESS_TOKEN, AWS_LAMBDA_SIGNUP,AWS_LAMBDA_SIGNIN,
+    NICE_ACCESS_TOKEN, AWS_LAMBDA_SIGNUP,AWS_LAMBDA_SIGNIN,GROUP_MONGO_URI, GROUP_DB_NAME,
     AWS_TOKEN, NODEMAILER_USER, NODEMAILER_PASS, NODEMAILER_SERVICE, NODEMAILER_HOST, SUNIL_MONGO_URI,
 } = applyDotenv(dotenv)
 
@@ -214,7 +214,7 @@ const doorbell = function () {
 
             try {
                 const {collection: tableCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
-                const {collection: membersCol} = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'groups');
+                const {collection: membersCol} = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'groups');
                 const allData = await tableCol.find({company}).toArray();
                 const maxContractNumObj = allData
                     .filter(item => item.contract_num && item.contract_num.startsWith(`${company}-`))
@@ -279,6 +279,7 @@ const doorbell = function () {
 
                     const memberData = {
                         group_name: `${data.name}의 그룹`,
+                        company,
                         user_key:newUserKey,
                         unit:[
                             {
@@ -286,6 +287,7 @@ const doorbell = function () {
                                 user_name:data.name,
                                 alias_name:null,
                                 email:data.user_email,
+                                latest_device_id:"",
                                 device_info:[],
                                 token:null,
                                 auth:true,
@@ -293,7 +295,7 @@ const doorbell = function () {
                                 join_at:moment().tz('Asia/Seoul').toDate(),
                             }
                         ],
-                        create_at:moment().tz('Asia/Seoul').toDate()
+                        created_at:moment().tz('Asia/Seoul').toDate()
                     }
 
 
