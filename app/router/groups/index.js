@@ -58,6 +58,10 @@ const {ConnectMongo} = require("../../service/ConnectMongo");
 // })
 
 
+app.patch('/device_name',(req,res)=>{
+    Groups().patchDeviceName(req,res)
+})
+
 app.get('/alarms/info', (req, res) => {
     Groups().getAlarms(req,res)
 })

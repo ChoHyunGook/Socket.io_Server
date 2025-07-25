@@ -4,10 +4,23 @@ const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken");
 const db = require("../../DataBase/index");
 const moment = require("moment-timezone");
+const AWS = require("aws-sdk");
+
+
 
 const {
-    GROUP_MONGO_URI,AWS_TOKEN,GROUP_DB_NAME
+    GROUP_MONGO_URI,AWS_TOKEN,GROUP_DB_NAME,AWS_SECRET,AWS_ACCESS,AWS_REGION
 } = applyDotenv(dotenv)
+
+
+AWS.config.update({
+    accessKeyId: AWS_SECRET,
+    secretAccessKey: AWS_ACCESS,
+    region: AWS_REGION
+});
+
+
+const dynamoDB = new AWS.DynamoDB.DocumentClient();
 
 
 const groups = function () {
@@ -327,6 +340,65 @@ const groups = function () {
                 return res.status(500).json({ code: 'ERR', message: e.message });
             }
 
+        },
+
+        async patchDeviceName(req,res){
+            let token = req.headers["token"];
+
+            let { device_id, device_name } = req.body;
+
+            let user_key;
+
+            try {
+                const decoded = jwt.verify(token, AWS_TOKEN);
+                user_key = decoded.user_key;
+            } catch (err) {
+                throw new Error('유효하지 않은 token입니다.');
+            }
+
+            const { collection: groupsCol } = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'groups');
+            const group = await groupsCol.findOne({ user_key });
+            if (!group) throw new Error("그룹을 찾을 수 없습니다.");
+
+            // 2. 본인 unit 찾기
+            const groupUnitIdx = (group.unit || []).findIndex(u => u.user_key === user_key);
+            if (groupUnitIdx === -1) throw new Error('본인 unit을 찾을 수 없습니다.');
+            const myUnit = group.unit[groupUnitIdx];
+
+            // 3. unit의 device_info에서 해당 device_id의 device_name 변경
+            let found = false;
+            if (!myUnit.device_info) myUnit.device_info = [];
+            myUnit.device_info = myUnit.device_info.map(dev => {
+                if (dev.device_id === device_id) {
+                    found = true;
+                    return { ...dev, device_name };
+                }
+                return dev;
+            });
+
+            // 4. groups 업데이트
+            await groupsCol.updateOne(
+                { _id: group._id },
+                { $set: { [`unit.${groupUnitIdx}.device_info`]: myUnit.device_info } }
+            );
+
+            // 5. 다이나모 디비에서도 디바이스네임 업데이트
+            try {
+                await dynamoDB.update({
+                    TableName: "DEVICE_TABLE", // 환경변수 또는 클래스 변수
+                    Key: {
+                        device_id,
+                        user_key
+                    },
+                    UpdateExpression: 'SET device_name = :dn',
+                    ExpressionAttributeValues: {
+                        ':dn': device_name
+                    }
+                }).promise();
+                return res.status(200).send("success");
+            } catch (e) {
+                return res.status(500).json({ message: '다이나모DB 업데이트 실패', error: e.message });
+            }
         },
 
 
