@@ -256,7 +256,7 @@ const doorbell = function () {
                     const awsResponse = await axios.post(AWS_LAMBDA_SIGNUP, saveAwsData);
                     console.log('success SignUp');
                     const awsResponseData = awsResponse.data;
-                    let lambdaDecoded = jwt.verify(awsResponseData.token, AWS_TOKEN); // 또는 AWS 쪽에서 사용하는 키
+                    let lambdaDecoded = jwt.verify(awsResponseData.response.token, AWS_TOKEN); // 또는 AWS 쪽에서 사용하는 키
                     let newUserKey = lambdaDecoded.user_key; // 여기에 유저키가 들어있음
 
                     const mongoSignUpData = {
