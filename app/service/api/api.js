@@ -897,7 +897,7 @@ const api = function () {
 
                     console.log('awsResponseData:', awsResponseData);
                     // ★ CHANGED: 토큰 디코드해서 user_key 추출
-                    newUserKey = jwt.verify(awsResponseData.token, AWS_TOKEN).user_key;
+                    newUserKey = jwt.verify(awsResponseData.response.token, AWS_TOKEN).user_key;
 
                     // 5) MongoDB 저장용 데이터 (★ CHANGED: user_key 세팅)
                     const mongoData = {
