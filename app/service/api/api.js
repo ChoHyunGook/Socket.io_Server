@@ -894,6 +894,8 @@ const api = function () {
                     const awsResponse = await axios.post(AWS_LAMBDA_SIGNUP, saveAwsData);
                     console.log('success SignUp');
                     const awsResponseData = awsResponse.data;
+
+                    console.log('awsResponseData:', awsResponseData);
                     // ★ CHANGED: 토큰 디코드해서 user_key 추출
                     newUserKey = jwt.verify(awsResponseData.token, AWS_TOKEN).user_key;
 
