@@ -895,7 +895,6 @@ const api = function () {
                     console.log('success SignUp');
                     const awsResponseData = awsResponse.data;
 
-                    console.log('awsResponseData:', awsResponseData.response);
                     // ★ CHANGED: 토큰 디코드해서 user_key 추출
                     newUserKey = jwt.verify(awsResponseData.response.token, AWS_TOKEN).user_key;
 
