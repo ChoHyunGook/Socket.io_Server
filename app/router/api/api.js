@@ -101,6 +101,304 @@ app.get('/get/personal/policy',async (req, res) => {
     res.send(htmlContent);
 
 })
+
+app.get('/get/personal/policy/doorbell',async (req, res) => {
+    // ✅ HTML 내용
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DOORBELLSQUARE — Terms of Service & Privacy Policy</title>
+  <style>
+    :root {
+      --fg: #111;
+      --muted: #555;
+      --bg: #fff;
+      --accent: #0a66c2;
+      --card: #f7f9fc;
+      --border: #e5e7eb;
+    }
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", "Apple SD Gothic Neo", "Malgun Gothic", "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 28px 20px 56px;
+    }
+    header h1 {
+      font-size: 1.9rem;
+      margin: 0 0 4px 0;
+    }
+    header .sub {
+      color: var(--muted);
+      margin-bottom: 22px;
+    }
+    nav.toc {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 10px 0 28px;
+    }
+    nav.toc a {
+      color: var(--accent);
+      text-decoration: none;
+      margin-right: 16px;
+    }
+    h2 {
+      margin-top: 36px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    h3 {
+      margin-top: 22px;
+    }
+    ul, ol {
+      padding-left: 22px;
+    }
+    .section-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin: 18px 0;
+    }
+    .muted {
+      color: var(--muted);
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    @media print {
+      nav.toc { display: none; }
+      .container { padding: 0; }
+      header h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>DOORBELLSQUARE — Terms of Service &amp; Privacy Policy</h1>
+      <div class="sub">Last updated: September 01, 2025</div>
+    </header>
+
+    <nav class="toc">
+      <strong>Quick links:</strong>
+      <a href="#tos">Terms of Service</a>
+      <a href="#privacy">Privacy Policy</a>
+    </nav>
+
+    <!-- Terms of Service -->
+    <section id="tos">
+      <h2>Terms of Service</h2>
+      <p>These terms of service ("Terms", "Agreement") are an agreement between <strong>DOORBELLSQUARE</strong> ("DOORBELLSQUARE", "we", "us" or "our") and you ("User", "you" or "your"). This Agreement sets forth the general terms and conditions of your use of the <strong>DOORBELLSQUARE</strong> mobile application and any of its products or services (collectively, "Mobile Application" or "Services").</p>
+
+      <div class="section-card">
+        <h3>1. Accounts and Membership</h3>
+        <p><strong>1.1.</strong> You must be at least 13 years old to use this Mobile Application. By using this Mobile Application and by agreeing to this Agreement, you warrant and represent that you are at least 13 years of age.</p>
+        <p><strong>1.2.</strong> If you create an account in the Mobile Application, you are responsible for maintaining the security of your account and you are fully responsible for all activities that occur under the account and any other actions taken in connection with it. We may, but have no obligation to, monitor and review new accounts before you may sign in and use our Services.</p>
+        <p><strong>1.3.</strong> Providing false contact information of any kind may result in the termination of your account. You must immediately notify us of any unauthorized uses of your account or any other breaches of security. We will not be liable for any acts or omissions by you, including any damages of any kind incurred as a result of such acts or omissions.</p>
+      </div>
+
+      <div class="section-card">
+        <h3>2. User Content</h3>
+        <p><strong>2.1.</strong> We do not own any data, information, or material (collectively, "Content") that you submit in the Mobile Application in the course of using the Service. You shall have sole responsibility for the accuracy, quality, integrity, legality, reliability, appropriateness, and intellectual property ownership or right to use of all submitted Content.</p>
+        <p><strong>2.2.</strong> We may, but have no obligation to, monitor and review Content in the Mobile Application submitted or created using our Services by you. Unless specifically permitted by you, your use of the Mobile Application does not grant us the license to use, reproduce, adapt, modify, publish, or distribute the Content created by you or stored in your user account for commercial, marketing, or any similar purpose.</p>
+        <p><strong>2.3.</strong> You grant us permission to access, copy, distribute, store, transmit, reformat, display, and perform the Content of your user account solely as required for the purpose of providing the Services to you.</p>
+      </div>
+
+      <div class="section-card">
+        <h3>3. Prohibited Uses</h3>
+        <p><strong>3.1.</strong> In addition to other terms as set forth in the Agreement, you are prohibited from using the Mobile Application or its Content:</p>
+        <ol type="a">
+          <li>for any unlawful purpose;</li>
+          <li>to solicit others to perform or participate in any unlawful acts;</li>
+          <li>to violate any international, federal, provincial or state regulations, rules, laws, or local ordinances;</li>
+          <li>to infringe upon or violate our intellectual property rights or the intellectual property rights of others;</li>
+          <li>to harass, abuse, insult, harm, defame, slander, disparage, intimidate, or discriminate based on gender, sexual orientation, religion, ethnicity, race, age, national origin, or disability;</li>
+          <li>to submit false or misleading information;</li>
+          <li>to upload or transmit viruses or any other type of malicious code that will or may be used in any way that will affect the functionality or operation of the Service or of any related mobile application, other mobile applications, or the Internet;</li>
+          <li>to collect or track the personal information of others;</li>
+          <li>to spam, phish, pharm, pretext, spider, crawl, or scrape;</li>
+          <li>for any obscene or immoral purpose; or</li>
+          <li>to interfere with or circumvent the security features of the Service or any related mobile application, other mobile applications, or the Internet.</li>
+        </ol>
+        <p><strong>3.2.</strong> We reserve the right to terminate your use of the Service or any related mobile application for violating any of the prohibited uses.</p>
+      </div>
+
+      <div class="section-card">
+        <h3>4. Intellectual Property Rights</h3>
+        <p><strong>4.1.</strong> This Agreement does not transfer to you any intellectual property owned by <strong>DOORBELLSQUARE</strong> or third parties, and all rights, titles, and interests in and to such property will remain (as between the parties) solely with <strong>DOORBELLSQUARE</strong>.</p>
+        <p><strong>4.2.</strong> All trademarks, service marks, graphics and logos used in connection with our Mobile Application or Services, are trademarks or registered trademarks of <strong>DOORBELLSQUARE</strong> or <strong>DOORBELLSQUARE</strong> licensors.</p>
+      </div>
+
+      <div class="section-card">
+        <h3>5. Limitation of Liability</h3>
+        <p><strong>5.1.</strong> To the fullest extent permitted by applicable law, in no event will <strong>DOORBELLSQUARE</strong>, its affiliates, officers, directors, employees, agents, suppliers, or licensors be liable to any person for any indirect, incidental, special, punitive, cover or consequential damages (including, without limitation, damages for lost profits, revenue, sales, goodwill, use of content, impact on business, business interruption, loss of anticipated savings, loss of business opportunity) however caused, under any theory of liability, including, without limitation, contract, tort, warranty, breach of statutory duty, negligence or otherwise, even if <strong>DOORBELLSQUARE</strong> has been advised as to the possibility of such damages or could have foreseen such damages.</p>
+      </div>
+
+      <div class="section-card">
+        <h3>6. Changes and Amendments</h3>
+        <p><strong>6.1.</strong> We reserve the right to modify this Agreement or its policies relating to the Mobile Application or Services at any time, effective upon posting of an updated version of this Agreement in the Mobile Application. When we do, we will post a notification in the Mobile Application. Continued use of the Mobile Application after any such changes shall constitute your consent to such changes.</p>
+      </div>
+
+      <div class="section-card">
+        <h3>7. Acceptance of These Terms</h3>
+        <p><strong>7.1.</strong> You acknowledge that you have read this Agreement and agree to all its terms and conditions. By using the Mobile Application or its Services you agree to be bound by this Agreement. If you do not agree to abide by the terms of this Agreement, you are not authorized to use or access the Mobile Application and its Services.</p>
+      </div>
+
+      <div class="section-card">
+        <h3>8. Contacting Us</h3>
+        <p><strong>8.1.</strong> If you have any questions about this Agreement, please contact us at <em>[Contact Information]</em>.</p>
+      </div>
+    </section>
+
+    <!-- Privacy Policy -->
+    <section id="privacy">
+      <h2>Privacy Policy (Private Usage Agreement)</h2>
+      <p>This Privacy Policy applies to the mobile application "<strong>DOORBELLSQUARE</strong>", developed and operated by (주)블라우비트. We are committed to protecting your privacy.</p>
+
+      <div class="section-card">
+        <h3>1. Overview</h3>
+        <p>This Privacy Policy (the "Policy") is designed to inform you about how <em>(Company Name)</em> ("we," "us," or "our") collects, uses, and discloses your personal information when you use our services (the "Services"). We take your privacy very seriously and are committed to protecting your personal information. This Policy explains how we do that.</p>
+      </div>
+
+      <div class="section-card">
+        <h3>2. Collection and Use of Personal Information</h3>
+        <p><strong>2.1 Personal Information We Collect</strong></p>
+        <p>We collect the following personal information from you when you use our Services:</p>
+        <p><strong>Required Personal Information:</strong></p>
+        <ul>
+          <li>Name</li>
+          <li>Email address</li>
+          <li>Phone number</li>
+          <li>Login information (ID, password)</li>
+        </ul>
+        <p><strong>Optional Personal Information:</strong></p>
+        <ul>
+          <li>Date of birth</li>
+          <li>Gender</li>
+          <li>Address</li>
+          <li>Profile picture</li>
+          <li>Service usage history</li>
+          <li>Cookies and device information</li>
+        </ul>
+        <p><strong>2.2 Purposes of Using Personal Information</strong></p>
+        <p>We use the personal information we collect for the following purposes:</p>
+        <ul>
+          <li><strong>Providing the Services:</strong>
+            <ul>
+              <li>Registering and managing your account</li>
+              <li>Verifying your service usage</li>
+              <li>Responding to your inquiries</li>
+              <li>Improving and developing our Services</li>
+            </ul>
+          </li>
+          <li><strong>Marketing:</strong>
+            <ul>
+              <li>Providing you with personalized advertisements and event information</li>
+              <li>Analyzing service usage and generating statistics</li>
+            </ul>
+          </li>
+          <li><strong>Other:</strong>
+            <ul>
+              <li>Complying with laws</li>
+              <li>Resolving disputes</li>
+            </ul>
+          </li>
+        </ul>
+        <p><strong>2.3 Retention Period</strong></p>
+        <p>We retain your personal information for the following periods:</p>
+        <ul>
+          <li><strong>Required Personal Information:</strong>
+            <ul>
+              <li>For as long as you use our Services</li>
+              <li>For any period required by law</li>
+            </ul>
+          </li>
+          <li><strong>Optional Personal Information:</strong>
+            <ul>
+              <li>Until you withdraw your consent or terminate your use of the Services</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <div class="section-card">
+        <h3>3. Sharing and Disclosure of Personal Information</h3>
+        <p>We do not share or disclose your personal information with third parties without your consent. However, we may share your personal information in the following limited circumstances:</p>
+        <ul>
+          <li>When required by law</li>
+          <li>When you have given us your express consent</li>
+          <li>In connection with a corporate reorganization, such as a merger, acquisition, or sale of assets</li>
+          <li>When we share your personal information in an aggregated and anonymized manner, so that it does not identify you</li>
+        </ul>
+      </div>
+
+      <div class="section-card">
+        <h3>4. Data Security</h3>
+        <p>We use the following technical and administrative safeguards to protect your personal information:</p>
+        <p><strong>Technical Safeguards:</strong></p>
+        <ul>
+          <li>Encryption</li>
+          <li>Access controls</li>
+          <li>Firewalls</li>
+          <li>Regular security audits and vulnerability assessments</li>
+        </ul>
+        <p><strong>Administrative Safeguards:</strong></p>
+        <ul>
+          <li>Training and education for employees on personal information handling</li>
+          <li>Supervision and management of personal information processing activities</li>
+          <li>Policies and procedures for personal information handling</li>
+        </ul>
+      </div>
+
+      <div class="section-card">
+        <h3>5. Your Rights</h3>
+        <p>You have the following rights with respect to your personal information:</p>
+        <ul>
+          <li><strong>Access and Correction:</strong> You have the right to access your personal information and to have it corrected if it is inaccurate.</li>
+          <li><strong>Restriction and Deletion:</strong> You have the right to restrict or delete your personal information.</li>
+          <li><strong>Data Portability:</strong> You have the right to receive your personal information in a structured, commonly used, and machine-readable format and to have it transferred to another controller.</li>
+          <li><strong>Withdrawal of Consent:</strong> You have the right to withdraw your consent to the processing of your personal information at any time.</li>
+        </ul>
+      </div>
+
+      <div class="section-card">
+        <h3>6. Changes to this Policy</h3>
+        <p>We may change this Policy from time to time to reflect changes in the law, our Services, or our practices. We will notify you of any material changes by posting the revised Policy on our Services or by sending you an email notification.</p>
+      </div>
+
+      <div class="section-card">
+        <h3>7. Contact Us</h3>
+        <p>If you have any questions about this Policy or your personal information, please contact us at: <strong>bjkim@blauhealthcare.com</strong></p>
+      </div>
+    </section>
+
+    <footer>
+      <div>© 2025 DOORBELLSQUARE. All rights reserved.</div>
+      <div class="muted">Document version: 2025-09-01</div>
+    </footer>
+  </div>
+</body>
+</html>
+`;
+    // ✅ HTML 콘텐츠 전송
+    res.setHeader('Content-Type', 'text/html');
+    res.send(htmlContent);
+
+})
+
 app.get('/get/picture',(req,res)=>{
     AWSAPI.getPicture(req,res);
 })

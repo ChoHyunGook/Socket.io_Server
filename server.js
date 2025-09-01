@@ -50,7 +50,7 @@ async function startServer(){
 
     app.use(morgan('dev'))
 
-    WebRtc()
+    //WebRtc()
 
     //메세지(히스토리), 비디오(레코드 테이블), 영상(s3) 3일마다 삭제 - 한국시간 00:01 기준
 
