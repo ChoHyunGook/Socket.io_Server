@@ -577,6 +577,19 @@ app.post('/history/search/table',(req,res)=>{
 })
 
 
+app.get('/version/app',(req,res)=>{
+    Api().getVersion(req,res)
+})
+app.post('/version/app',(req,res)=>{
+    Api().postVersion(req,res)
+})
+app.patch('/version/app',(req,res)=>{
+    Api().patchVersion(req,res)
+})
+app.delete('/version/app',(req,res)=>{
+    Api().deleteVersion(req,res)
+})
+
 
 
 

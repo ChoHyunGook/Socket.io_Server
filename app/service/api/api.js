@@ -31,7 +31,7 @@ const History = db.history
 const Face = db.face
 const AwsLogin = db.AWSLogin
 const AuthNumDB = db.authNum
-
+const AppVersion = db.AppVersion
 
 let count = 0;
 let awsLogsData = [];
@@ -60,6 +60,28 @@ AWS.config.update({
 });
 
 const dynamoDB = new AWS.DynamoDB.DocumentClient();
+
+// ── helpers (파일 상단 어딘가에) ───────────────────────────────
+const isValidPlatform = (p) => typeof p === 'string' && ['ios','android'].includes(p.toLowerCase());
+const normPlatform = (p) => p.toLowerCase();
+function parseVer(v) {
+    if (typeof v !== 'string') return [0];
+    return v.split('.').map(s => {
+        const n = Number(s.replace(/[^0-9]/g, ''));
+        return Number.isFinite(n) ? n : 0;
+    });
+}
+function cmpVer(a, b) {
+    const A = parseVer(a), B = parseVer(b);
+    const len = Math.max(A.length, B.length);
+    for (let i = 0; i < len; i++) {
+        const x = A[i] ?? 0, y = B[i] ?? 0;
+        if (x < y) return -1;
+        if (x > y) return 1;
+    }
+    return 0;
+}
+
 
 
 
@@ -2154,10 +2176,212 @@ const api = function () {
                     })
 
             }
-
-
         },
 
+        // return { ... } 내부
+        // 서비스 return { ... } 내부에 이 메서드만 교체
+        async getVersion(req, res) {
+            try {
+                const { app_id, platform, name } = req.query;
+                let { page, limit, sortBy, order } = req.query;
+
+                // ── 로컬 유틸(외부로 안 뺌) ───────────────────────────
+                const isValidPlatform = (p) => typeof p === 'string' && ['ios','android'].includes(p.toLowerCase());
+                const normPlatform = (p) => p.toLowerCase();
+                const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+                // ── 공통 match (전부 선택) ───────────────────────────
+                const $match = {};
+                if (app_id != null && app_id !== '') {
+                    const n = Number(app_id);
+                    if (!Number.isFinite(n)) return res.status(400).json({ error: "app_id must be a number" });
+                    $match.app_id = n;
+                }
+                if (platform != null && platform !== '') {
+                    if (!isValidPlatform(platform)) return res.status(400).json({ error: "platform must be 'ios' or 'android'" });
+                    $match.platform = normPlatform(platform);
+                }
+                if (name != null && name !== '') {
+                    $match.name = { $regex: `^${esc(name)}$`, $options: 'i' };
+                }
+
+                // ── 정렬/페이지 ─────────────────────────────────────
+                const sortField = (sortBy === 'version') ? 'versionParts' : 'createAt';
+                const sortDir = (String(order).toLowerCase() === 'asc') ? 1 : -1;
+
+                // app_id만 주고 page/limit 안 주면 최신 1개만 (동일 포맷 유지)
+                const isTopByAppIdMode = ($match.app_id !== undefined) && !$match.name &&
+                    (page == null && limit == null);
+
+                const pageNum = Math.max(1, Number(page) || 1);
+                const perPage = isTopByAppIdMode
+                    ? 1
+                    : Math.min(500, Math.max(1, Number(limit) || 20));
+
+                // ── 버전 정렬용 파생필드 ────────────────────────────
+                const addVersionParts = {
+                    $addFields: {
+                        versionParts: {
+                            $slice: [
+                                { $concatArrays: [
+                                        {
+                                            $map: {
+                                                input: { $split: ['$version', '.'] },
+                                                as: 'seg',
+                                                in: { $convert: { input: '$$seg', to: 'int', onError: 0, onNull: 0 } }
+                                            }
+                                        },
+                                        [0,0,0]
+                                    ] },
+                                3
+                            ]
+                        }
+                    }
+                };
+
+                // ── name 있을 때 extrema 계산 (추가로만 포함) ─────────
+                let extrema; // {min, prevOfMax, max} 또는 undefined
+                if ($match.name) {
+                    const [minDoc] = await AppVersion.aggregate([
+                        { $match },
+                        addVersionParts,
+                        { $sort: { versionParts: 1, createAt: 1 } },
+                        { $limit: 1 },
+                        { $project: { _id: 0, versionParts: 0 } }
+                    ]);
+
+                    const maxTwo = await AppVersion.aggregate([
+                        { $match },
+                        addVersionParts,
+                        { $sort: { versionParts: -1, createAt: -1 } },
+                        { $limit: 2 },
+                        { $project: { _id: 0, versionParts: 0 } }
+                    ]);
+
+                    const max = maxTwo?.[0] ?? null;
+                    const prevOfMax = (maxTwo && maxTwo.length >= 2) ? maxTwo[1] : null;
+                    extrema = { min: minDoc ?? null, prevOfMax, max };
+                }
+
+                // ── 목록 + 페이지네이션 (항상 동일 포맷으로 응답) ─────
+                const pipeline = [
+                    { $match },
+                    addVersionParts,
+                    {
+                        $facet: {
+                            meta: [{ $count: "total" }],
+                            items: [
+                                { $sort: { [sortField]: sortDir, createAt: sortDir } },
+                                { $skip: (pageNum - 1) * perPage },
+                                { $limit: perPage },
+                                { $project: { _id: 0, versionParts: 0 } }
+                            ]
+                        }
+                    },
+                    {
+                        $project: {
+                            items: 1,
+                            total: { $ifNull: [{ $arrayElemAt: ["$meta.total", 0] }, 0] }
+                        }
+                    }
+                ];
+
+                const [{ items = [], total = 0 } = { items: [], total: 0 }] = await AppVersion.aggregate(pipeline);
+
+                const resp = {
+                    page: pageNum,
+                    limit: perPage,
+                    total,
+                    totalPages: Math.ceil((total || 0) / perPage),
+                    items
+                };
+                if (extrema !== undefined) resp.extrema = extrema;
+
+                return res.status(200).json(resp);
+
+            } catch (err) {
+                console.error("getVersion error:", err);
+                return res.status(500).json({ error: "Server error" });
+            }
+        }
+        ,
+
+        async postVersion(req, res) {
+            try {
+                const { platform, version, name } = req.body;
+
+                if (!platform) return res.status(400).json({ error: "platform is required" });
+                if (!isValidPlatform(platform)) return res.status(400).json({ error: "platform must be 'ios' or 'android'" });
+                if (!version) return res.status(400).json({ error: "version is required" });
+
+                // DB에서 app_id 최대값 조회 → 없으면 1부터 시작
+                const lastDoc = await AppVersion.findOne().sort({ app_id: -1 }).lean();
+                const nextAppId = lastDoc ? lastDoc.app_id + 1 : 1;
+
+                const key = { app_id: nextAppId, platform: normPlatform(platform) };
+
+                const exists = await AppVersion.findOne(key).lean();
+                if (exists) return res.status(409).json({ error: "Version for (app_id, platform) already exists. Use PATCH." });
+
+                const doc = await AppVersion.create({
+                    ...key,
+                    name: name ?? null,
+                    version,
+                    createAt: new Date()
+                });
+
+                return res.status(201).json({ msg: "Created", data: doc });
+            } catch (err) {
+                console.error("postVersion error:", err);
+                if (err?.code === 11000) return res.status(409).json({ error: "Duplicate key: (app_id, platform)" });
+                return res.status(500).json({ error: "Server error" });
+            }
+        },
+
+        async patchVersion(req, res) {
+            try {
+                const { app_id, platform, version, name } = req.body;
+                if (app_id === undefined) return res.status(400).json({ error: "app_id is required" });
+                if (!Number.isFinite(Number(app_id))) return res.status(400).json({ error: "app_id must be a number" });
+                if (!platform) return res.status(400).json({ error: "platform is required" });
+                if (!isValidPlatform(platform)) return res.status(400).json({ error: "platform must be 'ios' or 'android'" });
+
+                const key = { app_id: Number(app_id), platform: normPlatform(platform) };
+                const toSet = {};
+                if (version !== undefined) toSet.version = version;
+                if (name !== undefined) toSet.name = name;
+                if (!Object.keys(toSet).length) return res.status(400).json({ error: "No fields to update (version, name)" });
+
+                const updated = await AppVersion.findOneAndUpdate(key, { $set: toSet }, { new: true });
+                if (!updated) return res.status(404).json({ error: "Target (app_id, platform) not found" });
+
+                return res.status(200).json({ msg: "Updated", data: updated });
+            } catch (err) {
+                console.error("patchVersion error:", err);
+                return res.status(500).json({ error: "Server error" });
+            }
+        },
+
+        async deleteVersion(req, res) {
+            try {
+                const appIdRaw = req.query.app_id ?? req.body?.app_id;
+                const platformRaw = req.query.platform ?? req.body?.platform;
+
+                if (appIdRaw === undefined) return res.status(400).json({ error: "app_id is required" });
+                if (!Number.isFinite(Number(appIdRaw))) return res.status(400).json({ error: "app_id must be a number" });
+                if (!platformRaw) return res.status(400).json({ error: "platform is required" });
+                if (!isValidPlatform(platformRaw)) return res.status(400).json({ error: "platform must be 'ios' or 'android'" });
+
+                const key = { app_id: Number(appIdRaw), platform: normPlatform(platformRaw) };
+                const del = await AppVersion.deleteOne(key);
+                if (del.deletedCount === 0) return res.status(404).json({ error: "Target (app_id, platform) not found" });
+
+                return res.status(200).json({ msg: "Deleted" });
+            } catch (err) {
+                console.error("deleteVersion error:", err);
+                return res.status(500).json({ error: "Server error" });
+            }
+        },
 
 
 
