@@ -545,7 +545,7 @@ const api = function () {
 
             // ✅ MongoDB admin DB → ConnectMongo 사용
             const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
-            const { collection: membersCol } = await ConnectMongo(MONGO_URI,       ADMIN_DB_NAME, 'members');
+            const { collection: membersCol } = await ConnectMongo(MONGO_URI,       ADMIN_DB_NAME, 'groups');
             const findUsers = await tablesCol.findOne({ user_key: verify.user_key });
             const group = await membersCol.findOne({ user_key: verify.user_key });
             if (!group) return res.status(404).json({ error: "Group (master) not found." });
