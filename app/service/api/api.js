@@ -544,7 +544,16 @@ const api = function () {
 
             // ✅ MongoDB admin DB → ConnectMongo 사용
             const { collection: tablesCol } = await ConnectMongo(MONGO_URI, ADMIN_DB_NAME, 'tables');
+            const { collection: membersCol } = await ConnectMongo(MONGO_URI,       ADMIN_DB_NAME, 'members');
             const findUsers = await tablesCol.findOne({ user_key: verify.user_key });
+            const group = await membersCol.findOne({ user_key: verify.user_key });
+            if (!group) return res.status(404).json({ error: "Group (master) not found." });
+            // 2. (그룹원은 건드리지 않음) 마스터 unit만 device_info에서 해당 device_id 제거
+            await membersCol.updateOne(
+                { user_key: verify.user_key, "unit.user_key": verify.user_key, "unit.auth": true },
+                { $pull: { "unit.$.device_info": { device_id: lowerDeviceId } } }
+            );
+
 
             let updatedDeviceIds = findUsers.device_id !== null
                 ? findUsers.device_id.split(',').filter(id => id !== lowerDeviceId).join(',')

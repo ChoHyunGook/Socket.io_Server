@@ -73,7 +73,6 @@ const groups = function () {
             }
 
 
-
             const { collection: groupsCol } = await ConnectMongo(GROUP_MONGO_URI, GROUP_DB_NAME, 'groups');
 
             const doc = await groupsCol.findOne(
