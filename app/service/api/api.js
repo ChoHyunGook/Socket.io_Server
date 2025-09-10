@@ -519,6 +519,7 @@ const api = function () {
             }
 
             const verify = jwt.verify(token, process.env.AWS_TOKEN);
+            console.log(verify);
 
             const sendFcmMessage = await axios.post(
                 "https://l122dwssje.execute-api.ap-northeast-2.amazonaws.com/Prod/push/others",
