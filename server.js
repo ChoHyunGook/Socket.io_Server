@@ -15,6 +15,7 @@ const Api = require('./app/router/api/api')
 const Myrucell = require('./app/router/myrucell/index')
 const Doorbell = require('./app/router/Doorbell/index')
 const Groups = require('./app/router/groups/index')
+const Repair = require('./app/router/Repair/index')
 
 const cookieParser = require('cookie-parser');
 const cors = require('cors')
@@ -54,6 +55,7 @@ async function startServer(){
 
     //메세지(히스토리), 비디오(레코드 테이블), 영상(s3) 3일마다 삭제 - 한국시간 00:01 기준
 
+    app.use('/repair', Repair)
     app.use('/socketServer', Socket)
     app.use('/myrucell', Myrucell)
     app.use('/doorbell', Doorbell)
