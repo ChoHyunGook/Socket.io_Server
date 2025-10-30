@@ -6,8 +6,22 @@ const ASService = require('../../service/ASService/SunilService')
 const service = ASService();
 //드라이버 로그인
 app.post('/login/driver',(req,res)=>{
-
+    service.driverLogin(req,res);
 })
+//드라이버 아이디 찾기
+app.post('/find/driver',(req,res)=>{
+    service.findDriver(req,res);
+})
+//드라이버 비밀번호 변경
+app.post('/driver/change-password',(req,res)=>{
+    service.changePassword(req,res);
+})
+
+//드라이버 아이디 기준 조회
+app.get('/find/driverById',(req,res)=>{
+    service.findDriverById(req,res)
+})
+
 //as조회
 app.get('/list',(req,res)=>{
     service.list(req,res)
