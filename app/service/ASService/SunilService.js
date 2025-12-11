@@ -6,11 +6,41 @@ const applyDotenv = require("../../../lambdas/applyDotenv");
 const dotenv = require("dotenv");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const AWS = require("aws-sdk");
 
 
-const {SUNIL_MONGO_URI} = applyDotenv(dotenv);
+const {SUNIL_MONGO_URI,AWS_SECRET,AWS_ACCESS,AWS_BUCKET_NAME,AWS_REGION} = applyDotenv(dotenv);
 
 const STATUS_IN_PROGRESS = "as 진행 중";
+
+const ClientId = AWS_SECRET
+const ClientSecret = AWS_ACCESS
+const Bucket_name = "repair-mylucell";
+
+const s3 = new AWS.S3({
+    accessKeyId: ClientId,
+    secretAccessKey: ClientSecret,
+    region: AWS_REGION
+});
+
+
+// 파일명용 타임스탬프 (YYYYMMDD_HHmm)
+function formatTimestampForFilename(date = new Date()) {
+    const pad = (n) => String(n).padStart(2, "0");
+    const y = date.getFullYear();
+    const m = pad(date.getMonth() + 1);
+    const d = pad(date.getDate());
+    const hh = pad(date.getHours());
+    const mm = pad(date.getMinutes());
+    return `${y}${m}${d}_${hh}${mm}`;
+}
+
+// S3 URL 생성
+function buildS3Url(key) {
+    // Bucket 정책을 퍼블릭 읽기로 해두셨다고 하셨으니 바로 접근 가능한 URL
+    return `https://${Bucket_name}.s3.${AWS_REGION}.amazonaws.com/${encodeURI(key)}`;
+}
+
 
 // 공통 유틸: 쿼리/바디에서 as_num 추출
 function getAsNum(req) {
@@ -510,6 +540,280 @@ const sunilService = function () {
                     .json({message: "AS 삭제 실패", error: String(err?.message || err)});
             }
         },
+
+
+        //첨부파일 조회
+        async getAttached(req, res) {
+            try {
+
+                const col = await getCol();
+
+                const as_num = getAsNum(req);
+                if (as_num === null) {
+                    return res.status(400).json({ message: "as_num이 필요합니다." });
+                }
+
+                const doc = await col.findOne(
+                    { as_num },
+                    { projection: { _id: 0, repairInfo: 1 } }
+                );
+
+                if (!doc) {
+                    return res.status(404).json({ message: "AS 문서를 찾을 수 없습니다." });
+                }
+
+                // repairInfo만 반환
+                return res.status(200).json({
+                    message: "첨부파일(수리내역) 조회 성공",
+                    repairInfo: doc.repairInfo || null,
+                });
+            } catch (err) {
+                return res.status(500).json({
+                    message: "첨부파일 조회 실패",
+                    error: String(err?.message || err),
+                });
+            }
+        },
+
+        //수리기사 수리내역 저장
+        async repairInfo(req, res) {
+            try {
+                const col = await getCol();
+                const driverCol = await getDriverCol();
+
+                // 1) 토큰 검증
+                const token = req.headers?.token;
+                if (!token) {
+                    return res.status(401).json({ message: "토큰이 필요합니다. (header.token)" });
+                }
+
+                const secret = "sunil-default-secret";
+                let decoded;
+                try {
+                    decoded = jwt.verify(token, secret);
+                } catch {
+                    return res.status(401).json({ message: "유효하지 않은 토큰입니다." });
+                }
+
+                const driverId = decoded?.sub;
+                if (!driverId) {
+                    return res.status(401).json({ message: "토큰에 드라이버 정보가 없습니다." });
+                }
+
+                // 2) 바디 값
+                const as_num = getAsNum(req);
+                const { memo } = req.body || {};
+
+                if (as_num === null) {
+                    return res.status(400).json({ message: "as_num이 필요합니다." });
+                }
+
+                // 3) 드라이버 정보 조회 (이름/전화번호 저장용)
+                const driver = await driverCol.findOne(
+                    { id: driverId },
+                    { projection: { _id: 0, id: 1, name: 1, tel: 1 } }
+                );
+                if (!driver) {
+                    return res.status(404).json({ message: "수리기사 정보를 찾을 수 없습니다." });
+                }
+
+                // 4) AS 문서 조회 + 기사 ID 일치 여부 체크
+                const asDoc = await col.findOne({ as_num });
+                if (!asDoc) {
+                    return res.status(404).json({ message: "AS 문서를 찾을 수 없습니다." });
+                }
+
+                const currentDriverId = asDoc.repairInfo?.driver?.id || null;
+                if (currentDriverId && currentDriverId !== driverId) {
+                    // 이미 다른 기사에게 배정된 / 작성된 건인 경우
+                    return res.status(403).json({
+                        message: "다른 수리기사에게 배정된 AS 건입니다. 수리내역을 수정할 수 없습니다.",
+                    });
+                }
+
+                // 5) 업로드할 파일 목록 정리
+                let files = [];
+                if (Array.isArray(req.files)) {
+                    files = req.files;
+                } else if (req.files && typeof req.files === "object") {
+                    Object.values(req.files).forEach((arr) => {
+                        if (Array.isArray(arr)) files.push(...arr);
+                    });
+                }
+
+                const now = new Date();
+                const timestamp = formatTimestampForFilename(now);
+
+                // 6) S3 업로드
+                const uploaded = await Promise.all(
+                    files.map(async (file, idx) => {
+                        const isImage = file.mimetype?.startsWith("image/");
+                        const isVideo = file.mimetype?.startsWith("video/");
+
+                        let folder = "etc";
+                        if (isImage) folder = "pictures";
+                        else if (isVideo) folder = "video";
+
+                        const original = file.originalname || "file";
+                        const dotIndex = original.lastIndexOf(".");
+                        const ext = dotIndex !== -1 ? original.substring(dotIndex) : "";
+
+                        const fileName = `${timestamp}_${idx}${ext}`;
+                        const key = `${folder}/${driverId}/${as_num}/${fileName}`;
+
+                        const params = {
+                            Bucket: Bucket_name,
+                            Key: key,
+                            Body: file.buffer,
+                            ContentType: file.mimetype,
+                        };
+
+                        await s3.upload(params).promise();
+
+                        return {
+                            file_name: fileName,
+                            url: buildS3Url(key),
+                            key,
+                            createAt: now,
+                            updateAt: now,
+                        };
+                    })
+                );
+
+                // 7) repairInfo 업데이트
+                const update = {
+                    "repairInfo.driver": {
+                        id: driver.id,
+                        name: driver.name ?? null,
+                        tel: driver.tel ?? null,
+                    },
+                    "repairInfo.status": true,
+                    "repairInfo.memo": memo ?? "",
+                    "repairInfo.attached": uploaded,
+                    "repairInfo.updateAt": now,
+                    updatedAt: now,
+                    // 필요 시 상태 변경
+                    // status: STATUS_IN_PROGRESS,
+                };
+
+                const { value: updatedDoc } = await col.findOneAndUpdate(
+                    { as_num },
+                    { $set: update },
+                    { returnDocument: "after" }
+                );
+
+                return res.status(200).json({
+                    message: "수리내역(첨부파일) 저장 성공",
+                    item: updatedDoc,
+                });
+            } catch (err) {
+                return res.status(500).json({
+                    message: "수리내역(첨부파일) 저장 실패",
+                    error: String(err?.message || err),
+                });
+            }
+        },
+
+
+
+        //수리기사 수리내역 삭제
+        async deleteRepairInfo(req, res) {
+            try {
+                const col = await getCol();
+
+                // 1) 토큰 검증
+                const token = req.headers?.token;
+                if (!token) {
+                    return res.status(401).json({ message: "토큰이 필요합니다. (header.token)" });
+                }
+
+                const secret = "sunil-default-secret";
+                let decoded;
+                try {
+                    decoded = jwt.verify(token, secret);
+                } catch {
+                    return res.status(401).json({ message: "유효하지 않은 토큰입니다." });
+                }
+
+                const driverId = decoded?.sub;
+                if (!driverId) {
+                    return res.status(401).json({ message: "토큰에 드라이버 정보가 없습니다." });
+                }
+
+                // 2) as_num
+                const as_num = getAsNum(req);
+                if (as_num === null) {
+                    return res.status(400).json({ message: "as_num이 필요합니다." });
+                }
+
+                // 3) 기존 문서 조회
+                const asDoc = await col.findOne({ as_num });
+                if (!asDoc) {
+                    return res.status(404).json({ message: "AS 문서를 찾을 수 없습니다." });
+                }
+
+                const currentDriverId = asDoc.repairInfo?.driver?.id || null;
+                if (!currentDriverId) {
+                    // 수리내역 자체가 아직 없는 경우
+                    return res.status(400).json({
+                        message: "등록된 수리내역이 없습니다.",
+                    });
+                }
+                if (currentDriverId !== driverId) {
+                    // 다른 기사 건
+                    return res.status(403).json({
+                        message: "본인이 작성한 수리내역만 삭제할 수 있습니다.",
+                    });
+                }
+
+                const attached = asDoc.repairInfo?.attached || [];
+                const keys = attached
+                    .map((f) => f.key)
+                    .filter((k) => typeof k === "string" && k.length > 0);
+
+                // 4) S3에서 파일 삭제
+                if (keys.length > 0) {
+                    const params = {
+                        Bucket: Bucket_name,
+                        Delete: {
+                            Objects: keys.map((Key) => ({ Key })),
+                            Quiet: true,
+                        },
+                    };
+
+                    await s3.deleteObjects(params).promise();
+                }
+
+                // 5) DB에서 repairInfo 초기화
+                const now = new Date();
+                const update = {
+                    "repairInfo.status": false,
+                    "repairInfo.memo": "",
+                    "repairInfo.attached": [],
+                    "repairInfo.updateAt": now,
+                    updatedAt: now,
+                };
+
+                const { value: updatedDoc } = await col.findOneAndUpdate(
+                    { as_num },
+                    { $set: update },
+                    { returnDocument: "after" }
+                );
+
+                return res.status(200).json({
+                    message: "수리내역(첨부파일) 삭제 성공",
+                    item: updatedDoc,
+                });
+            } catch (err) {
+                return res.status(500).json({
+                    message: "수리내역(첨부파일) 삭제 실패",
+                    error: String(err?.message || err),
+                });
+            }
+        },
+
+
+
     };
 };
 

@@ -235,8 +235,28 @@ const groups = function () {
                         const protocol = await protocolsCol.findOne({ protocol: message });
                         if (!protocol) continue;
 
-                        // Kdoor03, Kdoor04라면 히스토리에 저장 (FCM X)
-                        if (["Kdoor03", "Kdoor04"].includes(message)) {
+                        //히스토리에만 저장할 프로토콜 모음
+                        const targets = [
+                            "Kdoor03", "Edoor03", "Jdoor03", "Cdoor03",
+                            "Kdoor04", "Edoor04", "Jdoor04", "Cdoor04",
+
+                            "Kpassword04", "Epassword04", "Jpassword04", "Cpassword04",
+                            "Kpassword08", "Epassword08", "Jpassword08", "Cpassword08",
+                            "Kpassword09", "Epassword09", "Jpassword09", "Cpassword09",
+
+                            "Kfinger06", "Efinger06", "Jfinger06", "Cfinger06",
+                            "Kfinger07", "Efinger07", "Jfinger07", "Cfinger07",
+                            "Kfinger08", "Efinger08", "Jfinger08", "Cfinger08",
+                            "Kfinger09", "Efinger09", "Jfinger09", "Cfinger09",
+
+                            "Kpalmvein06", "Epalmvein06", "Jpalmvein06", "Cpalmvein06",
+                            "Kpalmvein07", "Epalmvein07", "Jpalmvein07", "Cpalmvein07",
+                            "Kpalmvein08", "Epalmvein08", "Jpalmvein08", "Cpalmvein08",
+                            "Kpalmvein09", "Epalmvein09", "Jpalmvein09", "Cpalmvein09",
+                        ];
+
+                        // targets 내부에 값이 있다면 히스토리에 저장 (FCM X)
+                        if (targets.includes(message)) {
 
                             // 프로토콜 title에서 {}를 device_name으로 치환
                             const protoTitle = (protocol.title || "").replace(/\{\}/g, deviceInfo.device_name || "");
